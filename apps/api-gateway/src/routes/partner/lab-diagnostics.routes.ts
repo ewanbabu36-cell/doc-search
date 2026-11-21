@@ -7,7 +7,7 @@ import { labDiagnosticsService } from '../../services/partner/LabDiagnosticsServ
 import { auditRepository } from '../../repositories/core/AuditRepository.js';
 import { authenticate, requirePermission, requireRoles } from '../../plugins/auth-guard.js';
 
-const PATHOLOGIST_ROLES = ['SUPER_ADMIN', 'COMPANY_ADMIN', 'HOSPITAL_ADMIN', 'CLINIC_ADMIN', 'CHIEF_MEDICAL_OFFICER', 'DOCTOR'] as const;
+const PATHOLOGIST_ROLES = ['SUPER_ADMIN', 'COMPANY_ADMIN', 'HOSPITAL_ADMIN', 'CLINIC_ADMIN', 'CHIEF_MEDICAL_OFFICER', 'DOCTOR', 'PATHOLOGIST'] as const;
 import { requireFeatureEntitlement, requireModuleCommercialAccess } from '../../plugins/commercial-guard.js';
 import {
   type CreateLabOrderInput,

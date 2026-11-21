@@ -5,6 +5,15 @@ import { nhaAbdmClient, type NhaGatewayHealth } from './NhaAbdmClient.js';
 
 const logger = createLogger('abdm-gateway-service');
 
+function maskAbha(abha: string): string {
+  if (!abha || abha.length < 8) return '****';
+  const parts = abha.split('-');
+  if (parts.length === 4) {
+    return `${parts[0]}-****-****-${parts[3]}`;
+  }
+  return `${abha.slice(0, 3)}******${abha.slice(-4)}`;
+}
+
 export class AbdmGatewayService {
   constructor(private readonly repo = new AbdmGatewayRepository()) {}
 
@@ -111,7 +120,7 @@ export class AbdmGatewayService {
             if (p['mobile']) mobileNumber = String(p['mobile']);
             if (p['address']) address = String(p['address']);
           }
-          logger.info(`Verified Aadhaar OTP and minted ABHA via Live NHA Gateway (${abhaNumber})`);
+          logger.info(`Verified Aadhaar OTP and minted ABHA via Live NHA Gateway (${maskAbha(abhaNumber)})`);
         } else {
           logger.warn(`NHA live verifyOtp error: ${liveResult.error}. Using certified sandbox verification.`);
         }

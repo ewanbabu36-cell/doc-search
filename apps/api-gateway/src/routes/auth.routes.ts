@@ -29,7 +29,7 @@ import { activationMailerService } from '../services/mail/ActivationMailerServic
 import type { RoleType } from '@docsearch/api-contracts';
 import { env } from '../config/env.js';
 import { extractAuthTokenFromRequest } from '../plugins/auth-guard.js';
-import { authenticate, optionalAuthenticate, requireRoles } from '../plugins/auth-guard.js';
+import { authenticate, requireRoles } from '../plugins/auth-guard.js';
 import { partnerOnboardingRepository } from '../repositories/company/PartnerOnboardingRepository.js';
 import { registrationFormPolicyService, resolveCanonicalRequestedPlan } from '../services/core/RegistrationFormPolicyService.js';
 import { launchOfferCampaignService } from '../services/core/LaunchOfferCampaignService.js';
@@ -1140,7 +1140,17 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
   });
 
   // GET /api/v1/auth/live-partners (List of newly onboarded live partners for fast login switch)
-  fastify.get('/api/v1/auth/live-partners', { preHandler: [optionalAuthenticate] }, async (_request, reply) => {
+  fastify.get('/api/v1/auth/live-partners', { preHandler: [authenticate] }, async (request, reply) => {
+    const session = request.session;
+    const isCompanyOrSuper = session?.isSuperAdmin || session?.roles?.some(r => ['SUPER_ADMIN', 'COMPANY_ADMIN', 'HOSPITAL_ADMIN'].includes(r));
+    if (!isCompanyOrSuper) {
+      throw new AppError({
+        message: 'Access denied: Administrative privileges required to inspect live partners',
+        code: ErrorCode.FORBIDDEN,
+        statusCode: 403
+      });
+    }
+
     const partners = realAuthService.getAllLivePartnerUsers().map((p) => ({
       id: p.id,
       email: p.email,
@@ -1149,8 +1159,7 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
       organizationType: p.organizationType,
       planTier: p.planTier,
       planExpiryDate: p.planExpiryDate || '30 days from activation',
-      accessibleFeatures: p.accessibleFeatures,
-      phone: p.phone
+      accessibleFeatures: p.accessibleFeatures
     }));
     return reply.status(200).send({ success: true, data: partners });
   });

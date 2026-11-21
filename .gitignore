@@ -92,3 +92,6 @@ override.tf.json
 terraform.rc
 
 .storage/
+
+.env.backup*
+.env.*.backup*

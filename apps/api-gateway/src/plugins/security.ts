@@ -3,7 +3,6 @@ import helmet from '@fastify/helmet';
 import cors from '@fastify/cors';
 import rateLimit from '@fastify/rate-limit';
 import { env } from '../config/env.js';
-import { extractAuthTokenFromRequest } from './auth-guard.js';
 
 export async function registerSecurityPlugins(app: FastifyInstance): Promise<void> {
   // 1. Security Headers via Helmet
@@ -62,8 +61,8 @@ export async function registerSecurityPlugins(app: FastifyInstance): Promise<voi
         }
       }
 
-      // In production, allow trusted domain patterns
-      if (origin.endsWith('.docsearch.health')) {
+      // In production, allow trusted domain patterns (Strict HTTPS apex and subdomains only)
+      if (origin === 'https://docsearch.health' || /^https:\/\/[a-zA-Z0-9-]+\.docsearch\.health$/.test(origin)) {
         return cb(null, true);
       }
       return cb(new Error('CORS origin denied'), false);
@@ -104,37 +103,16 @@ export async function registerSecurityPlugins(app: FastifyInstance): Promise<voi
       request.url.startsWith('/api/v1/partner/billing/webhooks') ||
       request.url.startsWith('/api/v1/webhooks/notifications'),
     keyGenerator: (request) => {
-      // 1. If session is already verified and attached
-      if (request.session?.userId) {
+      // 1. Only cryptographically verified and attached sessions receive user/tenant rate limit keys
+      if (request.session?.userId && request.session?.tenantId) {
         return `auth:${request.session.tenantId}:${request.session.userId}`;
       }
-      // 2. If Authorization / token header contains JWT token, extract sub & tenantId
-      const token = extractAuthTokenFromRequest(request);
-      if (token) {
-        try {
-          const parts = token.split('.');
-          if (parts.length === 3 && parts[1]) {
-            const payload = JSON.parse(Buffer.from(parts[1], 'base64url').toString('utf8'));
-            if (payload.sub && payload.tenantId) {
-              return `auth:${payload.tenantId}:${payload.sub}`;
-            }
-          }
-        } catch {
-          // fallback to IP on parse error
-        }
-      }
-      // 3. Fallback to client IP for unauthenticated traffic
+      // 2. Strict fallback to client IP for all unauthenticated or unverified traffic
       return `ip:${request.ip}`;
     },
     max: (request) => {
       // 🛡️ High throughput quota strictly reserved for cryptographically authenticated users
-      if (
-        request.session?.userId ||
-        Boolean(extractAuthTokenFromRequest(request)) ||
-        request.url.startsWith('/api/v1/partner/smart-icu') ||
-        request.url.startsWith('/api/v1/partner/bedside-concierge') ||
-        request.url.startsWith('/api/v1/partner/hardware')
-      ) {
+      if (request.session?.userId) {
         return 10000;
       }
       // Strict anti-abuse / anti-spray quota for unauthenticated public traffic

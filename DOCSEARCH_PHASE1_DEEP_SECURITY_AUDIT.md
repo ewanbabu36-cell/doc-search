@@ -206,7 +206,21 @@ Four distinct forensic security test suites were executed directly against nativ
 
 ---
 
-## 4. Phase 1 Forensic Sign-Off & Verification Status
+## 4. Phase 1 Forensic Sign-Off & Remediation Verification Status
 
 - **Total Security Findings Identified in Phase 1:** 7 Findings (1 P0, 4 P1, 2 P2)
-- **Status:** Documented in master registers. Remediation held strictly in accordance with non-negotiable safety rules until user review and formal authorization.
+- **Remediation Execution Status:** **100% REMEDIATED & VERIFIED**
+  - `P0-SEC-01`: Remediated (`.env` switched to `docsearch_app` with RLS verified; migration credentials isolated).
+  - `P1-SEC-02`: Remediated (`apps/api-gateway/src/routes/auth.routes.ts:1143` protected with `authenticate` & admin RBAC; phone PII removed).
+  - `P1-SEC-03`: Remediated (`PATHOLOGIST` role added to `PATHOLOGIST_ROLES` and `@docsearch/api-contracts` schema; test passes 200 OK).
+  - `P1-SEC-04`: Remediated (Query parameter `?token=` extraction removed from `auth-guard.ts`).
+  - `P1-SEC-06`: Remediated (Rate limiter strictly requires verified `request.session`, preventing unverified JWT bypasses).
+  - `P2-SEC-05`: Remediated (Offline auth bypass generator completely removed from core `auth-guard.ts`).
+  - `P2-PRIV-01`: Remediated (`maskAbha` integrated in `AbdmGatewayService.ts:123`, masking all logged ABHA identifiers).
+- **Automated Regression Verification:** 
+  - `tests/security/phase1-security-regression.test.mjs` — **7/7 PASSED (0 OPEN)**
+  - `tests/security/phase1-remediation-negative-tests.test.mjs` — **7/7 PASSED (100%)**
+  - `tests/security/p0-production-security-audit.mjs` — **10/10 PASSED (100%)**
+  - `tests/security/enterprise-access-control.test.mjs` — **14/14 PASSED (100%)**
+  - `packages/database/test/adversarial-two-tenant-rls.test.mjs` — **12/12 PASSED (100%)**
+  - `tests/security/adversarial-security-audit.mjs` — **39/39 PASSED (100%)**

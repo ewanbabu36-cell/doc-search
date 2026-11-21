@@ -18,6 +18,8 @@ export const RoleTypeSchema = z.enum([
   'RECEPTIONIST',
   'PHARMACIST',
   'LAB_TECHNICIAN',
+  'PATHOLOGIST',
+  'RADIOLOGIST',
   'BILLING_CLERK',
   'PATIENT'
 ]);
