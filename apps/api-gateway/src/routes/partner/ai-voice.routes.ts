@@ -70,6 +70,16 @@ export const aiVoiceRoutes: FastifyPluginAsync = async (app) => {
         (request.headers['x-idempotency-key'] as string | undefined) ||
         (request.headers['idempotency-key'] as string | undefined);
 
+      const session = request.session;
+      const isSuperAdmin = Boolean(session?.isSuperAdmin || (Array.isArray(session?.roles) && session.roles.includes('SUPER_ADMIN')));
+      const targetTenantId = (isSuperAdmin && body.targetTenantId) ? body.targetTenantId : session?.tenantId;
+      const canApprove = Boolean(
+        isSuperAdmin ||
+        (Array.isArray(session?.roles) && session.roles.some((r: string) => ['HOSPITAL_ADMIN', 'CLINIC_ADMIN', 'COMPANY_ADMIN'].includes(r)))
+      );
+      const isApprovalGranted = canApprove ? body.isApprovalGranted : false;
+      const approverId = canApprove ? (body.approverId || session?.userId) : undefined;
+
       const input: ProcessVoiceInteractionInput = {
         audio: body.audio,
         mimeType: body.mimeType || 'audio/wav',
@@ -77,10 +87,10 @@ export const aiVoiceRoutes: FastifyPluginAsync = async (app) => {
         capabilityId: body.capabilityId,
         toolId: body.toolId,
         toolInput: body.toolInput,
-        targetTenantId: body.targetTenantId,
+        targetTenantId,
         targetBranchId: body.targetBranchId,
-        isApprovalGranted: body.isApprovalGranted,
-        approverId: body.approverId,
+        isApprovalGranted,
+        approverId,
         approvalCapabilityId: body.approvalCapabilityId,
         synthesizeAudio: body.synthesizeAudio !== false,
         idempotencyKey

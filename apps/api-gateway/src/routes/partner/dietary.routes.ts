@@ -1,6 +1,8 @@
 import { type FastifyPluginAsync } from 'fastify';
 import { dietaryService } from '../../services/partner/DietaryService.js';
-import { authenticate, requirePermission } from '../../plugins/auth-guard.js';
+import { authenticate, requirePermission, requireRoles } from '../../plugins/auth-guard.js';
+
+const CLINICAL_DIETARY_ROLES = ['SUPER_ADMIN', 'COMPANY_ADMIN', 'HOSPITAL_ADMIN', 'CLINIC_ADMIN', 'CHIEF_MEDICAL_OFFICER', 'DOCTOR', 'NURSE'] as const;
 import { requireModuleCommercialAccess } from '../../plugins/commercial-guard.js';
 
 export const dietaryRoutes: FastifyPluginAsync = async (fastify) => {
@@ -101,7 +103,7 @@ export const dietaryRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.patch(
     '/api/v1/partner/dietary/assessments/:id/finalize',
     {
-      preHandler: [authenticate, requirePermission('dietary:assessment', 'update')]
+      preHandler: [authenticate, requirePermission('dietary:assessment', 'update'), requireRoles(...CLINICAL_DIETARY_ROLES)]
     },
     async (request) => {
       const { id } = request.params as { id: string };
@@ -149,7 +151,7 @@ export const dietaryRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.patch(
     '/api/v1/partner/dietary/orders/:id/approve',
     {
-      preHandler: [authenticate, requirePermission('dietary:order', 'update')]
+      preHandler: [authenticate, requirePermission('dietary:order', 'update'), requireRoles(...CLINICAL_DIETARY_ROLES)]
     },
     async (request) => {
       const { id } = request.params as { id: string };

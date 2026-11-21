@@ -105,14 +105,24 @@ export const aiFoundationRoutes: FastifyPluginAsync = async (app) => {
       const clientIp = request.ip;
       const userAgent = request.headers['user-agent'];
 
+      const session = request.session;
+      const isSuperAdmin = Boolean(session?.isSuperAdmin || (Array.isArray(session?.roles) && session.roles.includes('SUPER_ADMIN')));
+      const targetTenantId = (isSuperAdmin && body.targetTenantId) ? body.targetTenantId : session?.tenantId;
+      const canApprove = Boolean(
+        isSuperAdmin ||
+        (Array.isArray(session?.roles) && session.roles.some((r: string) => ['HOSPITAL_ADMIN', 'CLINIC_ADMIN', 'COMPANY_ADMIN'].includes(r)))
+      );
+      const isApprovalGranted = canApprove ? body.isApprovalGranted : false;
+      const approverId = canApprove ? (body.approverId || session?.userId) : undefined;
+
       const result = await aiCore.executeCapability(request.session, body.capabilityId, {
         toolId: body.toolId,
         toolInput: body.toolInput,
         prompt: body.prompt,
-        targetTenantId: body.targetTenantId,
+        targetTenantId,
         targetBranchId: body.targetBranchId,
-        isApprovalGranted: body.isApprovalGranted,
-        approverId: body.approverId,
+        isApprovalGranted,
+        approverId,
         approvalCapabilityId: body.approvalCapabilityId,
         correlationId,
         clientIp,

@@ -1,6 +1,9 @@
 import { type FastifyPluginAsync } from 'fastify';
 import { inpatientManagementService } from '../../services/partner/InpatientManagementService.js';
-import { authenticate, requirePermission } from '../../plugins/auth-guard.js';
+import { authenticate, requirePermission, requireRoles } from '../../plugins/auth-guard.js';
+
+const IPD_DOCTOR_ROLES = ['SUPER_ADMIN', 'COMPANY_ADMIN', 'HOSPITAL_ADMIN', 'CLINIC_ADMIN', 'CHIEF_MEDICAL_OFFICER', 'DOCTOR'] as const;
+const IPD_NURSE_DOCTOR_ROLES = ['SUPER_ADMIN', 'COMPANY_ADMIN', 'HOSPITAL_ADMIN', 'CLINIC_ADMIN', 'CHIEF_MEDICAL_OFFICER', 'DOCTOR', 'NURSE'] as const;
 import { requireModuleCommercialAccess } from '../../plugins/commercial-guard.js';
 import { distributedCache } from '../../services/cache/DistributedCacheService.js';
 import { horizontalSocketGateway } from '../../services/realtime/HorizontalSocketGateway.js';
@@ -38,7 +41,7 @@ export const inpatientManagementRoutes: FastifyPluginAsync = async (fastify) => 
   fastify.post(
     '/api/v1/partner/inpatient/wards',
     {
-      preHandler: [authenticate, requirePermission('clinical:encounters', 'create')]
+      preHandler: [authenticate, requirePermission('clinical:encounters', 'create'), requireRoles(...IPD_NURSE_DOCTOR_ROLES)]
     },
     async (request, reply) => {
       const payload = request.body as Omit<CreateWardInput, 'tenantId'>;
@@ -111,7 +114,7 @@ export const inpatientManagementRoutes: FastifyPluginAsync = async (fastify) => 
   fastify.post(
     '/api/v1/partner/inpatient/beds',
     {
-      preHandler: [authenticate, requirePermission('clinical:encounters', 'create')]
+      preHandler: [authenticate, requirePermission('clinical:encounters', 'create'), requireRoles(...IPD_NURSE_DOCTOR_ROLES)]
     },
     async (request, reply) => {
       const payload = request.body as Omit<CreateBedInput, 'tenantId'>;
@@ -129,7 +132,7 @@ export const inpatientManagementRoutes: FastifyPluginAsync = async (fastify) => 
   fastify.post(
     '/api/v1/partner/inpatient/quota/check-bed',
     {
-      preHandler: [authenticate, requirePermission('clinical:encounters', 'create')]
+      preHandler: [authenticate, requirePermission('clinical:encounters', 'create'), requireRoles(...IPD_NURSE_DOCTOR_ROLES)]
     },
     async (request, reply) => {
       const body = (request.body || {}) as {
@@ -137,7 +140,9 @@ export const inpatientManagementRoutes: FastifyPluginAsync = async (fastify) => 
         planTier?: string;
       };
 
-      const planTier = (body.planTier || 'Community').toUpperCase();
+      const isSuperAdmin = Boolean(request.session?.isSuperAdmin || (Array.isArray(request.session?.roles) && request.session.roles.includes('SUPER_ADMIN')));
+      const sessionTier = (request.session as any)?.planTier || (request.session as any)?.tier || 'Community';
+      const planTier = (isSuperAdmin && body.planTier ? body.planTier : sessionTier).toUpperCase();
       let maxAllowedBeds = 10;
       if (planTier.includes('ENTERPRISE')) {
         maxAllowedBeds = 9999;
@@ -192,7 +197,7 @@ export const inpatientManagementRoutes: FastifyPluginAsync = async (fastify) => 
   fastify.post(
     '/api/v1/partner/inpatient/admissions',
     {
-      preHandler: [authenticate, requirePermission('clinical:encounters', 'create')]
+      preHandler: [authenticate, requirePermission('clinical:encounters', 'create'), requireRoles(...IPD_NURSE_DOCTOR_ROLES)]
     },
     async (request, reply) => {
       const payload = request.body as Omit<CreateAdmissionInput, 'tenantId'>;
@@ -210,7 +215,7 @@ export const inpatientManagementRoutes: FastifyPluginAsync = async (fastify) => 
   fastify.post(
     '/api/v1/partner/inpatient/transfers',
     {
-      preHandler: [authenticate, requirePermission('clinical:encounters', 'create')]
+      preHandler: [authenticate, requirePermission('clinical:encounters', 'create'), requireRoles(...IPD_NURSE_DOCTOR_ROLES)]
     },
     async (request, reply) => {
       const payload = request.body as Omit<TransferBedInput, 'tenantId' | 'transferredBy'>;
@@ -228,7 +233,7 @@ export const inpatientManagementRoutes: FastifyPluginAsync = async (fastify) => 
   fastify.post(
     '/api/v1/partner/inpatient/nursing-notes',
     {
-      preHandler: [authenticate, requirePermission('clinical:encounters', 'create')]
+      preHandler: [authenticate, requirePermission('clinical:encounters', 'create'), requireRoles(...IPD_NURSE_DOCTOR_ROLES)]
     },
     async (request, reply) => {
       const payload = request.body as Omit<NursingNoteInput, 'tenantId' | 'nurseId'>;
@@ -254,7 +259,7 @@ export const inpatientManagementRoutes: FastifyPluginAsync = async (fastify) => 
   fastify.post(
     '/api/v1/partner/inpatient/admissions/:id/discharge',
     {
-      preHandler: [authenticate, requirePermission('clinical:encounters', 'update')]
+      preHandler: [authenticate, requirePermission('clinical:encounters', 'update'), requireRoles(...IPD_DOCTOR_ROLES)]
     },
     async (request) => {
       const { id } = request.params as { id: string };
@@ -291,7 +296,7 @@ export const inpatientManagementRoutes: FastifyPluginAsync = async (fastify) => 
   fastify.post(
     '/api/v1/partner/inpatient/rounds',
     {
-      preHandler: [authenticate, requirePermission('clinical:encounters', 'create')]
+      preHandler: [authenticate, requirePermission('clinical:encounters', 'create'), requireRoles(...IPD_NURSE_DOCTOR_ROLES)]
     },
     async (request, reply) => {
       const payload = request.body as Omit<CreateDoctorRoundInput, 'tenantId'>;
@@ -317,7 +322,7 @@ export const inpatientManagementRoutes: FastifyPluginAsync = async (fastify) => 
   fastify.post(
     '/api/v1/partner/inpatient/vitals',
     {
-      preHandler: [authenticate, requirePermission('clinical:encounters', 'create')]
+      preHandler: [authenticate, requirePermission('clinical:encounters', 'create'), requireRoles(...IPD_NURSE_DOCTOR_ROLES)]
     },
     async (request, reply) => {
       const payload = request.body as Omit<RecordVitalObservationInput, 'tenantId' | 'recordedBy'>;
@@ -368,7 +373,7 @@ export const inpatientManagementRoutes: FastifyPluginAsync = async (fastify) => 
   fastify.post(
     '/api/v1/partner/inpatient/admissions/:id/generate-bill',
     {
-      preHandler: [authenticate, requirePermission('clinical:encounters', 'create')]
+      preHandler: [authenticate, requirePermission('clinical:encounters', 'create'), requireRoles(...IPD_NURSE_DOCTOR_ROLES)]
     },
     async (request, reply) => {
       const { id } = request.params as { id: string };
@@ -394,7 +399,7 @@ export const inpatientManagementRoutes: FastifyPluginAsync = async (fastify) => 
   fastify.post(
     '/api/v1/partner/inpatient/housekeeping-tasks',
     {
-      preHandler: [authenticate, requirePermission('clinical:encounters', 'create')]
+      preHandler: [authenticate, requirePermission('clinical:encounters', 'create'), requireRoles(...IPD_NURSE_DOCTOR_ROLES)]
     },
     async (request, reply) => {
       const payload = request.body as any;

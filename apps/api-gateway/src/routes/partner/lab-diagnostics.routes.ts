@@ -5,7 +5,9 @@ import { z } from 'zod';
 import { AppError, ErrorCode } from '@docsearch/shared-core';
 import { labDiagnosticsService } from '../../services/partner/LabDiagnosticsService.js';
 import { auditRepository } from '../../repositories/core/AuditRepository.js';
-import { authenticate, requirePermission } from '../../plugins/auth-guard.js';
+import { authenticate, requirePermission, requireRoles } from '../../plugins/auth-guard.js';
+
+const PATHOLOGIST_ROLES = ['SUPER_ADMIN', 'COMPANY_ADMIN', 'HOSPITAL_ADMIN', 'CLINIC_ADMIN', 'CHIEF_MEDICAL_OFFICER', 'DOCTOR'] as const;
 import { requireFeatureEntitlement, requireModuleCommercialAccess } from '../../plugins/commercial-guard.js';
 import {
   type CreateLabOrderInput,
@@ -405,7 +407,7 @@ export const labDiagnosticsRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.patch(
     '/api/v1/partner/lab/orders/:id/verify',
     {
-      preHandler: [authenticate, requirePermission('lab:results', 'validate')]
+      preHandler: [authenticate, requirePermission('lab:results', 'validate'), requireRoles(...PATHOLOGIST_ROLES)]
     },
     handleVerify
   );
@@ -413,7 +415,7 @@ export const labDiagnosticsRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.patch(
     '/api/v1/partner/lab/orders/:id/results/verify',
     {
-      preHandler: [authenticate, requirePermission('lab:results', 'validate')]
+      preHandler: [authenticate, requirePermission('lab:results', 'validate'), requireRoles(...PATHOLOGIST_ROLES)]
     },
     handleVerify
   );
@@ -422,7 +424,7 @@ export const labDiagnosticsRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.post(
     '/api/v1/partner/lab/orders/:id/technical-validate',
     {
-      preHandler: [authenticate, requirePermission('lab:results', 'validate')]
+      preHandler: [authenticate, requirePermission('lab:results', 'validate'), requireRoles(...PATHOLOGIST_ROLES)]
     },
     async (request, reply) => {
       const { id } = request.params as { id: string };
@@ -440,7 +442,7 @@ export const labDiagnosticsRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.post(
     '/api/v1/partner/lab/orders/:id/pathologist-validate',
     {
-      preHandler: [authenticate, requirePermission('lab:results', 'validate')]
+      preHandler: [authenticate, requirePermission('lab:results', 'validate'), requireRoles(...PATHOLOGIST_ROLES)]
     },
     async (request, reply) => {
       const { id } = request.params as { id: string };

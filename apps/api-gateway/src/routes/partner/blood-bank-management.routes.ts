@@ -1,6 +1,6 @@
 import { type FastifyPluginAsync } from 'fastify';
 import { bloodBankManagementService } from '../../services/partner/BloodBankManagementService.js';
-import { authenticate, requirePermission } from '../../plugins/auth-guard.js';
+import { authenticate, requirePermission, requireRoles } from '../../plugins/auth-guard.js';
 import { requireModuleCommercialAccess } from '../../plugins/commercial-guard.js';
 import {
   type RegisterDonorInput,
@@ -12,6 +12,9 @@ import {
   type IssueBloodUnitInput,
   type RecordTransfusionInput
 } from '../../repositories/partner/BloodBankManagementRepository.js';
+
+const BLOOD_BANK_TECH_ROLES = ['SUPER_ADMIN', 'COMPANY_ADMIN', 'HOSPITAL_ADMIN', 'CLINIC_ADMIN', 'LAB_TECHNICIAN', 'DOCTOR', 'CHIEF_MEDICAL_OFFICER'] as const;
+const BLOOD_TRANSFUSION_ROLES = ['SUPER_ADMIN', 'COMPANY_ADMIN', 'HOSPITAL_ADMIN', 'CLINIC_ADMIN', 'NURSE', 'DOCTOR', 'CHIEF_MEDICAL_OFFICER'] as const;
 
 export const bloodBankManagementRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.addHook('preHandler', requireModuleCommercialAccess('BLOOD_BANK'));
@@ -75,7 +78,7 @@ export const bloodBankManagementRoutes: FastifyPluginAsync = async (fastify) => 
   fastify.post(
     '/api/v1/partner/blood-bank/tests',
     {
-      preHandler: [authenticate, requirePermission('clinical:encounters', 'create')]
+      preHandler: [authenticate, requirePermission('clinical:encounters', 'create'), requireRoles(...BLOOD_BANK_TECH_ROLES)]
     },
     async (request, reply) => {
       const payload = request.body as Omit<RecordBloodTestInput, 'tenantId' | 'testedBy'>;
@@ -103,7 +106,7 @@ export const bloodBankManagementRoutes: FastifyPluginAsync = async (fastify) => 
   fastify.post(
     '/api/v1/partner/blood-bank/crossmatch',
     {
-      preHandler: [authenticate, requirePermission('clinical:encounters', 'create')]
+      preHandler: [authenticate, requirePermission('clinical:encounters', 'create'), requireRoles(...BLOOD_BANK_TECH_ROLES)]
     },
     async (request, reply) => {
       const payload = request.body as Omit<PerformCrossmatchInput, 'tenantId' | 'technicianId'>;
@@ -120,7 +123,7 @@ export const bloodBankManagementRoutes: FastifyPluginAsync = async (fastify) => 
   fastify.post(
     '/api/v1/partner/blood-bank/issue',
     {
-      preHandler: [authenticate, requirePermission('clinical:encounters', 'create')]
+      preHandler: [authenticate, requirePermission('clinical:encounters', 'create'), requireRoles(...BLOOD_BANK_TECH_ROLES)]
     },
     async (request, reply) => {
       const payload = request.body as Omit<IssueBloodUnitInput, 'tenantId' | 'issuedBy'>;
@@ -137,7 +140,7 @@ export const bloodBankManagementRoutes: FastifyPluginAsync = async (fastify) => 
   fastify.post(
     '/api/v1/partner/blood-bank/transfusions',
     {
-      preHandler: [authenticate, requirePermission('clinical:encounters', 'create')]
+      preHandler: [authenticate, requirePermission('clinical:encounters', 'create'), requireRoles(...BLOOD_TRANSFUSION_ROLES)]
     },
     async (request, reply) => {
       const payload = request.body as Omit<RecordTransfusionInput, 'tenantId' | 'transfusedByNurse'>;

@@ -1,6 +1,6 @@
 import { type FastifyPluginAsync } from 'fastify';
 import { mrdManagementService } from '../../services/partner/MRDManagementService.js';
-import { authenticate, requirePermission } from '../../plugins/auth-guard.js';
+import { authenticate, requirePermission, requireRoles } from '../../plugins/auth-guard.js';
 import { requireModuleCommercialAccess } from '../../plugins/commercial-guard.js';
 import {
   type CreateMedicalRecordInput,
@@ -9,6 +9,8 @@ import {
   type FinalizeMedicalRecordInput,
   type AmendMedicalRecordInput
 } from '../../repositories/partner/MRDManagementRepository.js';
+
+const MRD_LEGAL_ROLES = ['SUPER_ADMIN', 'COMPANY_ADMIN', 'HOSPITAL_ADMIN', 'CLINIC_ADMIN', 'CHIEF_MEDICAL_OFFICER', 'DOCTOR', 'COMPLIANCE_OFFICER'] as const;
 
 export const mrdManagementRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.addHook('preHandler', requireModuleCommercialAccess('CLINICAL_EMR'));
@@ -99,7 +101,7 @@ export const mrdManagementRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.post(
     '/api/v1/partner/mrd/records/:id/finalize',
     {
-      preHandler: [authenticate, requirePermission('clinical:encounters', 'update')]
+      preHandler: [authenticate, requirePermission('clinical:encounters', 'update'), requireRoles(...MRD_LEGAL_ROLES)]
     },
     async (request, reply) => {
       const { id } = request.params as { id: string };
@@ -120,7 +122,7 @@ export const mrdManagementRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.post(
     '/api/v1/partner/mrd/records/:id/amend',
     {
-      preHandler: [authenticate, requirePermission('clinical:encounters', 'update')]
+      preHandler: [authenticate, requirePermission('clinical:encounters', 'update'), requireRoles(...MRD_LEGAL_ROLES)]
     },
     async (request, reply) => {
       const { id } = request.params as { id: string };

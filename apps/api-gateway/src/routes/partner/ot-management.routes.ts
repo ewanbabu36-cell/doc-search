@@ -1,6 +1,6 @@
 import { type FastifyPluginAsync } from 'fastify';
 import { otManagementService } from '../../services/partner/OTManagementService.js';
-import { authenticate, requirePermission } from '../../plugins/auth-guard.js';
+import { authenticate, requirePermission, requireRoles } from '../../plugins/auth-guard.js';
 import { requireModuleCommercialAccess } from '../../plugins/commercial-guard.js';
 import {
   type CreateOTRoomInput,
@@ -10,6 +10,9 @@ import {
   type RecordPACURecoveryInput,
   type TransferPostOpInput
 } from '../../repositories/partner/OTManagementRepository.js';
+
+const DOCTOR_SURGEON_ROLES = ['SUPER_ADMIN', 'COMPANY_ADMIN', 'HOSPITAL_ADMIN', 'CLINIC_ADMIN', 'CHIEF_MEDICAL_OFFICER', 'DOCTOR'] as const;
+const OT_CLINICAL_STAFF_ROLES = ['SUPER_ADMIN', 'COMPANY_ADMIN', 'HOSPITAL_ADMIN', 'CLINIC_ADMIN', 'CHIEF_MEDICAL_OFFICER', 'DOCTOR', 'NURSE'] as const;
 
 export const otManagementRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.addHook('preHandler', requireModuleCommercialAccess('OT_SURGERY'));
@@ -69,7 +72,7 @@ export const otManagementRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.post(
     '/api/v1/partner/ot/schedules/:id/pac',
     {
-      preHandler: [authenticate, requirePermission('clinical:encounters', 'create')]
+      preHandler: [authenticate, requirePermission('clinical:encounters', 'create'), requireRoles(...DOCTOR_SURGEON_ROLES)]
     },
     async (request, reply) => {
       const { id } = request.params as { id: string };
@@ -90,7 +93,7 @@ export const otManagementRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.post(
     '/api/v1/partner/ot/schedules/:id/operative-notes',
     {
-      preHandler: [authenticate, requirePermission('clinical:encounters', 'create')]
+      preHandler: [authenticate, requirePermission('clinical:encounters', 'create'), requireRoles(...DOCTOR_SURGEON_ROLES)]
     },
     async (request, reply) => {
       const { id } = request.params as { id: string };
@@ -111,7 +114,7 @@ export const otManagementRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.post(
     '/api/v1/partner/ot/schedules/:id/pacu',
     {
-      preHandler: [authenticate, requirePermission('clinical:encounters', 'create')]
+      preHandler: [authenticate, requirePermission('clinical:encounters', 'create'), requireRoles(...OT_CLINICAL_STAFF_ROLES)]
     },
     async (request, reply) => {
       const { id } = request.params as { id: string };
@@ -132,7 +135,7 @@ export const otManagementRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.post(
     '/api/v1/partner/ot/schedules/:id/transfer-postop',
     {
-      preHandler: [authenticate, requirePermission('clinical:encounters', 'update')]
+      preHandler: [authenticate, requirePermission('clinical:encounters', 'update'), requireRoles(...OT_CLINICAL_STAFF_ROLES)]
     },
     async (request, reply) => {
       const { id } = request.params as { id: string };

@@ -1,6 +1,6 @@
 import type { FastifyPluginAsync } from 'fastify';
 import crypto from 'node:crypto';
-import { authenticate } from '../../plugins/auth-guard.js';
+import { authenticate, requireRoles } from '../../plugins/auth-guard.js';
 
 interface AudioTranscriptionRequest {
   encounterId?: string;
@@ -22,6 +22,7 @@ interface SoapSynthesisRequest {
 
 export const aiScribeRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.addHook('preHandler', authenticate);
+  fastify.addHook('preHandler', requireRoles('SUPER_ADMIN', 'COMPANY_ADMIN', 'HOSPITAL_ADMIN', 'CLINIC_ADMIN', 'CHIEF_MEDICAL_OFFICER', 'DOCTOR', 'NURSE'));
 
   // 1. Stream Audio / Speech Transcription Chunk (Multilingual Hinglish/English/Hindi)
   fastify.post('/api/v1/partner/ai-scribe/stream-transcription', async (request, reply) => {
