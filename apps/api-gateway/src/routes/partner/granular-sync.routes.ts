@@ -7,7 +7,7 @@
 
 import { type FastifyPluginAsync } from 'fastify';
 import { z } from 'zod';
-import { authenticate, requirePermission } from '../../plugins/auth-guard.js';
+import { authenticate, requirePermission, requireRoles } from '../../plugins/auth-guard.js';
 import { enforceIdempotency } from '../../plugins/idempotency.js';
 import { requireModuleCommercialAccess } from '../../plugins/commercial-guard.js';
 import { granularSyncService, type GranularDeltaInput } from '../../services/partner/GranularSyncService.js';
@@ -39,6 +39,7 @@ export const granularSyncRoutes: FastifyPluginAsync = async (fastify) => {
     {
       preHandler: [
         authenticate,
+        requireRoles('SUPER_ADMIN', 'COMPANY_ADMIN', 'HOSPITAL_ADMIN', 'CLINIC_ADMIN', 'CHIEF_MEDICAL_OFFICER', 'DOCTOR', 'NURSE', 'RECEPTIONIST'),
         requirePermission('clinical:consultations', 'create'),
         enforceIdempotency
       ]
@@ -57,8 +58,13 @@ export const granularSyncRoutes: FastifyPluginAsync = async (fastify) => {
         };
       }
 
+      const sanitizedDeltas = (parsed.data.deltas as GranularDeltaInput[]).map((d) => ({
+        ...d,
+        actorId: request.session.userId
+      }));
+
       const result = await granularSyncService.processGranularDeltas(
-        parsed.data.deltas as GranularDeltaInput[],
+        sanitizedDeltas,
         request.session
       );
 

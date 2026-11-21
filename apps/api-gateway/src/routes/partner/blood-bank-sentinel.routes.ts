@@ -21,7 +21,7 @@ export const bloodBankSentinelRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.addHook('preHandler', authenticate);
 
   // 1. Ingest Continuous Cold-Chain Temperature Telemetry
-  fastify.post('/api/v1/partner/blood-bank/iot/telemetry-stream', async (request, reply) => {
+  fastify.post('/api/v1/partner/blood-bank/iot/telemetry-stream', { preHandler: [requireRoles('SUPER_ADMIN', 'COMPANY_ADMIN', 'HOSPITAL_ADMIN', 'CHIEF_MEDICAL_OFFICER', 'DOCTOR', 'NURSE', 'LAB_TECHNICIAN')] }, async (request, reply) => {
     const tenantId = (request as any).session?.tenantId || '11111111-1111-4111-8111-111111111111';
     const body = request.body as IotTelemetryRequest;
 
@@ -75,7 +75,7 @@ export const bloodBankSentinelRoutes: FastifyPluginAsync = async (fastify) => {
   });
 
   // 1b. Query Active Cold-Chain Temperature Breaches (Medical Superintendent & Blood Bank Admin)
-  fastify.get('/api/v1/partner/blood-bank/iot/breaches', async (request, reply) => {
+  fastify.get('/api/v1/partner/blood-bank/iot/breaches', { preHandler: [requireRoles('SUPER_ADMIN', 'COMPANY_ADMIN', 'HOSPITAL_ADMIN', 'CHIEF_MEDICAL_OFFICER', 'DOCTOR', 'NURSE', 'LAB_TECHNICIAN')] }, async (request, reply) => {
     const tenantId = (request as any).session?.tenantId || '11111111-1111-4111-8111-111111111111';
     const db = getDatabase();
     try {
@@ -188,7 +188,7 @@ export const bloodBankSentinelRoutes: FastifyPluginAsync = async (fastify) => {
   });
 
   // 4. Real-Time Blood Bank Inventory Summary
-  fastify.get('/api/v1/partner/blood-bank/inventory/summary', async (request, reply) => {
+  fastify.get('/api/v1/partner/blood-bank/inventory/summary', { preHandler: [requireRoles('SUPER_ADMIN', 'COMPANY_ADMIN', 'HOSPITAL_ADMIN', 'CLINIC_ADMIN', 'CHIEF_MEDICAL_OFFICER', 'DOCTOR', 'NURSE', 'LAB_TECHNICIAN')] }, async (request, reply) => {
     const tenantId = (request as any).session?.tenantId || '11111111-1111-4111-8111-111111111111';
     const db = getDatabase();
 

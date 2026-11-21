@@ -1,6 +1,6 @@
 import type { FastifyPluginAsync } from 'fastify';
 import { getDatabase, sql } from '@docsearch/database';
-import { authenticate } from '../../plugins/auth-guard.js';
+import { authenticate, requireRoles } from '../../plugins/auth-guard.js';
 
 interface SubstituteRequest {
   items: Array<{
@@ -16,7 +16,7 @@ export const genericArbitrageRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.addHook('preHandler', authenticate);
 
   // 1. Search Jan Aushadhi Catalog & Molecule Matching
-  fastify.get('/api/v1/partner/generic-arbitrage/search', async (request, reply) => {
+  fastify.get('/api/v1/partner/generic-arbitrage/search', { preHandler: [requireRoles('SUPER_ADMIN', 'COMPANY_ADMIN', 'HOSPITAL_ADMIN', 'CLINIC_ADMIN', 'PHARMACIST', 'DOCTOR', 'NURSE')] }, async (request, reply) => {
     const { query } = request.query as { query?: string };
     const db = getDatabase();
     const searchQuery = query ? `%${query.trim().toLowerCase()}%` : '%';
@@ -44,7 +44,7 @@ export const genericArbitrageRoutes: FastifyPluginAsync = async (fastify) => {
   });
 
   // 2. Compute Generic Arbitrage & Thermal Receipt Savings Calculation
-  fastify.post('/api/v1/partner/generic-arbitrage/substitute', async (request, reply) => {
+  fastify.post('/api/v1/partner/generic-arbitrage/substitute', { preHandler: [requireRoles('SUPER_ADMIN', 'COMPANY_ADMIN', 'HOSPITAL_ADMIN', 'CLINIC_ADMIN', 'PHARMACIST', 'DOCTOR')] }, async (request, reply) => {
     const body = (request.body || {}) as SubstituteRequest;
     const items = body.items || [];
     const db = getDatabase();

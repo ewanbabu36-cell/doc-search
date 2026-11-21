@@ -1,6 +1,6 @@
 import { type FastifyPluginAsync } from 'fastify';
 import { sepsisDeteriorationSentinelService, type SepsisAssessmentRequest } from '../../services/clinical/SepsisDeteriorationSentinelService.js';
-import { authenticate } from '../../plugins/auth-guard.js';
+import { authenticate, requireRoles } from '../../plugins/auth-guard.js';
 
 export const clinicalSentinelRoutes: FastifyPluginAsync = async (fastify) => {
   /**
@@ -10,7 +10,7 @@ export const clinicalSentinelRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.post(
     '/api/v1/partner/clinical/sepsis-assessment',
     {
-      preHandler: [authenticate]
+      preHandler: [authenticate, requireRoles('SUPER_ADMIN', 'COMPANY_ADMIN', 'HOSPITAL_ADMIN', 'CLINIC_ADMIN', 'CHIEF_MEDICAL_OFFICER', 'DOCTOR', 'NURSE')]
     },
     async (request) => {
       const body = request.body as SepsisAssessmentRequest;
@@ -29,7 +29,7 @@ export const clinicalSentinelRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.get(
     '/api/v1/partner/clinical/deterioration-radar/:patientId',
     {
-      preHandler: [authenticate]
+      preHandler: [authenticate, requireRoles('SUPER_ADMIN', 'COMPANY_ADMIN', 'HOSPITAL_ADMIN', 'CLINIC_ADMIN', 'CHIEF_MEDICAL_OFFICER', 'DOCTOR', 'NURSE')]
     },
     async (request) => {
       const { patientId } = request.params as { patientId: string };

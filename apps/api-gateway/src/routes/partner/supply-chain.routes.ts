@@ -1,6 +1,6 @@
 import type { FastifyPluginAsync } from 'fastify';
 import { SupplyChainService } from '../../services/partner/SupplyChainService.js';
-import { authenticate } from '../../plugins/auth-guard.js';
+import { authenticate, requireRoles } from '../../plugins/auth-guard.js';
 import { requireModuleCommercialAccess } from '../../plugins/commercial-guard.js';
 
 const service = new SupplyChainService();
@@ -33,7 +33,7 @@ export const supplyChainRoutes: FastifyPluginAsync = async (app) => {
 
   app.post(
     '/api/v1/partner/supply-chain/warehouses',
-    { preHandler: [authenticate] },
+    { preHandler: [authenticate, requireRoles('SUPER_ADMIN', 'COMPANY_ADMIN', 'HOSPITAL_ADMIN', 'CLINIC_ADMIN', 'BRANCH_MANAGER', 'PHARMACIST')] },
     async (request, reply) => {
       const { tenantId, branchId } = request.session;
       const body = (request.body || {}) as any;
@@ -67,7 +67,7 @@ export const supplyChainRoutes: FastifyPluginAsync = async (app) => {
 
   app.post(
     '/api/v1/partner/supply-chain/warehouses/:warehouseId/locations',
-    { preHandler: [authenticate] },
+    { preHandler: [authenticate, requireRoles('SUPER_ADMIN', 'COMPANY_ADMIN', 'HOSPITAL_ADMIN', 'CLINIC_ADMIN', 'BRANCH_MANAGER', 'PHARMACIST')] },
     async (request, reply) => {
       const { tenantId } = request.session;
       const { warehouseId } = request.params as { warehouseId: string };
@@ -90,7 +90,7 @@ export const supplyChainRoutes: FastifyPluginAsync = async (app) => {
 
   app.post(
     '/api/v1/partner/supply-chain/vendors',
-    { preHandler: [authenticate] },
+    { preHandler: [authenticate, requireRoles('SUPER_ADMIN', 'COMPANY_ADMIN', 'HOSPITAL_ADMIN', 'CLINIC_ADMIN', 'BRANCH_MANAGER', 'PHARMACIST')] },
     async (request, reply) => {
       const { tenantId, branchId } = request.session;
       const body = (request.body || {}) as any;
@@ -113,7 +113,7 @@ export const supplyChainRoutes: FastifyPluginAsync = async (app) => {
 
   app.post(
     '/api/v1/partner/supply-chain/items',
-    { preHandler: [authenticate] },
+    { preHandler: [authenticate, requireRoles('SUPER_ADMIN', 'COMPANY_ADMIN', 'HOSPITAL_ADMIN', 'CLINIC_ADMIN', 'BRANCH_MANAGER', 'PHARMACIST')] },
     async (request, reply) => {
       const { tenantId, branchId } = request.session;
       const body = (request.body || {}) as any;
@@ -157,7 +157,7 @@ export const supplyChainRoutes: FastifyPluginAsync = async (app) => {
 
   app.patch(
     '/api/v1/partner/supply-chain/requisitions/:id/approve',
-    { preHandler: [authenticate] },
+    { preHandler: [authenticate, requireRoles('SUPER_ADMIN', 'COMPANY_ADMIN', 'HOSPITAL_ADMIN', 'CLINIC_ADMIN', 'BRANCH_MANAGER', 'FINANCE_MANAGER')] },
     async (request, reply) => {
       const { tenantId, userId } = request.session;
       const { id } = request.params as { id: string };
@@ -190,7 +190,7 @@ export const supplyChainRoutes: FastifyPluginAsync = async (app) => {
 
   app.patch(
     '/api/v1/partner/supply-chain/purchase-orders/:id/approve',
-    { preHandler: [authenticate] },
+    { preHandler: [authenticate, requireRoles('SUPER_ADMIN', 'COMPANY_ADMIN', 'HOSPITAL_ADMIN', 'CLINIC_ADMIN', 'BRANCH_MANAGER', 'FINANCE_MANAGER')] },
     async (request, reply) => {
       const { tenantId, userId } = request.session;
       const { id } = request.params as { id: string };

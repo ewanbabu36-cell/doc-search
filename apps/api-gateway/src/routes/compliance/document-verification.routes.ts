@@ -190,6 +190,14 @@ export const documentVerificationRoutes: FastifyPluginAsync = async (fastify) =>
       preHandler: [authenticate, requirePermission('compliance:documents', 'read')]
     },
     async (request, reply) => {
+      if (!isAuthorizedHqComplianceCaller(request.session)) {
+        throw new AppError({
+          message: 'Access denied: Only authorized HQ Compliance Officers, Company Admins, or Super Admins may access the verification queue.',
+          code: ErrorCode.FORBIDDEN,
+          statusCode: 403
+        });
+      }
+
       const query = (request.query || {}) as Record<string, any>;
       const queue = await documentVerificationRepository.getVerificationQueue(query, {
         userId: request.session.userId,
@@ -260,6 +268,14 @@ export const documentVerificationRoutes: FastifyPluginAsync = async (fastify) =>
       preHandler: [authenticate, requirePermission('compliance:documents', 'manage')]
     },
     async (request, reply) => {
+      if (!isAuthorizedHqComplianceCaller(request.session)) {
+        throw new AppError({
+          message: 'Access denied: Only authorized HQ Compliance Officers, Company Admins, or Super Admins may revoke compliance documents.',
+          code: ErrorCode.FORBIDDEN,
+          statusCode: 403
+        });
+      }
+
       const { id } = request.params as { id: string };
       const body = (request.body || {}) as { reason?: string };
       const revoked = await documentVerificationRepository.revokeDocument(

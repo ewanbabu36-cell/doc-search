@@ -481,17 +481,23 @@ export async function publicBookingRoutes(app: FastifyInstance): Promise<void> {
       customerMobile
     });
 
+    const rawDigits = customerMobile.trim().replace(/\D/g, '');
+    const maskedMobile = rawDigits.length >= 10
+      ? `******${rawDigits.slice(-4)}`
+      : '******';
+    const maskedPatientRef = `PT-${rawDigits.slice(-4)}`;
+
     return reply.status(201).send({
       success: true,
       data: {
         token: tokenNumber,
         encounterId,
-        patientId: resolvedPatientId,
+        patientReference: maskedPatientRef,
         tenantName: resolved.tenantName,
         vertical: resolved.vertical,
         badgeIcon: resolved.preset.badgeIcon,
         customerName: customerName.trim(),
-        customerMobile: customerMobile.trim(),
+        customerMobile: maskedMobile,
         customerEmail: customerEmail?.trim() || null,
         provider: providerName,
         providerRole: providerRole || 'Specialist',

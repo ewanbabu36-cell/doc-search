@@ -1,6 +1,6 @@
 import type { FastifyPluginAsync } from 'fastify';
 import { QualityInfectionService } from '../../services/partner/QualityInfectionService.js';
-import { authenticate, requirePermission } from '../../plugins/auth-guard.js';
+import { authenticate, requirePermission, requireRoles } from '../../plugins/auth-guard.js';
 import { requireModuleCommercialAccess } from '../../plugins/commercial-guard.js';
 
 const service = new QualityInfectionService();
@@ -53,7 +53,7 @@ export const qualityInfectionRoutes: FastifyPluginAsync = async (app) => {
 
   app.patch(
     '/api/v1/partner/quality/incidents/:id/triage',
-    { preHandler: [authenticate, requirePermission('quality:incident', 'update')] },
+    { preHandler: [authenticate, requireRoles('SUPER_ADMIN', 'COMPANY_ADMIN', 'HOSPITAL_ADMIN', 'CLINIC_ADMIN', 'CHIEF_MEDICAL_OFFICER', 'DOCTOR'), requirePermission('quality:incident', 'update')] },
     async (request, reply) => {
       const { tenantId, userId } = request.session;
       const { id } = request.params as { id: string };
@@ -65,7 +65,7 @@ export const qualityInfectionRoutes: FastifyPluginAsync = async (app) => {
 
   app.patch(
     '/api/v1/partner/quality/incidents/:id/close',
-    { preHandler: [authenticate, requirePermission('quality:incident', 'update')] },
+    { preHandler: [authenticate, requireRoles('SUPER_ADMIN', 'COMPANY_ADMIN', 'HOSPITAL_ADMIN', 'CLINIC_ADMIN', 'CHIEF_MEDICAL_OFFICER', 'DOCTOR'), requirePermission('quality:incident', 'update')] },
     async (request, reply) => {
       const { tenantId, userId } = request.session;
       const { id } = request.params as { id: string };
@@ -120,7 +120,7 @@ export const qualityInfectionRoutes: FastifyPluginAsync = async (app) => {
 
   app.patch(
     '/api/v1/partner/quality/capas/:id/verify',
-    { preHandler: [authenticate, requirePermission('quality:capa', 'update')] },
+    { preHandler: [authenticate, requireRoles('SUPER_ADMIN', 'COMPANY_ADMIN', 'HOSPITAL_ADMIN', 'CLINIC_ADMIN', 'CHIEF_MEDICAL_OFFICER', 'DOCTOR'), requirePermission('quality:capa', 'update')] },
     async (request, reply) => {
       const { tenantId, userId } = request.session;
       const { id } = request.params as { id: string };

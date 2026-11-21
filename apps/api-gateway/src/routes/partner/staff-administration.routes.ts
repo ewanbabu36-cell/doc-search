@@ -86,6 +86,7 @@ export const staffAdministrationRoutes: FastifyPluginAsync = async (fastify) => 
   fastify.post(
     '/api/v1/partner/staff/departments',
     {
+      preValidation: [authenticate, requireExecutiveStaffAdmin],
       preHandler: [authenticate, requirePermission('partners', 'create')]
     },
     async (request, reply) => {
@@ -99,6 +100,7 @@ export const staffAdministrationRoutes: FastifyPluginAsync = async (fastify) => 
   fastify.put(
     '/api/v1/partner/staff/departments/:id',
     {
+      preValidation: [authenticate, requireExecutiveStaffAdmin],
       preHandler: [authenticate, requirePermission('partners', 'update')]
     },
     async (request, reply) => {

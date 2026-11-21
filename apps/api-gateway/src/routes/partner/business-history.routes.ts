@@ -1,6 +1,6 @@
 import { type FastifyPluginAsync } from 'fastify';
 import { z } from 'zod';
-import { authenticate } from '../../plugins/auth-guard.js';
+import { authenticate, requireRoles } from '../../plugins/auth-guard.js';
 import { requireModuleCommercialAccess } from '../../plugins/commercial-guard.js';
 import { businessHistoryService, type HistoryAction } from '../../services/partner/BusinessHistoryService.js';
 
@@ -17,7 +17,7 @@ export const businessHistoryRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.get(
     '/api/v1/partner/business-history/:entityType/:entityId',
     {
-      preHandler: [authenticate]
+      preHandler: [authenticate, requireRoles('SUPER_ADMIN', 'COMPANY_ADMIN', 'HOSPITAL_ADMIN', 'CLINIC_ADMIN', 'BRANCH_MANAGER', 'DOCTOR', 'NURSE', 'PHARMACIST', 'LAB_TECHNICIAN', 'BILLING_CLERK')]
     },
     async (request, reply) => {
       const { entityType, entityId } = request.params as { entityType: string; entityId: string };
@@ -54,7 +54,7 @@ export const businessHistoryRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.get(
     '/api/v1/partner/clinical/history/:entityType/:entityId',
     {
-      preHandler: [authenticate]
+      preHandler: [authenticate, requireRoles('SUPER_ADMIN', 'COMPANY_ADMIN', 'HOSPITAL_ADMIN', 'CLINIC_ADMIN', 'BRANCH_MANAGER', 'DOCTOR', 'NURSE', 'PHARMACIST', 'LAB_TECHNICIAN', 'BILLING_CLERK')]
     },
     async (request, reply) => {
       const { entityType, entityId } = request.params as { entityType: string; entityId: string };

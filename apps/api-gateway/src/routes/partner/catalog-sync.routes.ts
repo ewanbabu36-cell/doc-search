@@ -8,7 +8,7 @@
 
 import type { FastifyPluginAsync } from 'fastify';
 import { z } from 'zod';
-import { authenticate } from '../../plugins/auth-guard.js';
+import { authenticate, requireRoles } from '../../plugins/auth-guard.js';
 import { catalogSyncService } from '../../services/partner/CatalogSyncService.js';
 import { distributedCache } from '../../services/cache/DistributedCacheService.js';
 
@@ -21,7 +21,7 @@ export const catalogSyncRoutes: FastifyPluginAsync = async (app) => {
   app.get(
     '/api/v1/partner/catalog/sync',
     {
-      preHandler: [authenticate]
+      preHandler: [authenticate, requireRoles('SUPER_ADMIN', 'COMPANY_ADMIN', 'HOSPITAL_ADMIN', 'CLINIC_ADMIN', 'BRANCH_MANAGER', 'DOCTOR', 'NURSE', 'PHARMACIST', 'LAB_TECHNICIAN', 'BILLING_CLERK', 'RECEPTIONIST')]
     },
     async (request, reply) => {
       const query = CatalogSyncQuerySchema.parse(request.query || {});
