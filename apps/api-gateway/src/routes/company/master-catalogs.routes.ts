@@ -1,6 +1,6 @@
 import { type FastifyPluginAsync } from 'fastify';
 import { z } from 'zod';
-import { authenticate } from '../../plugins/auth-guard.js';
+import { authenticate, requireRoles } from '../../plugins/auth-guard.js';
 import { horizontalSocketGateway } from '../../services/realtime/HorizontalSocketGateway.js';
 import {
   getDatabase,
@@ -23,6 +23,12 @@ import {
 export const masterCatalogsRoutes: FastifyPluginAsync = async (fastify) => {
   // Guard all company master routes with authentication
   fastify.addHook('preHandler', authenticate);
+  // Guard mutations (POST, PATCH, DELETE) with company/super admin roles
+  fastify.addHook('preHandler', async (request, reply) => {
+    if (request.method !== 'GET') {
+      await requireRoles('SUPER_ADMIN', 'COMPANY_ADMIN')(request, reply);
+    }
+  });
 
   const notifyCatalogMutation = (entity: string) => {
     void horizontalSocketGateway.broadcast('*', 'PARTNER_CONFIG_MUTATED', {

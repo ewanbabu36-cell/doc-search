@@ -28,7 +28,12 @@ import {
   sql
 } from '@docsearch/database';
 import crypto from 'node:crypto';
-import { authenticate } from '../../plugins/auth-guard.js';
+import { authenticate, requireRoles } from '../../plugins/auth-guard.js';
+
+const FINANCE_BILLING_ROLES = ['SUPER_ADMIN', 'COMPANY_ADMIN', 'HOSPITAL_ADMIN', 'CLINIC_ADMIN', 'FINANCE_MANAGER', 'BILLING_CLERK'] as const;
+const PHARMACY_B2B_ROLES = ['SUPER_ADMIN', 'COMPANY_ADMIN', 'HOSPITAL_ADMIN', 'CLINIC_ADMIN', 'PHARMACIST', 'FINANCE_MANAGER'] as const;
+const DIAGNOSTIC_SIGN_ROLES = ['SUPER_ADMIN', 'COMPANY_ADMIN', 'HOSPITAL_ADMIN', 'CLINIC_ADMIN', 'LAB_TECHNICIAN', 'DOCTOR', 'CHIEF_MEDICAL_OFFICER'] as const;
+const ADMIN_CONFIG_ROLES = ['SUPER_ADMIN', 'COMPANY_ADMIN', 'HOSPITAL_ADMIN', 'CLINIC_ADMIN'] as const;
 
 export const commercialOperationsRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.addHook('preHandler', authenticate);
@@ -38,7 +43,7 @@ export const commercialOperationsRoutes: FastifyPluginAsync = async (fastify) =>
   // =========================================================================
 
   // Pre-approve Instant 0% Medical EMI
-  fastify.post('/api/v1/partner/billing/surgery-financing/pre-approve', async (request, reply) => {
+  fastify.post('/api/v1/partner/billing/surgery-financing/pre-approve', { preHandler: [requireRoles(...FINANCE_BILLING_ROLES)] }, async (request, reply) => {
     const body = request.body as {
       patientName?: string;
       patientPhone?: string;
@@ -241,7 +246,7 @@ export const commercialOperationsRoutes: FastifyPluginAsync = async (fastify) =>
   });
 
   // Disburse 0% Medical Loan to Hospital Escrow
-  fastify.post('/api/v1/partner/commercial/surgery-financing/disburse-loan', async (request, reply) => {
+  fastify.post('/api/v1/partner/commercial/surgery-financing/disburse-loan', { preHandler: [requireRoles(...FINANCE_BILLING_ROLES)] }, async (request, reply) => {
     const tenantId = (request as any).session?.tenantId || '11111111-1111-4111-8111-111111111111';
     const body = (request.body || {}) as {
       patientUhId?: string;
@@ -344,7 +349,7 @@ export const commercialOperationsRoutes: FastifyPluginAsync = async (fastify) =>
   });
 
   // Create or Update Doctor Payout Configuration
-  fastify.post('/api/v1/partner/billing/doctor-payouts/configs', async (request, reply) => {
+  fastify.post('/api/v1/partner/billing/doctor-payouts/configs', { preHandler: [requireRoles(...FINANCE_BILLING_ROLES)] }, async (request, reply) => {
     const tenantId = (request as any).session?.tenantId || '11111111-1111-4111-8111-111111111111';
     const body = request.body as any;
     const db = getDatabase();
@@ -366,7 +371,7 @@ export const commercialOperationsRoutes: FastifyPluginAsync = async (fastify) =>
   });
 
   // Generate Automated EOD Doctor Settlement with Dynamic Statutory TDS & NMC Ethics Declaration
-  fastify.post('/api/v1/partner/billing/doctor-payouts/settlements/generate', async (request, reply) => {
+  fastify.post('/api/v1/partner/billing/doctor-payouts/settlements/generate', { preHandler: [requireRoles(...FINANCE_BILLING_ROLES)] }, async (request, reply) => {
     const tenantId = (request as any).session?.tenantId || '11111111-1111-4111-8111-111111111111';
     const body = request.body as any;
     const db = getDatabase();
@@ -902,7 +907,7 @@ export const commercialOperationsRoutes: FastifyPluginAsync = async (fastify) =>
     return reply.status(201).send({ success: true, data: member });
   });
 
-  fastify.post('/api/v1/partner/billing/care-passes/wallet-deduct', async (request, reply) => {
+  fastify.post('/api/v1/partner/billing/care-passes/wallet-deduct', { preHandler: [requireRoles(...FINANCE_BILLING_ROLES)] }, async (request, reply) => {
     const body = request.body as any;
     const amount = Number(body.amount) || 500;
     const otp = String(body.otpCode || '').trim();
@@ -938,7 +943,7 @@ export const commercialOperationsRoutes: FastifyPluginAsync = async (fastify) =>
   });
 
   // --- PILLAR 3: Pharmacy B2B POs, GRN Inspector & RTV Debit Notes ---
-  fastify.post('/api/v1/partner/pharmacy/b2b/generate-po', async (request, reply) => {
+  fastify.post('/api/v1/partner/pharmacy/b2b/generate-po', { preHandler: [requireRoles(...PHARMACY_B2B_ROLES)] }, async (request, reply) => {
     const tenantId = (request as any).session?.tenantId || '11111111-1111-4111-8111-111111111111';
     const body = request.body as any;
     const db = getDatabase();
@@ -984,7 +989,7 @@ export const commercialOperationsRoutes: FastifyPluginAsync = async (fastify) =>
     });
   });
 
-  fastify.post('/api/v1/partner/pharmacy/b2b/generate-rtv-debit-note', async (request, reply) => {
+  fastify.post('/api/v1/partner/pharmacy/b2b/generate-rtv-debit-note', { preHandler: [requireRoles(...PHARMACY_B2B_ROLES)] }, async (request, reply) => {
     const tenantId = (request as any).session?.tenantId || '11111111-1111-4111-8111-111111111111';
     const body = request.body as any;
     const db = getDatabase();
@@ -1032,7 +1037,7 @@ export const commercialOperationsRoutes: FastifyPluginAsync = async (fastify) =>
     return reply.send({ success: true, data: pkgs });
   });
 
-  fastify.post('/api/v1/partner/diagnostics/reports/:id/sign-and-dispatch', async (request, reply) => {
+  fastify.post('/api/v1/partner/diagnostics/reports/:id/sign-and-dispatch', { preHandler: [requireRoles(...DIAGNOSTIC_SIGN_ROLES)] }, async (request, reply) => {
     const reportId = (request.params as any).id;
     const body = request.body as any;
     return reply.send({
@@ -1184,7 +1189,7 @@ export const commercialOperationsRoutes: FastifyPluginAsync = async (fastify) =>
     return reply.send({ success: true, data: addons });
   });
 
-  fastify.post('/api/v1/partner/commercial/addons/toggle', async (request, reply) => {
+  fastify.post('/api/v1/partner/commercial/addons/toggle', { preHandler: [requireRoles(...ADMIN_CONFIG_ROLES)] }, async (request, reply) => {
     const tenantId = (request as any).session?.tenantId || '11111111-1111-4111-8111-111111111111';
     const body = request.body as any;
     const db = getDatabase();

@@ -1,9 +1,12 @@
 import { type FastifyPluginAsync } from 'fastify';
 import { z } from 'zod';
 import { multiFacilityBedTelemetryService } from '../../services/executive/MultiFacilityBedTelemetryService.js';
-import { authenticate } from '../../plugins/auth-guard.js';
+import { authenticate, requireRoles } from '../../plugins/auth-guard.js';
 
 export const bedTelemetryRoutes: FastifyPluginAsync = async (fastify) => {
+  fastify.addHook('preHandler', authenticate);
+  fastify.addHook('preHandler', requireRoles('SUPER_ADMIN', 'COMPANY_ADMIN', 'HOSPITAL_ADMIN', 'CLINIC_ADMIN', 'CHIEF_MEDICAL_OFFICER', 'DOCTOR', 'NURSE'));
+
   // 1. Pan-India Network Bed Census
   fastify.get('/api/v1/executive/beds/network-census', { preHandler: [authenticate] }, async () => {
     return {

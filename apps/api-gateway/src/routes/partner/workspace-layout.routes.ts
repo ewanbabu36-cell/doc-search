@@ -1,6 +1,8 @@
 import { type FastifyPluginAsync } from 'fastify';
 import { z } from 'zod';
 import { getDatabase, userWorkspaceLayouts, eq, and } from '@docsearch/database';
+import { authenticate } from '../../plugins/auth-guard.js';
+import { AppError } from '@docsearch/shared-core';
 
 export const WorkspaceLayoutUpdateSchema = z.object({
   activePresetId: z.string().trim().optional().default('CLINICAL_DEFAULT'),
@@ -38,11 +40,16 @@ const DEFAULT_DESKTOP_WIDGETS = [
 ];
 
 export const workspaceLayoutRoutes: FastifyPluginAsync = async (fastify) => {
+  fastify.addHook('preHandler', authenticate);
+
   fastify.get('/api/v1/partner/workspace/layout', async (request, reply) => {
     try {
       const session = (request as any).session;
-      const tenantId = (request.headers['x-tenant-id'] as string) || session?.tenantId || '00000000-0000-0000-0000-000000000001';
-      const userId = (request.headers['x-user-id'] as string) || session?.userId || session?.actorId || '00000000-0000-0000-0000-000000000002';
+      if (!session || !session.tenantId) {
+        throw AppError.unauthorized('Authenticated session with valid tenantId required');
+      }
+      const tenantId = session.tenantId;
+      const userId = session.userId || session.actorId || '00000000-0000-0000-0000-000000000002';
 
       const db = getDatabase();
       const existing = await db
@@ -99,8 +106,11 @@ export const workspaceLayoutRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.put('/api/v1/partner/workspace/layout', async (request, reply) => {
     try {
       const session = (request as any).session;
-      const tenantId = (request.headers['x-tenant-id'] as string) || session?.tenantId || '00000000-0000-0000-0000-000000000001';
-      const userId = (request.headers['x-user-id'] as string) || session?.userId || session?.actorId || '00000000-0000-0000-0000-000000000002';
+      if (!session || !session.tenantId) {
+        throw AppError.unauthorized('Authenticated session with valid tenantId required');
+      }
+      const tenantId = session.tenantId;
+      const userId = session.userId || session.actorId || '00000000-0000-0000-0000-000000000002';
 
       const body = WorkspaceLayoutUpdateSchema.parse(request.body || {});
 

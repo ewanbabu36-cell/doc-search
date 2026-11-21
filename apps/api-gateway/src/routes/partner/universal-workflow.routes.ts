@@ -1,6 +1,6 @@
 import type { FastifyInstance, FastifyRequest } from 'fastify';
 import { AppError } from '@docsearch/shared-core';
-import { authenticate } from '../../plugins/auth-guard.js';
+import { authenticate, requireRoles } from '../../plugins/auth-guard.js';
 import {
   universalHealthcareWorkflowEngineService,
   type TaskPriorityLevel,
@@ -23,6 +23,9 @@ function getSessionOrThrow(request: FastifyRequest) {
 }
 
 export async function universalWorkflowRoutes(app: FastifyInstance): Promise<void> {
+  const WORKFLOW_ADMIN_ROLES = ['SUPER_ADMIN', 'COMPANY_ADMIN', 'HOSPITAL_ADMIN', 'CLINIC_ADMIN', 'CHIEF_MEDICAL_OFFICER'] as const;
+  const CLINICAL_WORKFLOW_STAFF_ROLES = ['SUPER_ADMIN', 'COMPANY_ADMIN', 'HOSPITAL_ADMIN', 'CLINIC_ADMIN', 'CHIEF_MEDICAL_OFFICER', 'DOCTOR', 'NURSE'] as const;
+
   /**
    * 1. GET /api/v1/partner/workflows/adapters
    * Lists all 10 declarative Department Workflow Adapters mapped to the single Universal Engine.
@@ -48,7 +51,7 @@ export async function universalWorkflowRoutes(app: FastifyInstance): Promise<voi
    */
   app.post(
     '/api/v1/partner/workflows/definitions/publish-version',
-    { preHandler: [authenticate] },
+    { preHandler: [authenticate, requireRoles(...WORKFLOW_ADMIN_ROLES)] },
     async (request, reply) => {
       const session = getSessionOrThrow(request);
       const body = (request.body ?? {}) as Record<string, unknown>;
@@ -98,6 +101,8 @@ export async function universalWorkflowRoutes(app: FastifyInstance): Promise<voi
       const patientId = String(body['patientId'] ?? '');
       const encounterId = String(body['encounterId'] ?? '');
 
+      const isSuperAdmin = Boolean(session?.isSuperAdmin || (Array.isArray(session?.roles) && session.roles.includes('SUPER_ADMIN')));
+
       const result = await universalHealthcareWorkflowEngineService.createWorkflowInstance(session, {
         workflowCodeOrDepartment,
         patientId,
@@ -112,10 +117,10 @@ export async function universalWorkflowRoutes(app: FastifyInstance): Promise<voi
         ...(body['contextData'] && typeof body['contextData'] === 'object'
           ? { contextData: body['contextData'] as Record<string, unknown> }
           : {}),
-        ...(body['licenseStatusOverride']
+        ...(isSuperAdmin && body['licenseStatusOverride']
           ? { licenseStatusOverride: String(body['licenseStatusOverride']) }
           : {}),
-        ...(typeof body['entitlementMissingOverride'] === 'boolean'
+        ...(isSuperAdmin && typeof body['entitlementMissingOverride'] === 'boolean'
           ? { entitlementMissingOverride: body['entitlementMissingOverride'] }
           : {})
       });
@@ -430,7 +435,7 @@ export async function universalWorkflowRoutes(app: FastifyInstance): Promise<voi
    */
   app.post(
     '/api/v1/partner/workflows/exceptions',
-    { preHandler: [authenticate] },
+    { preHandler: [authenticate, requireRoles(...CLINICAL_WORKFLOW_STAFF_ROLES)] },
     async (request, reply) => {
       const session = getSessionOrThrow(request);
       const body = (request.body ?? {}) as Record<string, unknown>;

@@ -1,7 +1,9 @@
 import { type FastifyPluginAsync } from 'fastify';
 import { z } from 'zod';
 import { AppError, ErrorCode } from '@docsearch/shared-core';
-import { authenticate } from '../../plugins/auth-guard.js';
+import { authenticate, requireRoles } from '../../plugins/auth-guard.js';
+
+const QUALITY_AUDIT_ROLES = ['SUPER_ADMIN', 'COMPANY_ADMIN', 'HOSPITAL_ADMIN', 'CLINIC_ADMIN', 'CHIEF_MEDICAL_OFFICER', 'COMPLIANCE_OFFICER'] as const;
 import { auditIntegrityService } from '../../services/reliability/AuditIntegrityService.js';
 import { dataLineageService } from '../../services/reliability/DataLineageService.js';
 import { reconciliationEngineService, type ReconciliationDomain } from '../../services/reliability/ReconciliationEngineService.js';
@@ -191,7 +193,7 @@ export const partnerReliabilityRoutes: FastifyPluginAsync = async (fastify) => {
     return { success: true, data };
   });
 
-  fastify.post('/api/v1/partner/reliability/offline-sync/conflicts/:id/resolve', { preHandler: [authenticate] }, async (request) => {
+  fastify.post('/api/v1/partner/reliability/offline-sync/conflicts/:id/resolve', { preHandler: [authenticate, requireRoles(...QUALITY_AUDIT_ROLES)] }, async (request) => {
     const { id } = request.params as { id: string };
     const body = request.body as any;
     const data = await offlineSyncService.resolveConflict(id, body, request.session);
@@ -219,21 +221,21 @@ export const partnerReliabilityRoutes: FastifyPluginAsync = async (fastify) => {
     return { success: true, data };
   });
 
-  fastify.post('/api/v1/partner/reliability/incidents/:id/rca', { preHandler: [authenticate] }, async (request) => {
+  fastify.post('/api/v1/partner/reliability/incidents/:id/rca', { preHandler: [authenticate, requireRoles(...QUALITY_AUDIT_ROLES)] }, async (request) => {
     const { id } = request.params as { id: string };
     const body = request.body as any;
     const data = await incidentCapaService.conductRca(id, body, request.session);
     return { success: true, data };
   });
 
-  fastify.post('/api/v1/partner/reliability/incidents/:id/capa', { preHandler: [authenticate] }, async (request) => {
+  fastify.post('/api/v1/partner/reliability/incidents/:id/capa', { preHandler: [authenticate, requireRoles(...QUALITY_AUDIT_ROLES)] }, async (request) => {
     const { id } = request.params as { id: string };
     const body = request.body as any;
     const data = await incidentCapaService.assignCapa(id, body, request.session);
     return { success: true, data };
   });
 
-  fastify.post('/api/v1/partner/reliability/incidents/capa/:id/verify', { preHandler: [authenticate] }, async (request) => {
+  fastify.post('/api/v1/partner/reliability/incidents/capa/:id/verify', { preHandler: [authenticate, requireRoles(...QUALITY_AUDIT_ROLES)] }, async (request) => {
     const { id } = request.params as { id: string };
     const body = (request.body as any) || {};
     const data = await incidentCapaService.verifyCapa(id, body.verificationNotes || 'Verified by quality auditor', request.session);

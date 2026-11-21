@@ -19,7 +19,9 @@ export async function licenseGovernanceRoutes(fastify: FastifyInstance): Promise
    * GET /api/v1/license/machine-fingerprint
    * Returns current physical hardware node fingerprint & telemetry
    */
-  fastify.get('/api/v1/license/machine-fingerprint', async (_req: FastifyRequest, reply: FastifyReply) => {
+  fastify.get('/api/v1/license/machine-fingerprint', {
+    preHandler: [authenticate]
+  }, async (_req: FastifyRequest, reply: FastifyReply) => {
     const telemetry = machineFingerprintService.getHardwareTelemetry();
     return reply.send({
       success: true,
@@ -90,7 +92,9 @@ export async function licenseGovernanceRoutes(fastify: FastifyInstance): Promise
    * POST /api/v1/license/activate
    * Activates an offline cryptographic license token
    */
-  fastify.post('/api/v1/license/activate', async (req: FastifyRequest, reply: FastifyReply) => {
+  fastify.post('/api/v1/license/activate', {
+    preHandler: [authenticate]
+  }, async (req: FastifyRequest, reply: FastifyReply) => {
     const body = req.body as { licenseToken?: string };
     if (!body?.licenseToken || typeof body.licenseToken !== 'string') {
       throw AppError.badRequest('licenseToken string is required for activation');
@@ -170,7 +174,9 @@ export async function licenseGovernanceRoutes(fastify: FastifyInstance): Promise
    * POST /api/v1/license/heartbeat
    * Periodic cryptographic telemetry ping from active workstation terminals
    */
-  fastify.post('/api/v1/license/heartbeat', async (req: FastifyRequest, reply: FastifyReply) => {
+  fastify.post('/api/v1/license/heartbeat', {
+    preHandler: [authenticate]
+  }, async (req: FastifyRequest, reply: FastifyReply) => {
     const body = (req.body || {}) as {
       licenseKey?: string;
       tenantId?: string;
@@ -179,19 +185,12 @@ export async function licenseGovernanceRoutes(fastify: FastifyInstance): Promise
       deviceName?: string;
     };
 
-    let tenantId = body.tenantId;
-    if (!tenantId && req.headers.authorization) {
-      try {
-        const token = req.headers.authorization.replace(/^Bearer\s+/i, '');
-        const decoded = (fastify as any).jwt?.decode?.(token) || (req as any).session;
-        if (decoded?.tenantId) {
-          tenantId = decoded.tenantId;
-        }
-      } catch {}
-    }
+    const session = (req as any).session;
+    const isSuperAdmin = Boolean(session?.isSuperAdmin || (Array.isArray(session?.roles) && session.roles.includes('SUPER_ADMIN')));
+    const tenantId = (isSuperAdmin && body.tenantId) ? body.tenantId : session?.tenantId;
 
     if (!tenantId) {
-      throw AppError.badRequest('tenantId is required for license heartbeat telemetry');
+      throw AppError.unauthorized('Authenticated tenant session is required for license heartbeat telemetry');
     }
 
     const fingerprint = body.machineFingerprint || machineFingerprintService.getMachineFingerprint();

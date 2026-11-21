@@ -2,9 +2,12 @@ import { type FastifyPluginAsync } from 'fastify';
 import { z } from 'zod';
 import { microAddonMarketplaceService } from '../../services/company/MicroAddonMarketplaceService.js';
 import { usageQuotaThrottlerService } from '../../services/company/UsageQuotaThrottlerService.js';
-import { authenticate } from '../../plugins/auth-guard.js';
+import { authenticate, requireRoles } from '../../plugins/auth-guard.js';
 
 export const microAddonRoutes: FastifyPluginAsync = async (fastify) => {
+  fastify.addHook('preHandler', authenticate);
+  fastify.addHook('preHandler', requireRoles('SUPER_ADMIN', 'COMPANY_ADMIN'));
+
   // 1. Get & Create Addons Catalog
   fastify.get('/api/v1/company/addons/catalog', { preHandler: [authenticate] }, async () => {
     return {

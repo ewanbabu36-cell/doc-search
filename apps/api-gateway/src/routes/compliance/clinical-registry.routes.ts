@@ -2,7 +2,9 @@ import { type FastifyPluginAsync } from 'fastify';
 import { z } from 'zod';
 import { nmcPhysicianVerificationService } from '../../services/compliance/NmcPhysicianVerificationService.js';
 import { clinicalOrderSetPublisherService } from '../../services/compliance/ClinicalOrderSetPublisherService.js';
-import { authenticate } from '../../plugins/auth-guard.js';
+import { authenticate, requireRoles } from '../../plugins/auth-guard.js';
+
+const COMPLIANCE_ADMIN_ROLES = ['SUPER_ADMIN', 'COMPANY_ADMIN', 'COMPLIANCE_OFFICER', 'CHIEF_MEDICAL_OFFICER'] as const;
 
 export const clinicalRegistryRoutes: FastifyPluginAsync = async (fastify) => {
   // 1. Verify Physician by NMC Registration Number
@@ -48,7 +50,7 @@ export const clinicalRegistryRoutes: FastifyPluginAsync = async (fastify) => {
     associatedHospital: z.string().optional()
   });
 
-  fastify.post('/api/v1/compliance/nmc/register', { preHandler: [authenticate] }, async (request) => {
+  fastify.post('/api/v1/compliance/nmc/register', { preHandler: [authenticate, requireRoles(...COMPLIANCE_ADMIN_ROLES)] }, async (request) => {
     const parsed = RegisterPhysicianSchema.parse(request.body || {});
     const record = nmcPhysicianVerificationService.registerDoctorVerification(parsed);
     return {
@@ -74,7 +76,7 @@ export const clinicalRegistryRoutes: FastifyPluginAsync = async (fastify) => {
     designation: z.string()
   });
 
-  fastify.post('/api/v1/compliance/order-sets/publish', { preHandler: [authenticate] }, async (request) => {
+  fastify.post('/api/v1/compliance/order-sets/publish', { preHandler: [authenticate, requireRoles(...COMPLIANCE_ADMIN_ROLES)] }, async (request) => {
     const parsed = PublishSchema.parse(request.body || {});
     const result = clinicalOrderSetPublisherService.publishAndSignoffOrderSet({
       id: parsed.id,
@@ -92,7 +94,7 @@ export const clinicalRegistryRoutes: FastifyPluginAsync = async (fastify) => {
     id: z.string()
   });
 
-  fastify.post('/api/v1/compliance/order-sets/broadcast', { preHandler: [authenticate] }, async (request) => {
+  fastify.post('/api/v1/compliance/order-sets/broadcast', { preHandler: [authenticate, requireRoles(...COMPLIANCE_ADMIN_ROLES)] }, async (request) => {
     const parsed = BroadcastSchema.parse(request.body || {});
     const result = clinicalOrderSetPublisherService.broadcastToTenants(parsed.id);
     return {

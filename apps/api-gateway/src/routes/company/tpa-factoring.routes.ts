@@ -1,9 +1,12 @@
 import { type FastifyPluginAsync } from 'fastify';
 import { z } from 'zod';
 import { tpaClaimFactoringService } from '../../services/finance/TpaClaimFactoringService.js';
-import { authenticate } from '../../plugins/auth-guard.js';
+import { authenticate, requireRoles } from '../../plugins/auth-guard.js';
 
 export const tpaFactoringRoutes: FastifyPluginAsync = async (fastify) => {
+  fastify.addHook('preHandler', authenticate);
+  fastify.addHook('preHandler', requireRoles('SUPER_ADMIN', 'COMPANY_ADMIN', 'FINANCE_MANAGER'));
+
   // 1. Factoring Overview & Liquidity Metrics
   const handleOverview = async () => ({
     success: true,

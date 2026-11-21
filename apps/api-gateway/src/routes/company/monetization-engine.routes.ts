@@ -1,9 +1,12 @@
 import { type FastifyPluginAsync } from 'fastify';
 import { z } from 'zod';
 import { monetizationEngineService } from '../../services/company/MonetizationEngineService.js';
-import { authenticate } from '../../plugins/auth-guard.js';
+import { authenticate, requireRoles } from '../../plugins/auth-guard.js';
 
 export const monetizationEngineRoutes: FastifyPluginAsync = async (fastify) => {
+  fastify.addHook('preHandler', authenticate);
+  fastify.addHook('preHandler', requireRoles('SUPER_ADMIN', 'COMPANY_ADMIN', 'FINANCE_MANAGER'));
+
   // 1. Get Global Monetization Config & GTM Strategy
   fastify.get('/api/v1/company/monetization/config', { preHandler: [authenticate] }, async () => {
     return {
