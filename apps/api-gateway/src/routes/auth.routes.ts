@@ -30,6 +30,7 @@ import type { RoleType } from '@docsearch/api-contracts';
 import { env } from '../config/env.js';
 import { extractAuthTokenFromRequest } from '../plugins/auth-guard.js';
 import { authenticate, requireRoles } from '../plugins/auth-guard.js';
+import { identitySecurityFoundationService } from '../services/security/IdentitySecurityFoundationService.js';
 import { partnerOnboardingRepository } from '../repositories/company/PartnerOnboardingRepository.js';
 import { registrationFormPolicyService, resolveCanonicalRequestedPlan } from '../services/core/RegistrationFormPolicyService.js';
 import { launchOfferCampaignService } from '../services/core/LaunchOfferCampaignService.js';
@@ -610,6 +611,36 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
       ipAddress: request.ip,
       userAgent: request.headers['user-agent']
     });
+
+    // Enforce immediate session revocation & suspension check on refresh
+    const revocation = await sessionRevocationService.isRevoked({
+      sub: res.session.userId,
+      email: res.session.actorEmail,
+      tenantId: res.session.tenantId,
+      branchId: res.session.branchId,
+      iat: Math.floor(Date.now() / 1000)
+    } as any);
+
+    if (revocation.revoked) {
+      await sessionRevocationService.revokeSession(res.session.sessionId, 'User account or session is revoked/suspended', res.session.userId);
+      await sessionService.logout(res.session.sessionId);
+      throw new AppError({
+        message: revocation.reason || 'Access denied: Session or account revoked',
+        code: (revocation.code as ErrorCode) || ErrorCode.UNAUTHORIZED,
+        statusCode: 401
+      });
+    }
+
+    const canonicalIdentity = await identitySecurityFoundationService.resolveCanonicalIdentity(res.session);
+    if (canonicalIdentity && canonicalIdentity.staffStatus !== 'ACTIVE') {
+      await sessionRevocationService.revokeSession(res.session.sessionId, `Staff account is ${canonicalIdentity.staffStatus}`, res.session.userId);
+      await sessionService.logout(res.session.sessionId);
+      throw new AppError({
+        message: `Access denied: Staff account is ${canonicalIdentity.staffStatus}`,
+        code: ErrorCode.FORBIDDEN,
+        statusCode: 403
+      });
+    }
 
     return reply.status(200).send({
       success: true,

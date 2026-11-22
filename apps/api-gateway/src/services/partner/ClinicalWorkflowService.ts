@@ -860,6 +860,10 @@ export class ClinicalWorkflowService {
           statusCode: 404
         });
       }
+      ScopeGuard.enforceBranchScope(session, {
+        targetTenantId: session.tenantId,
+        targetBranchId: apt.branchId || undefined
+      });
       return apt;
     });
   }

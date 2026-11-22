@@ -25,6 +25,7 @@ import {
   operationalDepartments,
   operationalStaff,
   doctorProfiles,
+  staffCredentials,
   medicationCatalog,
   investigationCatalog,
   branches,
@@ -4729,6 +4730,49 @@ export class ClinicalWorkflowRepository {
         message: 'Invalid slotTime provided for appointment.',
         statusCode: 400
       });
+    }
+
+    const [doctor] = await db
+      .select()
+      .from(doctorProfiles)
+      .where(
+        and(
+          eq(doctorProfiles.tenantId, input.tenantId),
+          eq(doctorProfiles.id, input.doctorId),
+          eq(doctorProfiles.status, 'ACTIVE')
+        )
+      )
+      .limit(1);
+
+    if (!doctor) {
+      throw new AppError({
+        statusCode: 400,
+        code: ErrorCode.VALIDATION_ERROR,
+        message: 'Selected doctor is invalid, inactive, or not found in this organization.'
+      });
+    }
+
+    if (branchId && doctor.branchId && doctor.branchId !== branchId) {
+      const [cbCred] = await db
+        .select()
+        .from(staffCredentials)
+        .where(
+          and(
+            eq(staffCredentials.tenantId, input.tenantId),
+            eq(staffCredentials.staffId, doctor.staffId),
+            eq(staffCredentials.verificationStatus, 'VERIFIED')
+          )
+        )
+        .limit(1);
+
+      const authorizedBranches = ((cbCred?.metadata as any)?.authorizedBranches) || [];
+      if (!authorizedBranches.includes(branchId)) {
+        throw new AppError({
+          statusCode: 403,
+          code: ErrorCode.BRANCH_ACCESS_DENIED,
+          message: 'Selected doctor is not privileged to practice at the requested branch.'
+        });
+      }
     }
 
     const slotDateStr = slotTimeDate.toISOString().slice(0, 10);

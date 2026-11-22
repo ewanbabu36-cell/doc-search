@@ -4,7 +4,7 @@ import { partnerOnboardingRepository, toDeterministicUuid } from '../../reposito
 import { licenseRepository } from '../../repositories/company/LicenseRepository.js';
 import { entitlementService } from '../company/EntitlementService.js';
 import { AppError } from '@docsearch/shared-core';
-import { type SessionContext } from '@docsearch/auth';
+import { type SessionContext, ScopeGuard } from '@docsearch/auth';
 import {
   withSecurityContext,
   getDatabase,
@@ -15,6 +15,8 @@ import {
   eq,
   and
 } from '@docsearch/database';
+import { sessionRevocationService } from '../core/SessionRevocationService.js';
+import { identitySecurityFoundationService } from '../security/IdentitySecurityFoundationService.js';
 import { realAuthService } from '../core/RealAuthService.js';
 import type {
   CreateOperationalDepartmentRequest,
@@ -683,6 +685,15 @@ export class StaffAdministrationService {
       status?: string;
     } = {}
   ) {
+    if (session.dataScope === 'branch' && session.branchId) {
+      if (filters.branchId && filters.branchId !== session.branchId) {
+        ScopeGuard.enforceBranchScope(session, {
+          targetTenantId: session.tenantId,
+          targetBranchId: filters.branchId
+        });
+      }
+      filters.branchId = session.branchId;
+    }
     return withSecurityContext(getDatabase(), session, async (tx) => {
       return staffAdministrationRepository.getStaff(session.tenantId, filters, tx);
     });
@@ -690,7 +701,14 @@ export class StaffAdministrationService {
 
   async getStaffById(session: SessionContext, staffId: string) {
     return withSecurityContext(getDatabase(), session, async (tx) => {
-      return staffAdministrationRepository.getStaffById(session.tenantId, staffId, tx);
+      const staff = await staffAdministrationRepository.getStaffById(session.tenantId, staffId, tx);
+      if (staff && session.dataScope === 'branch' && staff.branchId) {
+        ScopeGuard.enforceBranchScope(session, {
+          targetTenantId: session.tenantId,
+          targetBranchId: staff.branchId
+        });
+      }
+      return staff;
     });
   }
 
@@ -856,6 +874,11 @@ export class StaffAdministrationService {
           },
           tx
         );
+
+        if (String(input.newStatus).toUpperCase() === 'SUSPENDED' || String(input.newStatus).toUpperCase() === 'TERMINATED') {
+          await sessionRevocationService.revokeUser(existing.id, input.reason || `Staff status updated to ${input.newStatus}`);
+          identitySecurityFoundationService.invalidateSecurityCache(session.tenantId, existing.id, existing.id);
+        }
 
         await auditRepository.recordEvent(
           {
