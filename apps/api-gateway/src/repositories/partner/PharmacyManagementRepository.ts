@@ -629,6 +629,9 @@ export interface BatchRecallResult {
 
 export interface StoredPrescriptionQueueItem {
   id: string;
+  tenantId?: string | undefined;
+  partnerId?: string | undefined;
+  branchId?: string | undefined;
   encounterId: string;
   prescriptionId?: string | undefined;
   prescriptionNumber?: string | undefined;
@@ -770,6 +773,9 @@ export class PharmacyManagementRepository {
 
         list.push({
           id: p.id,
+          tenantId: p.tenantId,
+          partnerId: p.partnerId,
+          branchId: p.branchId,
           encounterId: p.encounterId || p.id,
           prescriptionId: p.id,
           prescriptionNumber: p.prescriptionNumber || `RX-${p.id.substring(0, 8)}`,

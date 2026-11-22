@@ -1,8 +1,8 @@
 {
-  "timestamp": "2026-11-19T12:46:32.569Z",
+  "timestamp": "2026-11-22T01:00:17.159Z",
   "totalTests": 35,
-  "passedTests": 35,
-  "failedTests": 0,
+  "passedTests": 26,
+  "failedTests": 9,
   "results": [
     {
       "id": "TEST-01",
@@ -27,7 +27,8 @@
     {
       "id": "TEST-05",
       "name": "Spoken instruction claiming foreign tenant data is blocked at Gate 4 (403)",
-      "status": "PASS"
+      "status": "FAIL",
+      "error": "Expected values to be strictly equal:\n\n200 !== 403\n"
     },
     {
       "id": "TEST-06",
@@ -52,7 +53,8 @@
     {
       "id": "TEST-10",
       "name": "Doctor role voice request can successfully invoke clinical documentation (200)",
-      "status": "PASS"
+      "status": "FAIL",
+      "error": "Expected values to be strictly equal:\n\n400 !== 200\n"
     },
     {
       "id": "TEST-11",
@@ -102,7 +104,8 @@
     {
       "id": "TEST-20",
       "name": "High-risk clinical order with verified clinician approval executes safely with EXECUTED category (200)",
-      "status": "PASS"
+      "status": "FAIL",
+      "error": "Expected values to be strictly equal:\n\n400 !== 200\n"
     },
     {
       "id": "TEST-21",
@@ -142,7 +145,8 @@
     {
       "id": "TEST-28",
       "name": "Upstream TTS synthesis failure fails open gracefully: returns text response (200)",
-      "status": "PASS"
+      "status": "FAIL",
+      "error": "Expected values to be strictly equal:\n\n400 !== 200\n"
     },
     {
       "id": "TEST-29",
@@ -157,27 +161,32 @@
     {
       "id": "TEST-31",
       "name": "Voice interaction with x-idempotency-key returns cached result on replay",
-      "status": "PASS"
+      "status": "FAIL",
+      "error": "Expected values to be strictly equal:\n\n400 !== 200\n"
     },
     {
       "id": "TEST-32",
       "name": "Voice interaction persists messages in database with metadata.inputType = VOICE",
-      "status": "PASS"
+      "status": "FAIL",
+      "error": "Expected values to be strictly equal:\n\n400 !== 200\n"
     },
     {
       "id": "TEST-33",
       "name": "Voice message history retrievable across session restarts",
-      "status": "PASS"
+      "status": "FAIL",
+      "error": "Expected values to be strictly equal:\n\n1 !== 2\n"
     },
     {
       "id": "TEST-34",
       "name": "Voice execution produces SHA-256 integrity hash chaining audit event",
-      "status": "PASS"
+      "status": "FAIL",
+      "error": "Expected values to be strictly equal:\n\n400 !== 200\n"
     },
     {
       "id": "TEST-35",
       "name": "Trace ID links voice interaction, user message, and assistant response",
-      "status": "PASS"
+      "status": "FAIL",
+      "error": "Expected values to be strictly equal:\n\n400 !== 200\n"
     }
   ]
 }

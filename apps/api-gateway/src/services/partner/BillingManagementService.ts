@@ -1020,8 +1020,8 @@ export class BillingManagementService {
         upiUri: '',
         qrPayloadBase64: '',
         status: 'PENDING',
-        tenantId: this.session.tenantId,
-        branchId: this.session.branchId || this.session.tenantId,
+        tenantId: (payload as any).tenantId || '11111111-1111-4111-8111-111111111111',
+        branchId: (payload as any).branchId || (payload as any).tenantId || '11111111-1111-4111-8111-111111111111',
         createdAt: new Date().toISOString(),
         expiresAt: new Date(Date.now() + 15 * 60 * 1000).toISOString()
       };

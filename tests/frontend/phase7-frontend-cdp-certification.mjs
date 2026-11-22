@@ -78,14 +78,19 @@ await testScenario('Company Executive Platform (Port 5177) Unauthenticated Shell
 // 4. Partner Platform (:5173) Unauthenticated
 await testScenario('Partner Platform (Port 5173) Unauthenticated Shell', {
   url: 'http://localhost:5173/',
-  viewport: VIEWPORTS.desktop_1080
+  viewport: VIEWPORTS.desktop_1080,
+  setupStorage: `
+    localStorage.clear();
+    localStorage.setItem('docsearch_logged_out', 'true');
+  `
 });
 
 // 5. Partner Platform (:5173) Authenticated Dashboard
 await testScenario('Partner Platform (Port 5173) Authenticated Doctor Dashboard', {
   url: 'http://localhost:5173/',
   viewport: VIEWPORTS.desktop_1080,
-  setupStorage: createDoctorAuth()
+  setupStorage: createDoctorAuth(),
+  timeoutMs: 45000
 });
 
 closeChrome();

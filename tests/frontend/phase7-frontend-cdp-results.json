@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-11-21T17:58:20.581Z",
+  "timestamp": "2026-11-22T01:12:35.011Z",
   "passCount": 5,
   "total": 5,
   "results": [
@@ -11,7 +11,7 @@
         "success": true,
         "dom": {
           "title": "DOC SEARCH — Next-Gen Intelligent Hospital Operating System",
-          "bodyLength": 9728,
+          "bodyLength": 11667,
           "rootChildren": 1,
           "hasWhiteScreen": false,
           "hasCrashBoundary": false,
@@ -19,10 +19,10 @@
           "innerWidth": 1920,
           "hasHorizontalOverflow": false,
           "invisibleTextCount": 0,
-          "hasActiveModal": false,
+          "hasActiveModal": true,
           "tableCount": 0,
           "inputCount": 1,
-          "buttonCount": 55,
+          "buttonCount": 69,
           "textSnippet": "NEW RELEASE\n✨ ABDM M1/M2/M3 National Health Gateway, Ambient Voice Scribe 3.0 & Hardware Bridge now live.\n🎮 Try 10-Sec Live Demo →\nDOC\nSEARCH\nENTERPRISE OS\n●\n12ms\nINTELLIGENT HEALTHCARE OS\nOverview\n\ud83c"
         },
         "consoleErrors": [],
@@ -92,19 +92,19 @@
         "success": true,
         "dom": {
           "title": "DOC SEARCH — Healthcare Operating System",
-          "bodyLength": 8870,
+          "bodyLength": 4674,
           "rootChildren": 1,
           "hasWhiteScreen": false,
           "hasCrashBoundary": false,
-          "scrollWidth": 1920,
+          "scrollWidth": 1910,
           "innerWidth": 1920,
           "hasHorizontalOverflow": false,
           "invisibleTextCount": 0,
           "hasActiveModal": false,
           "tableCount": 0,
-          "inputCount": 1,
-          "buttonCount": 28,
-          "textSnippet": "🏥 DR. SHARMA HEART & GENERAL OPD CLINIC\n|\nDr. Alok Sharma, MD\n🚪 Room 101\n▾\n● Live OPD Connected\n⚡15-Sec SmartRx\n📊Reports & Audit\n⚙️Chamber Settings\n✕Exit Cockpit\n⚡\nPATIENT 360 STORYBOARD\n◀\nKK\nKis"
+          "inputCount": 0,
+          "buttonCount": 9,
+          "textSnippet": "🏥\nDOC SEARCH\nClinical Hospital Management System\nPostgreSQL 18.4 Engine • ABDM & FHIR Ready\nSpecialties\nOPD Live Desk\nBed Availability\n100% Free Lifetime\n24x7 Emergency\n🔐\nStaff Login\n🏥\nRegister Fac"
         },
         "consoleErrors": [],
         "uncaughtExceptions": [],

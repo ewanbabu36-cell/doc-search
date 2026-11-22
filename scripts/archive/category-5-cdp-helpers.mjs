@@ -192,6 +192,7 @@ export async function runBrowserScenario({
       clearTimeout(scenarioTimer);
       try { ws.close(); } catch {}
       try { await fetch(`http://127.0.0.1:${DEBUG_PORT}/json/close/${tabData.id}`); } catch {}
+      await sleep(600);
       resolve(data);
     };
 
@@ -209,6 +210,7 @@ export async function runBrowserScenario({
       return new Promise((res) => {
         const id = msgId++;
         const timer = setTimeout(() => {
+          console.warn(`[CDP TIMEOUT 8s] ${method}`);
           callbacks.delete(id);
           res({});
         }, 8000);
@@ -264,16 +266,17 @@ export async function runBrowserScenario({
 
         // Navigate cleanly
         await send('Page.navigate', { url });
+        await sleep(1500);
 
-        // Active polling for React hydration (up to 7000ms)
-        for (let i = 0; i < 28; i++) {
+        // Active polling for React hydration (up to 8000ms)
+        for (let i = 0; i < 20; i++) {
           const check = await send('Runtime.evaluate', {
             expression: '!!(document.getElementById("root")?.children?.length > 0 && document.body.innerText.trim().length > 30 && !document.body.innerText.includes("Authenticating Session"))'
           });
           if (check?.result?.value === true) {
             break;
           }
-          await sleep(250);
+          await sleep(400);
         }
 
         if (preEvalAction) {

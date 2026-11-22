@@ -18,8 +18,8 @@ export class PharmacyManagementService {
     requestedScope?: { tenantId?: string | undefined; branchId?: string | undefined; departmentId?: string | undefined }
   ) {
     const scope = ScopeGuard.resolveEffectiveQueryScope(session, requestedScope);
-    return withSecurityContext(getDatabase(), session, async () => {
-      const items = await pharmacyManagementRepository.getPrescriptionQueue(scope.tenantId, status);
+    return withSecurityContext(getDatabase(), session, async (tx) => {
+      const items = await pharmacyManagementRepository.getPrescriptionQueue(scope.tenantId, status, tx);
       return ScopeGuard.filterRecordsByScope(items, scope);
     });
   }
@@ -30,8 +30,8 @@ export class PharmacyManagementService {
     requestedScope?: { tenantId?: string | undefined; branchId?: string | undefined; departmentId?: string | undefined }
   ) {
     const scope = ScopeGuard.resolveEffectiveQueryScope(session, requestedScope);
-    return withSecurityContext(getDatabase(), session, async () => {
-      const rx = await pharmacyManagementRepository.getPrescriptionById(scope.tenantId, prescriptionId);
+    return withSecurityContext(getDatabase(), session, async (tx) => {
+      const rx = await pharmacyManagementRepository.getPrescriptionById(scope.tenantId, prescriptionId, tx);
       if (rx) {
         ScopeGuard.assertRecordInScope(session, rx, scope);
       }
@@ -158,8 +158,8 @@ export class PharmacyManagementService {
     requestedScope?: { tenantId?: string | undefined; branchId?: string | undefined; departmentId?: string | undefined }
   ) {
     const scope = ScopeGuard.resolveEffectiveQueryScope(session, requestedScope);
-    return withSecurityContext(getDatabase(), session, async () => {
-      const items = await pharmacyManagementRepository.getStockMovements(scope.tenantId, medicationId);
+    return withSecurityContext(getDatabase(), session, async (tx) => {
+      const items = await pharmacyManagementRepository.getStockMovements(scope.tenantId, medicationId, tx);
       return ScopeGuard.filterRecordsByScope(items, scope);
     });
   }
@@ -170,8 +170,8 @@ export class PharmacyManagementService {
     requestedScope?: { tenantId?: string | undefined; branchId?: string | undefined; departmentId?: string | undefined }
   ) {
     const scope = ScopeGuard.resolveEffectiveQueryScope(session, requestedScope);
-    return withSecurityContext(getDatabase(), session, async () => {
-      const items = await pharmacyManagementRepository.getPatientMedicationHistory(scope.tenantId, patientId);
+    return withSecurityContext(getDatabase(), session, async (tx) => {
+      const items = await pharmacyManagementRepository.getPatientMedicationHistory(scope.tenantId, patientId, tx);
       return ScopeGuard.filterRecordsByScope(items, scope);
     });
   }
@@ -196,8 +196,8 @@ export class PharmacyManagementService {
     requestedScope?: { tenantId?: string | undefined; branchId?: string | undefined; departmentId?: string | undefined }
   ) {
     const scope = ScopeGuard.resolveEffectiveQueryScope(session, requestedScope);
-    return withSecurityContext(getDatabase(), session, async () => {
-      return pharmacyManagementRepository.getInventorySnapshot(scope.tenantId);
+    return withSecurityContext(getDatabase(), session, async (tx) => {
+      return pharmacyManagementRepository.getInventorySnapshot(scope.tenantId, tx);
     });
   }
 
@@ -448,8 +448,8 @@ export class PharmacyManagementService {
     requestedScope?: { tenantId?: string | undefined; branchId?: string | undefined; departmentId?: string | undefined }
   ) {
     const scope = ScopeGuard.resolveEffectiveQueryScope(session, requestedScope);
-    return withSecurityContext(getDatabase(), session, async () => {
-      const items = await pharmacyManagementRepository.getPendingPrescriptions(scope.tenantId);
+    return withSecurityContext(getDatabase(), session, async (tx) => {
+      const items = await pharmacyManagementRepository.getPendingPrescriptions(scope.tenantId, tx);
       return ScopeGuard.filterRecordsByScope(items, scope);
     });
   }
@@ -502,8 +502,8 @@ export class PharmacyManagementService {
     requestedScope?: { tenantId?: string | undefined; branchId?: string | undefined; departmentId?: string | undefined }
   ) {
     const scope = ScopeGuard.resolveEffectiveQueryScope(session, requestedScope);
-    return withSecurityContext(getDatabase(), session, async () => {
-      const records = await pharmacyManagementRepository.getControlledSubstances(scope.tenantId, filter);
+    return withSecurityContext(getDatabase(), session, async (tx) => {
+      const records = await pharmacyManagementRepository.getControlledSubstances(scope.tenantId, filter, tx);
       return ScopeGuard.filterRecordsByScope(records, scope);
     });
   }

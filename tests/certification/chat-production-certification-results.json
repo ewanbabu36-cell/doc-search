@@ -1,8 +1,8 @@
 {
-  "timestamp": "2026-11-19T12:46:21.366Z",
+  "timestamp": "2026-11-22T00:59:44.936Z",
   "totalTests": 40,
-  "passedTests": 40,
-  "failedTests": 0,
+  "passedTests": 38,
+  "failedTests": 2,
   "results": [
     {
       "id": "TEST-01",
@@ -107,7 +107,8 @@
     {
       "id": "TEST-21",
       "name": "High-risk clinical commit with verified clinician approval succeeds (200)",
-      "status": "PASS"
+      "status": "FAIL",
+      "error": "Expected values to be strictly equal:\n\n400 !== 200\n"
     },
     {
       "id": "TEST-22",
@@ -122,7 +123,8 @@
     {
       "id": "TEST-24",
       "name": "Malicious cross-tenant argument in toolInput is blocked",
-      "status": "PASS"
+      "status": "FAIL",
+      "error": "Expected values to be strictly equal:\n\n200 !== 403\n"
     },
     {
       "id": "TEST-25",
