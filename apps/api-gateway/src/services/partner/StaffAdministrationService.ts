@@ -11,6 +11,7 @@ import {
   operationalStaff,
   staffRoleAssignments,
   partnerProfiles,
+  operationalPartners,
   eq,
   and
 } from '@docsearch/database';
@@ -361,22 +362,45 @@ export class StaffAdministrationService {
       const db = getDatabase();
       if (db) {
         try {
-          const [prof] = await db
-            .select()
-            .from(partnerProfiles)
-            .where(eq(partnerProfiles.tenantId, tenantId))
-            .limit(1);
-          if (prof) {
-            const pMeta = (prof.metadata as Record<string, any>) || {};
-            const opModel = String(prof.operatingModel || pMeta['operatingModel'] || rawOperatingModel || '').toUpperCase().trim();
-            if (opModel === 'WHOLESALE_ONLY') return 'PHARMACY_WHOLESALE';
-            if (opModel === 'HYBRID') return 'PHARMACY_HYBRID';
-            const profType = pMeta['partnerType'] || pMeta['facilityType'] || pMeta['organizationType'];
-            if (profType) {
-              return this.normalizeProfile(String(profType), opModel);
+          const resolved = await withSecurityContext(db, session, async (tx) => {
+            const [prof] = await tx
+              .select()
+              .from(partnerProfiles)
+              .where(eq(partnerProfiles.tenantId, tenantId))
+              .limit(1);
+            if (prof) {
+              const pMeta = (prof.metadata as Record<string, any>) || {};
+              const opModel = String(prof.operatingModel || pMeta['operatingModel'] || rawOperatingModel || '').toUpperCase().trim();
+              if (opModel === 'WHOLESALE_ONLY') return 'PHARMACY_WHOLESALE';
+              if (opModel === 'HYBRID') return 'PHARMACY_HYBRID';
+              const profType = prof.partnerType || pMeta['partnerType'] || pMeta['facilityType'] || pMeta['organizationType'];
+              if (profType) {
+                return this.normalizeProfile(String(profType), opModel);
+              }
             }
+
+            const [op] = await tx
+              .select()
+              .from(operationalPartners)
+              .where(eq(operationalPartners.tenantId, tenantId))
+              .limit(1);
+            if (op) {
+              const opModel = String(op.operatingModel || rawOperatingModel || '').toUpperCase().trim();
+              if (opModel === 'WHOLESALE_ONLY') return 'PHARMACY_WHOLESALE';
+              if (opModel === 'HYBRID') return 'PHARMACY_HYBRID';
+              if (op.partnerType) {
+                return this.normalizeProfile(String(op.partnerType), opModel);
+              }
+            }
+            return null;
+          });
+
+          if (resolved) {
+            return resolved;
           }
-        } catch {}
+        } catch (dbErr) {
+          console.error('[resolvePartnerProfile DB ERROR]:', dbErr);
+        }
       }
 
       const queue = await partnerOnboardingRepository.getVerificationQueue();
