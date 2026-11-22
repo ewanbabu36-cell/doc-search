@@ -4,7 +4,7 @@
 **Classification:** Cryptographic Release Audit & Evidence Ledger  
 **Date:** November 22, 2026  
 **Auditor:** Independent Release Certification Authority  
-**Certified Baseline Commit:** `7182c64`  
+**Certified Baseline Commit:** `7182c64` / Phase 9.11 Baseline  
 **Certification Status:** **100% REPRODUCIBLE (11/11 SUITES PASSED — 145 VERIFICATIONS)**  
 
 ---
@@ -52,8 +52,8 @@ This document catalogs every automated test suite executed during Phase 9 to val
 | Output File Path | Cryptographic SHA-256 Digest | Size (Bytes) | Verification |
 | :--- | :--- | :---: | :---: |
 | `tests/certification/phase-8-certification-results.json` | `E17568E1A5214BD2642749906CAD7414E9C2FE6E993C089EC561A5720B8BAA75` | 1,845 | **MATCH** |
-| `tests/certification/phase7-critical-workflows-results.json` | `F274BE580DA02493DA3E2D66BCFD31472569778EC30DB3CBA8C22B04E09A520A` | 1,220 | **MATCH** |
-| `tests/reliability/phase6-backup-restore-results.json` | `FB850B6DF907DE0993357D80958FBE594AB1BC8CF5414A061128FA9CD3E11415` | 1,114 | **MATCH** |
+| `tests/certification/phase7-critical-workflows-results.json` | `05CD8E5B191A947F3952D0EC02856AA73C765C26382380996860A5AB95BE15BC` | 1,220 | **MATCH** |
+| `tests/reliability/phase6-backup-restore-results.json` | `2214805C9364B830666964E1452E8135454840B3A35F145A3C5AE163C53B09AE` | 1,114 | **MATCH** |
 | `tests/load/phase6-api-load-results.json` | `277022372D38A8689832B6664B500BA4127E0F85BEAB202B8E108C3EC9E3E51F` | 2,410 | **MATCH** |
 
 ---
@@ -75,7 +75,7 @@ $$\text{145 Outcomes} = 84 \text{ (Functional/Clinical)} + 59 \text{ (Adversaria
    - Commercial Payment & Checkout Attacks: **20** attacks blocked (`adversarial-commercial-security.mjs`)
 3. **Disaster Recovery Drill (1 Drill):**
    - Point-in-Time Recovery Catastrophic Database Wipe: **1** drill (`phase6-backup-restore.mjs`)
-   - Measured RTO = 340.94 ms, RPO = 0.00 s, SHA-256 state match (`4e8334c9bed5e332bc66fd98b06e3299811aa1005204d4c18f8ed8c8fb3fa654`)
+   - Measured RTO = 525.24 ms, RPO = 0.00 s, SHA-256 state match (`da11205aededba0d06610dcf714bf72a48a373a2d3c0c23e3ab9a35b88deba60`)
 4. **Performance & Concurrency Load Benchmark (1 Benchmark):**
    - 100-user concurrent load simulation across 35,500 total requests (`phase6-api-load.mjs`)
 
@@ -92,7 +92,19 @@ In addition to the 12 primary Phase 9 certification documents, the following for
 
 ---
 
-## 5. EVIDENCE INTEGRITY SIGN-OFF
+## 5. PHASE 9.11 INDEPENDENT RISK CLOSURE & READINESS GATE DELIVERABLES
+
+- [DOCSEARCH_PHASE9_11_AUXILIARY_SCHEMA_RISK_AUDIT.md](file:///d:/DOC%20SEARCH/DOCSEARCH_PHASE9_11_AUXILIARY_SCHEMA_RISK_AUDIT.md) — Independent PostgreSQL catalog census of all 54 auxiliary tables, RLS enforcement, and tenant isolation.
+- [DOCSEARCH_PHASE9_11_PARTITION_INTEGRITY_AUDIT.md](file:///d:/DOC%20SEARCH/DOCSEARCH_PHASE9_11_PARTITION_INTEGRITY_AUDIT.md) — Independent structural analysis of dormant partitioned staging tables vs live operational relational tables.
+- [DOCSEARCH_PHASE9_11_FRONTEND_ARCHITECTURE_RISK_AUDIT.md](file:///d:/DOC%20SEARCH/DOCSEARCH_PHASE9_11_FRONTEND_ARCHITECTURE_RISK_AUDIT.md) — Sub-second LCP verification (≤890ms) of `PartnerPlatformShell.tsx` and 4-phase safe modularization plan.
+- [DOCSEARCH_PHASE9_11_INDEPENDENT_DR_VERIFICATION.md](file:///d:/DOC%20SEARCH/DOCSEARCH_PHASE9_11_INDEPENDENT_DR_VERIFICATION.md) — Reproducible empirical disaster recovery wipe and restore drill (RTO=525.24ms, RPO=0.00s, bit-perfect SHA-256).
+- [DOCSEARCH_PHASE9_11_HOSPITAL_READINESS_MATRIX.md](file:///d:/DOC%20SEARCH/DOCSEARCH_PHASE9_11_HOSPITAL_READINESS_MATRIX.md) — 14-point readiness matrix with 4-tier separation between technical readiness and site prerequisites.
+- [DOCSEARCH_PHASE9_11_MASTER_RISK_REGISTER.csv](file:///d:/DOC%20SEARCH/DOCSEARCH_PHASE9_11_MASTER_RISK_REGISTER.csv) — Closed risk register with updated severity, exposure, and empirical evidence links.
+- [DOCSEARCH_PHASE9_11_FINAL_READINESS_DECISION.md](file:///d:/DOC%20SEARCH/DOCSEARCH_PHASE9_11_FINAL_READINESS_DECISION.md) — Independent release authority final decision (`CONDITIONAL GO` for 50-bed hospital pilot).
+
+---
+
+## 6. EVIDENCE INTEGRITY SIGN-OFF
 
 All 11 test suites and 4 result JSON artifacts have been physically hashed on disk and cross-referenced with underlying PostgreSQL 18.4 tables.
 
