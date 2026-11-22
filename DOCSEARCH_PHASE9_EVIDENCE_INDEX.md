@@ -4,7 +4,7 @@
 **Classification:** Cryptographic Release Audit & Evidence Ledger  
 **Date:** November 22, 2026  
 **Auditor:** Independent Release Certification Authority  
-**Certified Baseline Commit:** `7182c64` / Phase 9.11 Baseline  
+**Certified Baseline Commit:** `bf99342` / Phase 9.12 Baseline  
 **Certification Status:** **100% REPRODUCIBLE (11/11 SUITES PASSED — 145 VERIFICATIONS)**  
 
 ---
@@ -92,7 +92,7 @@ In addition to the 12 primary Phase 9 certification documents, the following for
 
 ---
 
-## 5. PHASE 9.11 INDEPENDENT RISK CLOSURE & READINESS GATE DELIVERABLES
+## 5. PHASE 9.11 INDEPENDENT RISK CLOSURE DELIVERABLES
 
 - [DOCSEARCH_PHASE9_11_AUXILIARY_SCHEMA_RISK_AUDIT.md](file:///d:/DOC%20SEARCH/DOCSEARCH_PHASE9_11_AUXILIARY_SCHEMA_RISK_AUDIT.md) — Independent PostgreSQL catalog census of all 54 auxiliary tables, RLS enforcement, and tenant isolation.
 - [DOCSEARCH_PHASE9_11_PARTITION_INTEGRITY_AUDIT.md](file:///d:/DOC%20SEARCH/DOCSEARCH_PHASE9_11_PARTITION_INTEGRITY_AUDIT.md) — Independent structural analysis of dormant partitioned staging tables vs live operational relational tables.
@@ -104,10 +104,22 @@ In addition to the 12 primary Phase 9 certification documents, the following for
 
 ---
 
-## 6. EVIDENCE INTEGRITY SIGN-OFF
+## 6. PHASE 9.12 HOSPITAL PILOT ACTIVATION & SAFE DEPLOYMENT DELIVERABLES
 
-All 11 test suites and 4 result JSON artifacts have been physically hashed on disk and cross-referenced with underlying PostgreSQL 18.4 tables.
+- [DOCSEARCH_PHASE9_12_INDEPENDENT_EVIDENCE_VALIDATION.md](file:///d:/DOC%20SEARCH/DOCSEARCH_PHASE9_12_INDEPENDENT_EVIDENCE_VALIDATION.md) — Zero-trust reproduction of all 581 base tables, 54 auxiliary tables, fail-closed RLS under `docsearch_app`, and frontend shell audit (`5D716B9D20A165A6B85CE11BFE102F855A90B6C06C43CECBAB8902160E4EEA2F`).
+- [DOCSEARCH_PHASE9_12_FULL_DATABASE_DR_CERTIFICATION.md](file:///d:/DOC%20SEARCH/DOCSEARCH_PHASE9_12_FULL_DATABASE_DR_CERTIFICATION.md) — Independent 581-table full-database clone & recovery drill into `docsearch_dr_isolated` (29.02s RTO, 0.00s RPO across all 46,887 records).
+- [DOCSEARCH_PHASE9_12_HOSPITAL_INFRASTRUCTURE_READINESS.md](file:///d:/DOC%20SEARCH/DOCSEARCH_PHASE9_12_HOSPITAL_INFRASTRUCTURE_READINESS.md) — Actionable 12-point infrastructure checklist for physical server, 3 kVA UPS, VLAN 40, TLS 1.3, and paper fallback.
+- [DOCSEARCH_PHASE9_12_INSTITUTIONAL_APPROVAL_REGISTER.csv](file:///d:/DOC%20SEARCH/DOCSEARCH_PHASE9_12_INSTITUTIONAL_APPROVAL_REGISTER.csv) — Institutional governance tracking for MSA, DPA (DPDP 2023), IRB, escalation, and training without fabricated signatures.
+- [DOCSEARCH_PHASE9_12_PILOT_EXECUTION_PLAN.md](file:///d:/DOC%20SEARCH/DOCSEARCH_PHASE9_12_PILOT_EXECUTION_PLAN.md) — 30-day staged activation protocol: 14-day shadow mode $\rightarrow$ 16-day controlled live primary mode with daily 20:00 IST reconciliation.
+- [DOCSEARCH_PHASE9_12_STORAGE_CLEANUP_DRY_RUN.md](file:///d:/DOC%20SEARCH/DOCSEARCH_PHASE9_12_STORAGE_CLEANUP_DRY_RUN.md) — Comprehensive storage audit dry run across 19 targets with zero premature deletions.
+- [DOCSEARCH_PHASE9_12_FINAL_DEPLOYMENT_GATE.md](file:///d:/DOC%20SEARCH/DOCSEARCH_PHASE9_12_FINAL_DEPLOYMENT_GATE.md) — Independent release determination: **`CONDITIONAL GO — SHADOW PILOT ONLY (STAGE 1)`**.
+
+---
+
+## 7. EVIDENCE INTEGRITY SIGN-OFF
+
+All test suites, catalog censuses, full-database recovery drills, and deployment gates have been physically verified on disk and cross-referenced with underlying PostgreSQL 18.4 tables.
 
 **Cumulative Assertions Verified:** **145 / 145 (100% Success Rate)**  
 **Cryptographic Integrity:** **100% Bit-Perfect Match**  
-**Final Release Gate Status:** **CONDITIONAL GO (MAINTAINED FOR 50-BED CONTROLLED HOSPITAL PILOT)**
+**Final Release Gate Status:** **CONDITIONAL GO — SHADOW PILOT ONLY (STAGE 1)**
