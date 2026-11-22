@@ -9,14 +9,14 @@
     "auditEventsCount": 40
   },
   "backupMetrics": {
-    "backupDurationMs": 252.25,
+    "backupDurationMs": 31.44,
     "backupSizeBytes": 118794,
     "backupSizeKb": 116.01,
-    "backupSha256Checksum": "81ad784797be625457bf7fd4a56894281593ac8445b344818eacc3dc5cc7928c"
+    "backupSha256Checksum": "4e8334c9bed5e332bc66fd98b06e3299811aa1005204d4c18f8ed8c8fb3fa654"
   },
   "restoreMetrics": {
-    "observedRtoMs": 869.59,
-    "observedRtoSeconds": 0.8696,
+    "observedRtoMs": 340.94,
+    "observedRtoSeconds": 0.3409,
     "recordsRestored": 115,
     "recordsLostDuringRecovery": 0
   },
@@ -26,10 +26,10 @@
     "snapshotIsolation": "STRICT_TRANSACTIONAL_CONSISTENCY"
   },
   "integrityVerification": {
-    "preDisasterSha256": "81ad784797be625457bf7fd4a56894281593ac8445b344818eacc3dc5cc7928c",
-    "postRecoverySha256": "81ad784797be625457bf7fd4a56894281593ac8445b344818eacc3dc5cc7928c",
+    "preDisasterSha256": "4e8334c9bed5e332bc66fd98b06e3299811aa1005204d4c18f8ed8c8fb3fa654",
+    "postRecoverySha256": "4e8334c9bed5e332bc66fd98b06e3299811aa1005204d4c18f8ed8c8fb3fa654",
     "bitPerfectChecksumMatch": true,
     "relationalIntegrityVerified": true,
-    "verdict": "PASS — BIT-PERFECT RESTORATION (RPO=0s, MEASURED RTO=869.59ms)"
+    "verdict": "PASS — BIT-PERFECT RESTORATION (RPO=0s, MEASURED RTO=340.94ms)"
   }
 }
