@@ -1,7 +1,7 @@
 import { type FastifyPluginAsync, type FastifyRequest, type FastifyReply } from 'fastify';
 import { z } from 'zod';
 import { createLogger } from '@docsearch/shared-core';
-import { authenticate, requireRoles } from '../../plugins/auth-guard.js';
+import { authenticate, requireRoles, requireTenantId } from '../../plugins/auth-guard.js';
 
 const logger = createLogger('emergency-code-blue');
 
@@ -49,7 +49,7 @@ export const codeBlueRoutes: FastifyPluginAsync = async (fastify) => {
     }
 
     const session = (request as any).session;
-    const tenantId = session?.tenantId || '11111111-1111-4111-8111-111111111111';
+    const tenantId = requireTenantId(request);
     const callerId = session?.user?.id || 'STAFF-EMERGENCY-CALLER';
     const callerName = session?.user?.name || 'On-Duty Nurse / Staff';
 
@@ -96,7 +96,7 @@ export const codeBlueRoutes: FastifyPluginAsync = async (fastify) => {
 
   // 2. Real-Time SSE Stream for Emergency Displays and Nurse Cockpits (🛡️ Tenant Scoped & Authenticated)
   fastify.get('/api/v1/emergency/code-blue/stream', { preHandler: [authenticate] }, async (request: FastifyRequest, reply: FastifyReply) => {
-    const tenantId = (request as any).session?.tenantId || '11111111-1111-4111-8111-111111111111';
+    const tenantId = requireTenantId(request);
 
     reply.raw.setHeader('Content-Type', 'text/event-stream');
     reply.raw.setHeader('Cache-Control', 'no-cache, no-transform');

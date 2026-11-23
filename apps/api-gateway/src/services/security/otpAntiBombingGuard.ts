@@ -1,3 +1,5 @@
+import crypto from 'node:crypto';
+
 /**
  * DOC SEARCH SMS & OTP Anti-Bombing / Brute-Force Defense Guard
  * Prevents automated scripts and hackers from flooding SMS gateways,
@@ -10,10 +12,17 @@ interface OtpRateRecord {
   blockedUntil: number;
 }
 
+interface StoredOtpRecord {
+  hash: string;
+  expiresAt: number;
+  attempts: number;
+}
+
 class OtpAntiBombingGuard {
   // In-memory buckets (can be backed by Redis in distributed cluster)
   private phoneBuckets = new Map<string, OtpRateRecord>();
   private ipBuckets = new Map<string, { count: number; windowStart: number }>();
+  private otpStore = new Map<string, StoredOtpRecord>();
 
   // Configuration constants
   private readonly COOLDOWN_SECONDS = 60; // Minimum 60s between OTP requests
@@ -111,6 +120,47 @@ class OtpAntiBombingGuard {
     phoneRecord.lastRequestedAt = now;
     phoneRecord.attemptsInWindow += 1;
     this.phoneBuckets.set(cleanPhone, phoneRecord);
+  }
+
+  /**
+   * Generates a cryptographically random 6-digit OTP, hashes it with SHA-256,
+   * and stores it with a 5-minute expiry window. (AUTH-001)
+   */
+  public generateAndStoreOtp(phone: string): string {
+    const cleanPhone = phone.replace(/\D/g, '').slice(-10);
+    const otp = crypto.randomInt(100000, 1000000).toString();
+    const hash = crypto.createHash('sha256').update(otp).digest('hex');
+    this.otpStore.set(cleanPhone, {
+      hash,
+      expiresAt: Date.now() + 5 * 60 * 1000, // 5 minute TTL
+      attempts: 0
+    });
+    return otp;
+  }
+
+  /**
+   * Verifies an entered OTP against the stored SHA-256 hash.
+   * Enforces 3 maximum attempts per OTP and invalidates on success.
+   */
+  public verifyStoredOtp(phone: string, inputOtp: string): boolean {
+    const cleanPhone = phone.replace(/\D/g, '').slice(-10);
+    const record = this.otpStore.get(cleanPhone);
+    if (!record) return false;
+    if (Date.now() > record.expiresAt) {
+      this.otpStore.delete(cleanPhone);
+      return false;
+    }
+    record.attempts += 1;
+    if (record.attempts > 3) {
+      this.otpStore.delete(cleanPhone);
+      return false;
+    }
+    const inputHash = crypto.createHash('sha256').update(inputOtp).digest('hex');
+    if (crypto.timingSafeEqual(Buffer.from(inputHash, 'utf8'), Buffer.from(record.hash, 'utf8'))) {
+      this.otpStore.delete(cleanPhone);
+      return true;
+    }
+    return false;
   }
 
   /**

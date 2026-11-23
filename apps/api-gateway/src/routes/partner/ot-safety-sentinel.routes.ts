@@ -1,6 +1,6 @@
 import type { FastifyPluginAsync } from 'fastify';
 import { getDatabase, sql } from '@docsearch/database';
-import { authenticate, requireRoles } from '../../plugins/auth-guard.js';
+import { authenticate, requireRoles, requireTenantId } from '../../plugins/auth-guard.js';
 
 interface PacSignRequest {
   caseId?: string;
@@ -39,7 +39,7 @@ export const otSafetySentinelRoutes: FastifyPluginAsync = async (fastify) => {
 
   // 1. Anaesthesia Pre-Op Clearance (PAC) Hard-Gate (🛡️ Doctor / Anesthetist Role Enforced)
   fastify.post('/api/v1/partner/ot-safety/pac/sign-clearance', { preHandler: [requireRoles('DOCTOR', 'CHIEF_MEDICAL_OFFICER', 'HOSPITAL_ADMIN', 'SUPER_ADMIN')] }, async (request, reply) => {
-    const tenantId = (request as any).session?.tenantId || '11111111-1111-4111-8111-111111111111';
+    const tenantId = requireTenantId(request);
     const body = request.body as PacSignRequest;
 
     const caseId = body.caseId || `OT-CASE-${Date.now().toString(36).toUpperCase()}`;
@@ -119,7 +119,7 @@ export const otSafetySentinelRoutes: FastifyPluginAsync = async (fastify) => {
 
   // 2. Digital WHO 3-Phase Safe Surgery Checklist (🛡️ Clinical Staff Role Enforced)
   fastify.post('/api/v1/partner/ot-safety/checklist/phase', { preHandler: [requireRoles('DOCTOR', 'NURSE', 'CHIEF_MEDICAL_OFFICER', 'HOSPITAL_ADMIN', 'SUPER_ADMIN')] }, async (request, reply) => {
-    const tenantId = (request as any).session?.tenantId || '11111111-1111-4111-8111-111111111111';
+    const tenantId = requireTenantId(request);
     const body = request.body as ChecklistPhaseRequest;
 
     const caseId = body.caseId;
@@ -168,7 +168,7 @@ export const otSafetySentinelRoutes: FastifyPluginAsync = async (fastify) => {
 
   // 3. Dual-Nurse Surgical Count Reconciliation (🛡️ Clinical Staff Role Enforced)
   fastify.post('/api/v1/partner/ot-safety/reconciliation/count-tray', { preHandler: [requireRoles('DOCTOR', 'NURSE', 'CHIEF_MEDICAL_OFFICER', 'HOSPITAL_ADMIN', 'SUPER_ADMIN')] }, async (request, reply) => {
-    const tenantId = (request as any).session?.tenantId || '11111111-1111-4111-8111-111111111111';
+    const tenantId = requireTenantId(request);
     const body = request.body as CountTrayRequest;
 
     const caseId = body.caseId;
@@ -225,7 +225,7 @@ export const otSafetySentinelRoutes: FastifyPluginAsync = async (fastify) => {
 
   // 4. CSSD Sterile Autoclave Batches Query
   fastify.get('/api/v1/partner/ot-safety/cssd/autoclave-batches', async (request, reply) => {
-    const tenantId = (request as any).session?.tenantId || '11111111-1111-4111-8111-111111111111';
+    const tenantId = requireTenantId(request);
     const db = getDatabase();
 
     let batches: any[] = [];

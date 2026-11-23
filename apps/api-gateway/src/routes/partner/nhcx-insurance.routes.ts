@@ -1,7 +1,7 @@
 import type { FastifyPluginAsync } from 'fastify';
 import crypto from 'node:crypto';
 import { getDatabase, sql } from '@docsearch/database';
-import { authenticate, requireRoles } from '../../plugins/auth-guard.js';
+import { authenticate, requireRoles, requireTenantId } from '../../plugins/auth-guard.js';
 
 interface NhcxPreAuthRequest {
   patientUhId: string;
@@ -43,7 +43,7 @@ export const nhcxInsuranceRoutes: FastifyPluginAsync = async (fastify) => {
     '/api/v1/partner/insurance/nhcx/pre-auth/initiate',
     { preHandler: [authenticate, requireRoles(...NHCX_AUTHORIZED_ROLES)] },
     async (request, reply) => {
-      const tenantId = (request as any).session?.tenantId || '11111111-1111-4111-8111-111111111111';
+      const tenantId = requireTenantId(request);
       const body = (request.body || {}) as NhcxPreAuthRequest;
       const db = getDatabase();
 
@@ -102,7 +102,7 @@ export const nhcxInsuranceRoutes: FastifyPluginAsync = async (fastify) => {
     '/api/v1/partner/insurance/nhcx/claim/submit-discharge-bundle',
     { preHandler: [authenticate, requireRoles(...NHCX_AUTHORIZED_ROLES)] },
     async (request, reply) => {
-      const tenantId = (request as any).session?.tenantId || '11111111-1111-4111-8111-111111111111';
+      const tenantId = requireTenantId(request);
       const body = (request.body || {}) as NhcxDischargeClaimRequest;
       const db = getDatabase();
 
@@ -184,7 +184,7 @@ export const nhcxInsuranceRoutes: FastifyPluginAsync = async (fastify) => {
     '/api/v1/partner/insurance/nhcx/claim/:claimId/adjudication-status',
     { preHandler: [authenticate, requireRoles(...NHCX_AUTHORIZED_ROLES)] },
     async (request, reply) => {
-      const tenantId = (request as any).session?.tenantId || '11111111-1111-4111-8111-111111111111';
+      const tenantId = requireTenantId(request);
       const { claimId } = request.params as { claimId: string };
       const db = getDatabase();
 

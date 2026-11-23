@@ -17,9 +17,9 @@ export const HospitalWhiteLabelStudioView: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
 
-  const testEmail = 'whitelabel.admin@docsearch.health';
-  const testPassword = 'Hospital@2026!';
-  const localhostLoginUrl = 'http://localhost:5175/';
+  const testEmail = 'admin@' + (whiteLabelConfig.customCnameDomain || 'docsearch.health');
+  const testPassword = '[Provisioned via DocSearch SSO / Secure One-Time Activation Link]';
+  const localhostLoginUrl = 'https://' + (whiteLabelConfig.customCnameDomain || 'care.docsearch.health');
 
   const handleCopy = (text: string, key: string) => {
     try {
@@ -93,7 +93,14 @@ export const HospitalWhiteLabelStudioView: React.FC = () => {
 
   const handleSaveWhiteLabel = (e: React.FormEvent) => {
     e.preventDefault();
-    setSaveNotice(`✓ White-Label Theme successfully compiled and deployed to Edge CDN for "${whiteLabelConfig.customCnameDomain}"!`);
+    updateWhiteLabel({
+      hospitalName: whiteLabelConfig.hospitalName,
+      customCnameDomain: whiteLabelConfig.customCnameDomain,
+      primaryColor: whiteLabelConfig.primaryColor,
+      accentColor: whiteLabelConfig.accentColor,
+      smsSenderId: whiteLabelConfig.smsSenderId
+    });
+    setSaveNotice(`✓ White-Label branding profile updated for "${whiteLabelConfig.customCnameDomain || whiteLabelConfig.hospitalName}". Configuration active.`);
     setTimeout(() => setSaveNotice(null), 5000);
   };
 

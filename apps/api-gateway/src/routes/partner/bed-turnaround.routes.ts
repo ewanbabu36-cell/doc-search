@@ -1,6 +1,6 @@
 import type { FastifyPluginAsync } from 'fastify';
 import { getDatabase, sql } from '@docsearch/database';
-import { authenticate, requireRoles } from '../../plugins/auth-guard.js';
+import { authenticate, requireRoles, requireTenantId } from '../../plugins/auth-guard.js';
 import { clinicalSweeperService } from '../../services/partner/ClinicalSweeperService.js';
 
 interface DispatchCleaningRequest {
@@ -36,7 +36,7 @@ export const bedTurnaroundRoutes: FastifyPluginAsync = async (fastify) => {
     '/api/v1/partner/bed-turnaround/dispatch-cleaning-token',
     { preHandler: [requireRoles(...HOUSEKEEPING_ROLES)] },
     async (request, reply) => {
-      const tenantId = (request as any).session?.tenantId || '11111111-1111-4111-8111-111111111111';
+      const tenantId = requireTenantId(request);
       const body = (request.body || {}) as DispatchCleaningRequest;
 
       const bedNumber = body.bedNumber || 'BED-204-DELUXE';
@@ -82,7 +82,7 @@ export const bedTurnaroundRoutes: FastifyPluginAsync = async (fastify) => {
     '/api/v1/partner/bed-turnaround/scan-bed-status',
     { preHandler: [requireRoles(...HOUSEKEEPING_ROLES)] },
     async (request, reply) => {
-    const tenantId = (request as any).session?.tenantId || '11111111-1111-4111-8111-111111111111';
+    const tenantId = requireTenantId(request);
     const body = (request.body || {}) as ScanBedStatusRequest;
 
     const bedNumber = body.bedNumber || 'BED-204-DELUXE';
@@ -128,7 +128,7 @@ export const bedTurnaroundRoutes: FastifyPluginAsync = async (fastify) => {
 
   // 3. Query Bed Turnaround Metrics (Dynamic SQL Filter & Aggregation)
   fastify.get('/api/v1/partner/bed-turnaround/turnaround-metrics', async (request, reply) => {
-    const tenantId = (request as any).session?.tenantId || '11111111-1111-4111-8111-111111111111';
+    const tenantId = requireTenantId(request);
     const query = (request.query || {}) as {
       departments?: string;
       department?: string;
@@ -219,7 +219,7 @@ export const bedTurnaroundRoutes: FastifyPluginAsync = async (fastify) => {
     '/api/v1/partner/bed-turnaround/auto-escalate-sweep',
     { preHandler: [requireRoles('HOSPITAL_ADMIN', 'SUPER_ADMIN', 'COMPANY_ADMIN', 'CLINIC_ADMIN', 'BRANCH_MANAGER')] },
     async (request, reply) => {
-    const tenantId = (request as any).session?.tenantId || '11111111-1111-4111-8111-111111111111';
+    const tenantId = requireTenantId(request);
     const result = await clinicalSweeperService.runBedTurnaroundEscalationSweep(tenantId);
 
     return reply.status(200).send({

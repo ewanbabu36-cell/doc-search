@@ -229,31 +229,54 @@ class PatientApiService {
       console.warn('Scanned parchi upload API call failed, saving locally:', err);
     }
 
+    // FEATURE-003: Never fabricate clinical facts. Mark as LOCAL_DRAFT / PENDING_SYNC.
     const fallbackRecord: ScannedParchiRecord = {
-      id: `PARCHI-${Date.now().toString(36).toUpperCase()}`,
+      id: `PARCHI-LOCAL-DRAFT-${Date.now().toString(36).toUpperCase()}`,
       scannedAt: new Date().toISOString(),
       sourceType: recordData.sourceType || 'CAMERA_SCAN',
-      doctorName: recordData.doctorName || 'Dr. Alok Sharma, MD',
-      clinicHospital: recordData.clinicHospital || 'DocSearch General OPD Clinic',
+      doctorName: recordData.doctorName || 'Unassigned / Local Draft',
+      clinicHospital: recordData.clinicHospital || 'Pending Verification',
       consultationDate: recordData.consultationDate || new Date().toLocaleDateString('en-IN'),
-      diagnosis: recordData.diagnosis || 'Acute Upper Respiratory Infection',
+      diagnosis: recordData.diagnosis || 'Unspecified (Upload Pending Sync)',
       medicines: recordData.medicines || [],
-      confidenceScore: 0.95,
-      aiNotes: 'Prescription scanned successfully.'
+      confidenceScore: 0,
+      aiNotes: 'LOCAL_DRAFT: Offline capture. Cloud sync and AI OCR pending verification.'
     };
     this.saveScannedParchi(fallbackRecord);
     return fallbackRecord;
   }
 
+  // PHI-001: Ephemeral secure session storage helper to prevent sensitive PHI leakage
+  private getSecureItem(key: string): string | null {
+    if (typeof window === 'undefined') return null;
+    try {
+      return sessionStorage.getItem(key) || localStorage.getItem(key);
+    } catch {
+      return null;
+    }
+  }
+
+  private setSecureItem(key: string, value: string): void {
+    if (typeof window === 'undefined') return;
+    try {
+      sessionStorage.setItem(key, value);
+    } catch {}
+  }
+
+  private removeSecureItem(key: string): void {
+    if (typeof window === 'undefined') return;
+    try {
+      sessionStorage.removeItem(key);
+      localStorage.removeItem(key);
+    } catch {}
+  }
+
   getToken(): string | null {
     const t = (
       this.token ||
-      (typeof window !== 'undefined'
-        ? (localStorage.getItem('docsearch_patient_token') ||
-           localStorage.getItem('docsearch_auth_token') ||
-           localStorage.getItem('docsearch_sso_master_token') ||
-           localStorage.getItem('token'))
-        : null)
+      this.getSecureItem('docsearch_patient_token') ||
+      this.getSecureItem('docsearch_auth_token') ||
+      this.getSecureItem('docsearch_sso_master_token')
     )?.trim();
     if (!t || t === 'null' || t === 'undefined' || t === '[object Object]') return null;
     return t;
@@ -434,8 +457,8 @@ class PatientApiService {
   }
 
   getCurrentPatient(): PatientProfile | null {
-    if (!this.currentPatient && typeof window !== 'undefined') {
-      const stored = localStorage.getItem('docsearch_patient_profile');
+    if (!this.currentPatient) {
+      const stored = this.getSecureItem('docsearch_patient_profile');
       if (stored) {
         try {
           this.currentPatient = JSON.parse(stored);
@@ -447,12 +470,43 @@ class PatientApiService {
 
   setPatient(p: PatientProfile | null) {
     this.currentPatient = p;
-    if (typeof window !== 'undefined') {
-      if (p) localStorage.setItem('docsearch_patient_profile', JSON.stringify(p));
-      else {
-        localStorage.removeItem('docsearch_patient_profile');
-        localStorage.removeItem('docsearch_patient_token');
+    if (p) {
+      this.setSecureItem('docsearch_patient_profile', JSON.stringify(p));
+    } else {
+      this.removeSecureItem('docsearch_patient_profile');
+      this.removeSecureItem('docsearch_patient_token');
+    }
+  }
+
+  /**
+   * Books a real atomic persisted appointment / OPD queue token via backend API (FEATURE-001)
+   */
+  async bookAppointment(
+    paramsOrPhone: string | { mobileNumber: string; departmentName?: string; chiefComplaint?: string; doctorName?: string },
+    deptName?: string,
+    complaint?: string
+  ): Promise<{ success: boolean; tokenNumber?: string; estimatedWaitMinutes?: number; encounterId?: string; message?: string }> {
+    const params = typeof paramsOrPhone === 'string'
+      ? { mobileNumber: paramsOrPhone, departmentName: deptName, chiefComplaint: complaint, doctorName: undefined }
+      : paramsOrPhone;
+    try {
+      const res = await fetch('/api/v1/patient/appointments/book', {
+        method: 'POST',
+        headers: this.getAuthHeaders({ 'Content-Type': 'application/json' }),
+        body: JSON.stringify({
+          mobileNumber: params.mobileNumber,
+          departmentName: params.departmentName || 'General Medicine',
+          chiefComplaint: params.chiefComplaint || `OPD Consultation with ${params.doctorName || 'Doctor'}`
+        })
+      });
+      if (res.ok) {
+        return await res.json();
       }
+      const err = await res.json().catch(() => ({}));
+      return { success: false, message: err?.message || `Booking failed with status ${res.status}` };
+    } catch (err: any) {
+      console.warn('Booking API call failed:', err);
+      return { success: false, message: err?.message || 'Hospital scheduling server is offline.' };
     }
   }
 
@@ -541,22 +595,6 @@ class PatientApiService {
     }
   }
 
-  async bookAppointment(
-    phone: string,
-    departmentName: string = 'General Medicine',
-    chiefComplaint: string = 'OPD Consultation'
-  ): Promise<boolean> {
-    try {
-      const res = await fetch('/api/v1/patient/appointments/book', {
-        method: 'POST',
-        headers: this.getAuthHeaders({ 'Content-Type': 'application/json' }),
-        body: JSON.stringify({ mobileNumber: phone, departmentName, chiefComplaint })
-      });
-      return res.ok;
-    } catch {
-      return false;
-    }
-  }
 
   async getMedicationSchedule(phone?: string): Promise<MedicationScheduleResponse> {
     const targetPhone = phone || this.currentPatient?.phone;

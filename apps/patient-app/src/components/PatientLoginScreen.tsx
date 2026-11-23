@@ -170,26 +170,28 @@ export const PatientLoginScreen: React.FC<Props> = ({ language, onLanguageToggle
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
-              <button
-                type="button"
-                onClick={handleQuickDemo}
-                style={{
-                  backgroundColor: '#10B981',
-                  color: '#FFFFFF',
-                  border: 'none',
-                  borderRadius: '10px',
-                  padding: '10px 8px',
-                  fontSize: '0.8125rem',
-                  fontWeight: 800,
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '4px'
-                }}
-              >
-                <span>⚡ तुरंत टोकन लें</span>
-              </button>
+              {!import.meta.env.PROD && (
+                <button
+                  type="button"
+                  onClick={handleQuickDemo}
+                  style={{
+                    backgroundColor: '#10B981',
+                    color: '#FFFFFF',
+                    border: 'none',
+                    borderRadius: '10px',
+                    padding: '10px 8px',
+                    fontSize: '0.8125rem',
+                    fontWeight: 800,
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '4px'
+                  }}
+                >
+                  <span>⚡ तुरंत टोकन लें</span>
+                </button>
+              )}
 
               <button
                 type="button"
@@ -335,9 +337,11 @@ export const PatientLoginScreen: React.FC<Props> = ({ language, onLanguageToggle
                   boxSizing: 'border-box'
                 }}
               />
-              <div style={{ fontSize: '0.75rem', color: '#38BDF8', textAlign: 'center', marginTop: '6px' }}>
-                ⚡ Test OTP: <strong>1234</strong>
-              </div>
+              {!import.meta.env.PROD && (
+                <div style={{ fontSize: '0.75rem', color: '#38BDF8', textAlign: 'center', marginTop: '6px' }}>
+                  ⚡ Test OTP: <strong>1234</strong>
+                </div>
+              )}
             </div>
 
             <button
@@ -526,29 +530,31 @@ export const PatientLoginScreen: React.FC<Props> = ({ language, onLanguageToggle
           </div>
         )}
 
-        {/* 1-Click Demo Login */}
-        <div style={{ marginTop: '36px', textAlign: 'center', borderTop: '1px solid rgba(255, 255, 255, 0.08)', paddingTop: '24px' }}>
-          <button
-            type="button"
-            onClick={handleQuickDemo}
-            style={{
-              width: '100%',
-              backgroundColor: 'rgba(56, 189, 248, 0.1)',
-              border: '1px dashed rgba(56, 189, 248, 0.35)',
-              color: '#38BDF8',
-              borderRadius: '14px',
-              padding: '14px',
-              fontSize: '0.9375rem',
-              fontWeight: 700,
-              cursor: 'pointer'
-            }}
-          >
-            ⚡ {t.quickDemoLogin}
-          </button>
-          <span style={{ display: 'block', fontSize: '0.75rem', color: '#64748B', marginTop: '6px' }}>
-            Instant Multi-Patient test: Vikramaditya, Shanti Devi & Aarav
-          </span>
-        </div>
+        {/* 1-Click Demo Login (Development Only) */}
+        {!import.meta.env.PROD && (
+          <div style={{ marginTop: '36px', textAlign: 'center', borderTop: '1px solid rgba(255, 255, 255, 0.08)', paddingTop: '24px' }}>
+            <button
+              type="button"
+              onClick={handleQuickDemo}
+              style={{
+                width: '100%',
+                backgroundColor: 'rgba(56, 189, 248, 0.1)',
+                border: '1px dashed rgba(56, 189, 248, 0.35)',
+                color: '#38BDF8',
+                borderRadius: '14px',
+                padding: '14px',
+                fontSize: '0.9375rem',
+                fontWeight: 700,
+                cursor: 'pointer'
+              }}
+            >
+              ⚡ {t.quickDemoLogin}
+            </button>
+            <span style={{ display: 'block', fontSize: '0.75rem', color: '#64748B', marginTop: '6px' }}>
+              Instant Multi-Patient test: Vikramaditya, Shanti Devi & Aarav
+            </span>
+          </div>
+        )}
       </div>
     </div>
   );

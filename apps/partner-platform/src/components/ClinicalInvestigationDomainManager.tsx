@@ -264,7 +264,7 @@ export const ClinicalInvestigationDomainManager: React.FC<ClinicalInvestigationD
 
   const isDevOrQaEnvironment = Boolean(
     (typeof import.meta !== 'undefined' && (import.meta.env?.DEV || import.meta.env?.MODE === 'development' || import.meta.env?.MODE === 'test')) ||
-    (typeof process !== 'undefined' && process.env?.NODE_ENV !== 'production')
+    (typeof process !== 'undefined' && process.env?.['NODE_ENV'] !== 'production')
   );
 
   const handleSimulatePanicAlert = (type: 'platelets' | 'potassium' = 'platelets') => {

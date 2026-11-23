@@ -1,6 +1,6 @@
 import type { FastifyPluginAsync } from 'fastify';
 import { getDatabase, sql } from '@docsearch/database';
-import { authenticate, requireRoles } from '../../plugins/auth-guard.js';
+import { authenticate, requireRoles, requireTenantId } from '../../plugins/auth-guard.js';
 
 interface BarcodeScanRequest {
   rawBarcodeString: string;
@@ -41,7 +41,7 @@ export const pharmacyPosSentinelRoutes: FastifyPluginAsync = async (fastify) => 
 
   // 1. GS1 2D DataMatrix & EAN-13 Barcode Parser (<50ms)
   fastify.post('/api/v1/partner/pharmacy-pos/barcode/scan', async (request, reply) => {
-    const tenantId = (request as any).session?.tenantId || '11111111-1111-4111-8111-111111111111';
+    const tenantId = requireTenantId(request);
     const body = request.body as BarcodeScanRequest;
     const rawBarcode = body.rawBarcodeString || '08901234567891';
 
@@ -108,7 +108,7 @@ export const pharmacyPosSentinelRoutes: FastifyPluginAsync = async (fastify) => 
 
   // 2. Strict FEFO (First-Expiry-First-Out) Transaction Lock
   fastify.post('/api/v1/partner/pharmacy-pos/fefo/validate-batch', async (request, reply) => {
-    const tenantId = (request as any).session?.tenantId || '11111111-1111-4111-8111-111111111111';
+    const tenantId = requireTenantId(request);
     const body = request.body as FefoValidateRequest;
 
     const itemCode = body.itemCode || 'MED-AUG-625';
@@ -160,7 +160,7 @@ export const pharmacyPosSentinelRoutes: FastifyPluginAsync = async (fastify) => 
 
   // 3. Statutory Schedule H1 / Schedule X Narcotics Dual-Signature Register (🛡️ Pharmacist / Admin Role Enforced)
   fastify.post('/api/v1/partner/pharmacy-pos/schedule-h1/dispense', { preHandler: [requireRoles('PHARMACIST', 'DOCTOR', 'SUPER_ADMIN', 'HOSPITAL_ADMIN', 'CLINIC_ADMIN')] }, async (request, reply) => {
-    const tenantId = (request as any).session?.tenantId || '11111111-1111-4111-8111-111111111111';
+    const tenantId = requireTenantId(request);
     const body = request.body as ScheduleH1DispenseRequest;
 
     const entryId = `H1-REG-${Date.now().toString(36).toUpperCase()}`;
@@ -211,7 +211,7 @@ export const pharmacyPosSentinelRoutes: FastifyPluginAsync = async (fastify) => 
 
   // 3b. CDSCO Drug Inspector Statutory Schedule H1 / Narcotics Register Query
   fastify.get('/api/v1/partner/pharmacy-pos/schedule-h1/register', async (request, reply) => {
-    const tenantId = (request as any).session?.tenantId || '11111111-1111-4111-8111-111111111111';
+    const tenantId = requireTenantId(request);
     const db = getDatabase();
     try {
       const res = await db.execute(sql`
@@ -240,7 +240,7 @@ export const pharmacyPosSentinelRoutes: FastifyPluginAsync = async (fastify) => 
 
   // 4. Pharmacy Counter POS Checkout & Thermal Receipt Payload (Atomic Transaction Boundary)
   fastify.post('/api/v1/partner/pharmacy-pos/bill/checkout', async (request, reply) => {
-    const tenantId = (request as any).session?.tenantId || '11111111-1111-4111-8111-111111111111';
+    const tenantId = requireTenantId(request);
     const body = request.body as BillCheckoutRequest;
 
     const invoiceNumber = `PHARM-INV-${Date.now().toString(36).toUpperCase()}`;

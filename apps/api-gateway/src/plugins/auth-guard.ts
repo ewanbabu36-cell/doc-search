@@ -701,3 +701,15 @@ export function requireBranchScope(
     });
   };
 }
+
+/**
+ * Strict fail-closed tenant extractor for route handlers (SEC-004).
+ * Guarantees that request execution fails closed if authenticated tenant context is absent.
+ */
+export function requireTenantId(request: FastifyRequest): string {
+  const session = (request as any).session as SessionContext | undefined;
+  if (!session?.tenantId) {
+    throw AppError.unauthorized('Authenticated tenant context is required. No tenantId found in session.');
+  }
+  return session.tenantId;
+}

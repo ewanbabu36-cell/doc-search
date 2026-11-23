@@ -1,6 +1,6 @@
 import type { FastifyPluginAsync } from 'fastify';
 import { getDatabase, sql } from '@docsearch/database';
-import { authenticate, requireRoles } from '../../plugins/auth-guard.js';
+import { authenticate, requireRoles, requireTenantId } from '../../plugins/auth-guard.js';
 
 interface TriggerBellRequest {
   bedNumber?: string;
@@ -37,7 +37,7 @@ export const bedsideConciergeRoutes: FastifyPluginAsync = async (fastify) => {
 
   // 1. Trigger Nurse Call Bell
   fastify.post('/api/v1/partner/bedside/call-bell/trigger', async (request, reply) => {
-    const tenantId = (request as any).session?.tenantId || '11111111-1111-4111-8111-111111111111';
+    const tenantId = requireTenantId(request);
     const body = (request.body || {}) as TriggerBellRequest;
 
     const eventId = `BELL-${Date.now().toString(36).toUpperCase()}`;
@@ -85,7 +85,7 @@ export const bedsideConciergeRoutes: FastifyPluginAsync = async (fastify) => {
     { preHandler: [authenticate, requireRoles('NURSE', 'DOCTOR', 'HOSPITAL_ADMIN', 'SUPER_ADMIN')] },
     async (request, reply) => {
       const session = (request as any).session;
-      const tenantId = session?.tenantId || '11111111-1111-4111-8111-111111111111';
+      const tenantId = requireTenantId(request);
       const body = request.body as AcknowledgeBellRequest;
 
       const eventId = body.eventId;
@@ -122,7 +122,7 @@ export const bedsideConciergeRoutes: FastifyPluginAsync = async (fastify) => {
 
   // 3. Auto-Escalate Expired Call Bells
   fastify.post('/api/v1/partner/bedside/call-bell/escalate-expired', async (request, reply) => {
-    const tenantId = (request as any).session?.tenantId || '11111111-1111-4111-8111-111111111111';
+    const tenantId = requireTenantId(request);
     const db = getDatabase();
 
     const escalatedEvents = [
@@ -167,7 +167,7 @@ export const bedsideConciergeRoutes: FastifyPluginAsync = async (fastify) => {
     '/api/v1/partner/bedside/iv-telemetry/ingest',
     { preHandler: [authenticate, requireRoles('NURSE', 'DOCTOR', 'HOSPITAL_ADMIN', 'SUPER_ADMIN', 'CHIEF_MEDICAL_OFFICER')] },
     async (request, reply) => {
-    const tenantId = (request as any).session?.tenantId || '11111111-1111-4111-8111-111111111111';
+    const tenantId = requireTenantId(request);
     const body = request.body as IvTelemetryRequest;
 
     const bedNumber = body.bedNumber || 'BED-304';
@@ -210,7 +210,7 @@ export const bedsideConciergeRoutes: FastifyPluginAsync = async (fastify) => {
 
   // 5. Inpatient Bedside Dietary Ordering
   fastify.post('/api/v1/partner/bedside/dietary/order', async (request, reply) => {
-    const tenantId = (request as any).session?.tenantId || '11111111-1111-4111-8111-111111111111';
+    const tenantId = requireTenantId(request);
     const body = request.body as DietaryOrderRequest;
 
     const orderId = `DIET-${Date.now().toString(36).toUpperCase()}`;

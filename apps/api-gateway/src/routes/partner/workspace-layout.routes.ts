@@ -49,7 +49,10 @@ export const workspaceLayoutRoutes: FastifyPluginAsync = async (fastify) => {
         throw AppError.unauthorized('Authenticated session with valid tenantId required');
       }
       const tenantId = session.tenantId;
-      const userId = session.userId || session.actorId || '00000000-0000-0000-0000-000000000002';
+      const userId = session.userId || session.actorId;
+      if (!userId) {
+        throw AppError.unauthorized('Authenticated userId required');
+      }
 
       const db = getDatabase();
       const existing = await db
@@ -110,7 +113,10 @@ export const workspaceLayoutRoutes: FastifyPluginAsync = async (fastify) => {
         throw AppError.unauthorized('Authenticated session with valid tenantId required');
       }
       const tenantId = session.tenantId;
-      const userId = session.userId || session.actorId || '00000000-0000-0000-0000-000000000002';
+      const userId = session.userId || session.actorId;
+      if (!userId) {
+        throw AppError.unauthorized('Authenticated userId required');
+      }
 
       const body = WorkspaceLayoutUpdateSchema.parse(request.body || {});
 

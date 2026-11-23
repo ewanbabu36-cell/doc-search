@@ -1,6 +1,6 @@
 import { type FastifyPluginAsync } from 'fastify';
 import { getDatabase, doctorSchedules, eq, and, desc, sql } from '@docsearch/database';
-import { authenticate, requirePermission, requireRoles } from '../../plugins/auth-guard.js';
+import { authenticate, requirePermission, requireRoles, requireTenantId } from '../../plugins/auth-guard.js';
 import { requireModuleCommercialAccess } from '../../plugins/commercial-guard.js';
 import { distributedCache } from '../../services/cache/DistributedCacheService.js';
 import { horizontalSocketGateway } from '../../services/realtime/HorizontalSocketGateway.js';
@@ -80,9 +80,9 @@ export const rosterRoutes: FastifyPluginAsync = async (fastify) => {
       const schedule: DoctorScheduleDto = {
         id: crypto.randomUUID(),
         tenantId: request.session.tenantId,
-        partnerId: req.partnerId || '22222222-2222-4222-8222-222222222201',
-        organizationId: req.organizationId || request.session.organizationId || '44444444-4444-4444-8444-444444444401',
-        branchId: req.branchId || request.session.branchId || '88888888-1111-4888-8888-111111111101',
+        partnerId: requireTenantId(request),
+        organizationId: req.organizationId || request.session?.organizationId || request.session?.tenantId,
+        branchId: request.session?.branchId || '',
         doctorId: req.doctorId,
         doctorName: 'Dr. Assigned',
         dayOfWeek: req.dayOfWeek,
@@ -197,8 +197,8 @@ export const rosterRoutes: FastifyPluginAsync = async (fastify) => {
       const leave: DoctorLeaveDto = {
         id: crypto.randomUUID(),
         tenantId: request.session.tenantId,
-        partnerId: req.partnerId || '22222222-2222-4222-8222-222222222201',
-        organizationId: req.organizationId || request.session.organizationId || '44444444-4444-4444-8444-444444444401',
+        partnerId: requireTenantId(request),
+        organizationId: req.organizationId || request.session?.organizationId || request.session?.tenantId,
         branchId: req.branchId || request.session.branchId,
         doctorId: req.doctorId,
         doctorName: 'Dr. Physician',
@@ -291,9 +291,9 @@ export const rosterRoutes: FastifyPluginAsync = async (fastify) => {
         slot = {
           id,
           tenantId: request.session.tenantId,
-          partnerId: req.partnerId || '22222222-2222-4222-8222-222222222201',
-          organizationId: req.organizationId || request.session.organizationId || '44444444-4444-4444-8444-444444444401',
-          branchId: request.session.branchId || '88888888-1111-4888-8888-111111111101',
+          partnerId: requireTenantId(request),
+          organizationId: req.organizationId || request.session?.organizationId || request.session?.tenantId,
+          branchId: request.session?.branchId || '',
           scheduleId: crypto.randomUUID(),
           doctorId: 'default-doc',
           doctorName: 'Dr. Physician',
@@ -382,8 +382,8 @@ export const rosterRoutes: FastifyPluginAsync = async (fastify) => {
       const fee: ConsultationFeeMatrixDto = {
         id: crypto.randomUUID(),
         tenantId: request.session.tenantId,
-        partnerId: req.partnerId || '22222222-2222-4222-8222-222222222201',
-        organizationId: req.organizationId || request.session.organizationId || '44444444-4444-4444-8444-444444444401',
+        partnerId: requireTenantId(request),
+        organizationId: req.organizationId || request.session?.organizationId || request.session?.tenantId,
         branchId: req.branchId || request.session.branchId,
         specialtyCode: req.specialtyCode,
         doctorId: req.doctorId,
@@ -493,7 +493,7 @@ export const rosterRoutes: FastifyPluginAsync = async (fastify) => {
       ]
     },
     async (request, reply) => {
-      const tenantId = request.session?.tenantId || '11111111-1111-4111-8111-111111111111';
+      const tenantId = requireTenantId(request);
       void tenantId;
       const body = (request.body || {}) as {
         doctorId?: string;
@@ -549,7 +549,7 @@ export const rosterRoutes: FastifyPluginAsync = async (fastify) => {
       ]
     },
     async (request, reply) => {
-      const tenantId = request.session?.tenantId || '11111111-1111-4111-8111-111111111111';
+      const tenantId = requireTenantId(request);
       void tenantId;
       const body = (request.body || {}) as {
         doctorId?: string;

@@ -20,6 +20,7 @@ import {
   resolveIndustryPreset,
   type IndustryVertical,
   AppError,
+  ErrorCode,
   createLogger
 } from '@docsearch/shared-core';
 import { activationMailerService } from '../../services/mail/ActivationMailerService.js';
@@ -114,15 +115,11 @@ export async function publicBookingRoutes(app: FastifyInstance): Promise<void> {
 
     let tenantId: string = matchedTenant?.id;
     if (!tenantId) {
-      try {
-        const anyTenant = await db.select({ id: tenants.id }).from(tenants).limit(1);
-        if (anyTenant[0]?.id) {
-          tenantId = anyTenant[0].id;
-        } else {
-          tenantId = '11111111-1111-4111-8111-111111111111';
-        }
-      } catch {
-        tenantId = '11111111-1111-4111-8111-111111111111';
+      const anyTenant = await db.select({ id: tenants.id }).from(tenants).limit(1);
+      if (anyTenant[0]?.id) {
+        tenantId = anyTenant[0].id;
+      } else {
+        throw new AppError({ message: `Public portal slug "${portalSlug}" not found or inactive.`, statusCode: 404, code: ErrorCode.NOT_FOUND });
       }
     }
 

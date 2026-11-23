@@ -28,6 +28,8 @@ export const DynamicUpiInvoiceView: React.FC = () => {
   const [paymentStatus, setPaymentStatus] = useState<'PENDING' | 'PAID'>('PENDING');
   const [utrNumber, setUtrNumber] = useState('');
   const [whatsAppSent, setWhatsAppSent] = useState(false);
+  const [paymentError, setPaymentError] = useState<string | null>(null);
+  const [isProcessingPayment, setIsProcessingPayment] = useState(false);
 
   const toggleItem = (id: string) => {
     setBillItems((prev) =>
@@ -72,16 +74,21 @@ export const DynamicUpiInvoiceView: React.FC = () => {
 
   const handleConfirmPayment = async (customUtr?: string) => {
     const generatedUtr = customUtr || `UTR-${Date.now().toString().slice(-8)}`;
-    setPaymentStatus('PAID');
-    setUtrNumber(generatedUtr);
+    setPaymentError(null);
+    setIsProcessingPayment(true);
 
     try {
       const pProfile = partnerProfile as any;
+      const tenantId = pProfile?.tenantId;
+      if (!tenantId) {
+        throw new Error('Active partner tenant context is required to record invoice settlement.');
+      }
+
       await billingManagementService.createInvoice({
-        tenantId: pProfile.tenantId || '11111111-1111-4111-8111-111111111111',
-        partnerId: pProfile.partnerId || '22222222-2222-4222-8222-222222222222',
-        organizationId: pProfile.organizationId || '33333333-3333-4333-8333-333333333333',
-        branchId: pProfile.branchId || '44444444-4444-4444-8444-444444444444',
+        tenantId,
+        partnerId: pProfile.partnerId || tenantId,
+        organizationId: pProfile.organizationId || tenantId,
+        branchId: pProfile.branchId || tenantId,
         patientId: patientUhid || 'pat-walkin-upi',
         patientName: patientName || 'Cash / Walk-in Customer',
         patientMrn: patientUhid || `MRN-${Date.now().toString().slice(-6)}`,
@@ -100,15 +107,26 @@ export const DynamicUpiInvoiceView: React.FC = () => {
         paymentReference: generatedUtr,
         actorId: pProfile.staffId || 'Cashier Desk',
         actorRole: 'Billing Cashier',
-        justification: `Instant dynamic UPI payment confirmed at counter with UTR ${generatedUtr}`
+        justification: `Instant dynamic UPI payment confirmed at counter with verified UTR ${generatedUtr}`
       } as any);
-    } catch (err) {
-      console.warn('Backend billing persistence note:', err);
+
+      // FIN-002: Only transition to PAID after backend persistence succeeds
+      setPaymentStatus('PAID');
+      setUtrNumber(generatedUtr);
+    } catch (err: any) {
+      console.error('Backend billing persistence error:', err);
+      setPaymentError(err?.message || 'Invoice persistence failed on server. Payment not marked as settled.');
+    } finally {
+      setIsProcessingPayment(false);
     }
   };
 
   const handleSimulatePayment = () => {
-    const simUtr = `UTR-RAZORPAY-${Math.floor(10000000 + Math.random() * 90000000)}`;
+    if (import.meta.env.PROD) {
+      alert('Sandbox payment simulation is disabled in production environment.');
+      return;
+    }
+    const simUtr = `UTR-SANDBOX-${Math.floor(10000000 + Math.random() * 90000000)}`;
     handleConfirmPayment(simUtr);
   };
 
@@ -554,34 +572,43 @@ export const DynamicUpiInvoiceView: React.FC = () => {
 
           {/* Test Trigger / Cash Settle Buttons */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', width: '100%' }}>
+            {paymentError && (
+              <div style={{ padding: '8px 12px', borderRadius: '8px', backgroundColor: 'rgba(239, 68, 68, 0.15)', border: '1px solid #EF4444', color: '#FCA5A5', fontSize: '0.75rem', fontWeight: 600 }}>
+                ⚠️ {paymentError}
+              </div>
+            )}
             {paymentStatus === 'PENDING' ? (
               <>
+                {!import.meta.env.PROD && (
+                  <Button
+                    type="button"
+                    variant="primary"
+                    size="md"
+                    disabled={isProcessingPayment}
+                    onClick={handleSimulatePayment}
+                    style={{
+                      width: '100%',
+                      fontWeight: 800,
+                      backgroundColor: '#0284C7',
+                      borderColor: '#0284C7',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '6px'
+                    }}
+                    title="Simulate instant customer UPI scan & payment (Sandbox Test Only)"
+                  >
+                    ⚡ Simulate Instant Payment (Sandbox Test)
+                  </Button>
+                )}
                 <Button
-                  type="button"
                   variant="primary"
                   size="md"
-                  onClick={handleSimulatePayment}
-                  style={{
-                    width: '100%',
-                    fontWeight: 800,
-                    backgroundColor: '#0284C7',
-                    borderColor: '#0284C7',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '6px'
-                  }}
-                  title="Simulate instant customer UPI scan & payment (Razorpay / Cashfree Sandbox)"
-                >
-                  ⚡ Simulate Instant Payment (Sandbox Test)
-                </Button>
-                <Button
-                  variant="primary"
-                  size="md"
+                  disabled={isProcessingPayment}
                   onClick={() => handleConfirmPayment()}
                   style={{ width: '100%', fontWeight: 800, backgroundColor: '#10B981', borderColor: '#10B981' }}
                 >
-                  ✓ Confirm Settlement / Mark Paid (₹{totalAmount})
+                  {isProcessingPayment ? '⏳ Verifying & Recording...' : `✓ Confirm Settlement / Mark Paid (₹${totalAmount})`}
                 </Button>
               </>
             ) : (

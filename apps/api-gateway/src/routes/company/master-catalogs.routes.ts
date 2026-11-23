@@ -1,6 +1,6 @@
 import { type FastifyPluginAsync } from 'fastify';
 import { z } from 'zod';
-import { authenticate, requireRoles } from '../../plugins/auth-guard.js';
+import { authenticate, requireRoles, requireTenantId } from '../../plugins/auth-guard.js';
 import { horizontalSocketGateway } from '../../services/realtime/HorizontalSocketGateway.js';
 import {
   getDatabase,
@@ -69,7 +69,7 @@ export const masterCatalogsRoutes: FastifyPluginAsync = async (fastify) => {
     const db = getDatabase();
     if (!db) return reply.status(500).send({ success: false, error: 'Database unavailable' });
 
-    const tenantId = request.session?.tenantId || '00000000-0000-0000-0000-000000000000';
+    const tenantId = requireTenantId(request);
     const [created] = await db
       .insert(prescriptionTemplates)
       .values({
@@ -224,11 +224,11 @@ export const masterCatalogsRoutes: FastifyPluginAsync = async (fastify) => {
     const db = getDatabase();
     if (!db) return reply.status(500).send({ success: false, error: 'Database unavailable' });
 
-    const tenantId = request.session?.tenantId || '1e72b864-920a-c07d-98c5-183d3eb50428';
-    const branchId = (request.session as any)?.branchId || '2f91a36c-734d-4c67-91b0-231e4090c33d';
+    const tenantId = requireTenantId(request);
+    const branchId = (request.session as any)?.branchId; if (!branchId) throw new Error('branchId is required');
     const partnerId = (request.session as any)?.partnerId || tenantId;
     const organizationId = tenantId;
-    const unitId = body.unitId || '27593a2b-9298-429a-b498-7d21327de198';
+    const unitId = body.unitId; if (!unitId) throw new Error('unitId is required');
 
     const [created] = await db
       .insert(inpatientWards)
@@ -324,7 +324,7 @@ export const masterCatalogsRoutes: FastifyPluginAsync = async (fastify) => {
     const db = getDatabase();
     if (!db) return reply.status(500).send({ success: false, error: 'Database unavailable' });
 
-    const tenantId = request.session?.tenantId || '00000000-0000-0000-0000-000000000000';
+    const tenantId = requireTenantId(request);
 
     const [created] = await db
       .insert(diagnosticHealthPackages)
@@ -423,8 +423,8 @@ export const masterCatalogsRoutes: FastifyPluginAsync = async (fastify) => {
     const db = getDatabase();
     if (!db) return reply.status(500).send({ success: false, error: 'Database unavailable' });
 
-    const tenantId = request.session?.tenantId || '1e72b864-920a-c07d-98c5-183d3eb50428';
-    const partnerId = (request.session as any)?.partnerId || '6d29e8f7-ca9e-48a0-a1d0-4a8108e10c76';
+    const tenantId = requireTenantId(request);
+    const partnerId = (request.session as any)?.partnerId; if (!partnerId) throw new Error('partnerId is required');
     const organizationId = tenantId;
 
     const [created] = await db
@@ -535,8 +535,8 @@ export const masterCatalogsRoutes: FastifyPluginAsync = async (fastify) => {
     const db = getDatabase();
     if (!db) return reply.status(500).send({ success: false, error: 'Database unavailable' });
 
-    const tenantId = request.session?.tenantId || '1e72b864-920a-c07d-98c5-183d3eb50428';
-    const partnerId = (request.session as any)?.partnerId || '6d29e8f7-ca9e-48a0-a1d0-4a8108e10c76';
+    const tenantId = requireTenantId(request);
+    const partnerId = (request.session as any)?.partnerId; if (!partnerId) throw new Error('partnerId is required');
     const organizationId = tenantId;
 
     const [created] = await db
@@ -619,8 +619,8 @@ export const masterCatalogsRoutes: FastifyPluginAsync = async (fastify) => {
     const db = getDatabase();
     if (!db) return reply.status(500).send({ success: false, error: 'Database unavailable' });
 
-    const tenantId = request.session?.tenantId || '1e72b864-920a-c07d-98c5-183d3eb50428';
-    const partnerId = (request.session as any)?.partnerId || '6d29e8f7-ca9e-48a0-a1d0-4a8108e10c76';
+    const tenantId = requireTenantId(request);
+    const partnerId = (request.session as any)?.partnerId; if (!partnerId) throw new Error('partnerId is required');
     const organizationId = tenantId;
 
     const [created] = await db
@@ -700,10 +700,10 @@ export const masterCatalogsRoutes: FastifyPluginAsync = async (fastify) => {
     const db = getDatabase();
     if (!db) return reply.status(500).send({ success: false, error: 'Database unavailable' });
 
-    const tenantId = request.session?.tenantId || '1e72b864-920a-c07d-98c5-183d3eb50428';
-    const partnerId = (request.session as any)?.partnerId || '6d29e8f7-ca9e-48a0-a1d0-4a8108e10c76';
+    const tenantId = requireTenantId(request);
+    const partnerId = (request.session as any)?.partnerId; if (!partnerId) throw new Error('partnerId is required');
     const organizationId = tenantId;
-    const branchId = (request.session as any)?.branchId || '2f91a36c-734d-4c67-91b0-231e4090c33d';
+    const branchId = (request.session as any)?.branchId; if (!branchId) throw new Error('branchId is required');
 
     const [created] = await db
       .insert(surgicalProcedures)
@@ -780,7 +780,7 @@ export const masterCatalogsRoutes: FastifyPluginAsync = async (fastify) => {
     const db = getDatabase();
     if (!db) return reply.status(500).send({ success: false, error: 'Database unavailable' });
 
-    const tenantId = request.session?.tenantId || '1e72b864-920a-c07d-98c5-183d3eb50428';
+    const tenantId = requireTenantId(request);
     const contractDate = body.contractValidUntil ? new Date(body.contractValidUntil) : new Date(Date.now() + 365 * 24 * 3600 * 1000);
 
     const [created] = await db

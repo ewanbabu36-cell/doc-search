@@ -1,6 +1,6 @@
 import type { FastifyPluginAsync } from 'fastify';
 import { getDatabase, sql } from '@docsearch/database';
-import { authenticate, requireRoles } from '../../plugins/auth-guard.js';
+import { authenticate, requireRoles, requireTenantId } from '../../plugins/auth-guard.js';
 
 interface BulkEnrollRequest {
   contractCode: string;
@@ -19,7 +19,7 @@ export const corporateB2bRoutes: FastifyPluginAsync = async (fastify) => {
 
   // 1. List Corporate Enterprise Accounts (🛡️ Multi-Tenant Scoped)
   fastify.get('/api/v1/partner/corporate-b2b/clients', async (request, reply) => {
-    const tenantId = (request as any).session?.tenantId || '11111111-1111-4111-8111-111111111111';
+    const tenantId = requireTenantId(request);
     const db = getDatabase();
     try {
       const res = await db.execute(sql`
@@ -39,7 +39,7 @@ export const corporateB2bRoutes: FastifyPluginAsync = async (fastify) => {
 
   // 2. Bulk Enroll Corporate Employees & Allocate Family Health Passes (🛡️ Admin Role Enforced)
   fastify.post('/api/v1/partner/corporate-b2b/employees/bulk-enroll', { preHandler: [requireRoles('HOSPITAL_ADMIN', 'SUPER_ADMIN', 'COMPANY_ADMIN', 'BRANCH_MANAGER')] }, async (request, reply) => {
-    const tenantId = (request as any).session?.tenantId || '11111111-1111-4111-8111-111111111111';
+    const tenantId = requireTenantId(request);
     const body = (request.body || {}) as BulkEnrollRequest;
     const emps = body.employees || [];
     const contractCode = body.contractCode || 'CORP-TCS-2026';

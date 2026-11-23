@@ -104,6 +104,8 @@ export const MeritDoctorMarketplaceScreen: React.FC<Props> = ({
   const [search, setSearch] = useState('');
   const [activeTab, setActiveTab] = useState<'ALL' | 'IN_CLINIC' | 'VIDEO'>('ALL');
   const [confirmedNotice, setConfirmedNotice] = useState<string | null>(null);
+  const [isBooking, setIsBooking] = useState(false);
+  const [bookingError, setBookingError] = useState<string | null>(null);
 
   const filtered = useMemo(() => {
     return DOCTORS.filter((d) => {
@@ -123,26 +125,41 @@ export const MeritDoctorMarketplaceScreen: React.FC<Props> = ({
     });
   }, [search, activeTab]);
 
-  const handleBookToken = (doc: Doctor) => {
-    const newTokenNumber = `#${Math.floor(16 + Math.random() * 15)}`;
-    const updated: PatientProfile = {
-      ...patient,
-      activeToken: {
-        tokenNumber: newTokenNumber,
-        doctorName: doc.name,
-        chamberRoom: `${doc.specialtyEn.split(' ')[0]} - Room 102`,
-        patientsAhead: doc.patientsAhead,
-        estimatedWaitMins: doc.waitMins,
-        isCalled: false
-      }
-    };
-    patientApiService.setPatient(updated);
-    setConfirmedNotice(
-      language === 'hi'
-        ? `✅ टोकन ${newTokenNumber} बुक हो गया! डॉक्टर ${doc.name} के पास केवल ${doc.patientsAhead} मरीज़ आगे हैं (~${doc.waitMins} मिनट इंतज़ार)।`
-        : `✅ Token ${newTokenNumber} Confirmed! Only ${doc.patientsAhead} patients ahead of you for ${doc.name} (~${doc.waitMins}m wait).`
-    );
-    onBookOpdSuccess(updated);
+  const handleBookToken = async (doc: Doctor) => {
+    setIsBooking(true);
+    setBookingError(null);
+    try {
+      const res = await patientApiService.bookAppointment({
+        mobileNumber: patient.phone,
+        departmentName: doc.specialtyEn,
+        chiefComplaint: `Consultation with ${doc.name}`,
+        doctorName: doc.name
+      });
+
+      const tokenNum = res?.tokenNumber || `#${Math.floor(16 + Math.random() * 15)}`;
+      const updated: PatientProfile = {
+        ...patient,
+        activeToken: {
+          tokenNumber: tokenNum,
+          doctorName: doc.name,
+          chamberRoom: `${doc.specialtyEn.split(' ')[0]} - Room 102`,
+          patientsAhead: doc.patientsAhead,
+          estimatedWaitMins: res?.estimatedWaitMinutes || doc.waitMins,
+          isCalled: false
+        }
+      };
+      patientApiService.setPatient(updated);
+      setConfirmedNotice(
+        language === 'hi'
+          ? `✅ टोकन ${tokenNum} बुक हो गया! डॉक्टर ${doc.name} के पास केवल ${doc.patientsAhead} मरीज़ आगे हैं (~${doc.waitMins} मिनट इंतज़ार)।`
+          : `✅ Token ${tokenNum} Confirmed! Only ${doc.patientsAhead} patients ahead of you for ${doc.name} (~${doc.waitMins}m wait).`
+      );
+      onBookOpdSuccess(updated);
+    } catch (err: any) {
+      setBookingError(err?.message || 'Hospital booking service unavailable');
+    } finally {
+      setIsBooking(false);
+    }
   };
 
   return (
@@ -251,6 +268,29 @@ export const MeritDoctorMarketplaceScreen: React.FC<Props> = ({
       </div>
 
       {/* Confirmation Toast */}
+      {isBooking && (
+        <div style={{ padding: '10px', marginBottom: '16px', backgroundColor: 'rgba(56, 189, 248, 0.15)', border: '1px solid #0284C7', borderRadius: '12px', color: '#38BDF8', fontSize: '0.8125rem', fontWeight: 700, textAlign: 'center' }}>
+          ⏳ Contacting hospital OPD scheduling server...
+        </div>
+      )}
+
+      {bookingError && (
+        <div
+          style={{
+            backgroundColor: 'rgba(239, 68, 68, 0.25)',
+            border: '1px solid #EF4444',
+            borderRadius: '12px',
+            padding: '12px',
+            marginBottom: '16px',
+            color: '#FCA5A5',
+            fontSize: '0.8125rem',
+            fontWeight: 700
+          }}
+        >
+          ⚠️ {bookingError}
+        </div>
+      )}
+
       {confirmedNotice && (
         <div
           style={{

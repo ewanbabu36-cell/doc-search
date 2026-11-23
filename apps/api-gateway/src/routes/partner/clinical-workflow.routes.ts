@@ -4,7 +4,7 @@ import { z } from 'zod';
 import { AppError, ErrorCode } from '@docsearch/shared-core';
 import { getDatabase, auditEvents, prescriptionTemplates, eq, desc } from '@docsearch/database';
 import { clinicalWorkflowService } from '../../services/partner/ClinicalWorkflowService.js';
-import { authenticate, requirePermission } from '../../plugins/auth-guard.js';
+import { authenticate, requirePermission, requireTenantId } from '../../plugins/auth-guard.js';
 import { requireModuleCommercialAccess } from '../../plugins/commercial-guard.js';
 import { enforceIdempotency } from '../../plugins/idempotency.js';
 import {
@@ -1684,7 +1684,7 @@ export const clinicalWorkflowRoutes: FastifyPluginAsync = async (fastify) => {
     async (request, reply) => {
       const db = getDatabase();
       const body = request.body as any;
-      const tenantId = request.session?.tenantId || '11111111-1111-4000-8000-000000000001';
+      const tenantId = requireTenantId(request);
       const doctorId = request.session?.userId;
 
       const templateCode = body.templateCode || `tmpl-${Date.now().toString(36)}`;

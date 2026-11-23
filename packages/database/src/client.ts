@@ -1,8 +1,8 @@
 import { drizzle, NodePgDatabase } from 'drizzle-orm/node-postgres';
-import { sql } from 'drizzle-orm';
 import pg from 'pg';
 import * as schema from './schema/index.js';
 import { createLogger, AppError, ErrorCode } from '@docsearch/shared-core';
+import { setLocalTenantContext } from './security/engine-rls.js';
 
 const { Pool } = pg;
 const logger = createLogger('database');
@@ -330,17 +330,12 @@ export async function withSecurityContext<T>(
     }
 
     return await db.transaction(async (tx) => {
-      // Set transaction-local session variables
-      const tenantId = context.tenantId || '';
-      const branchId = context.branchId || '';
-      const userId = context.userId || '';
-      const isSuperAdmin = context.isSuperAdmin ? 'true' : 'false';
-
-      await tx.execute(sql`SELECT
-        set_config('app.current_tenant_id', ${tenantId}, true),
-        set_config('app.current_branch_id', ${branchId}, true),
-        set_config('app.current_user_id', ${userId}, true),
-        set_config('app.is_super_admin', ${isSuperAdmin}, true)`);
+      // Set transaction-local session variables via HMAC-verified context (SEC-001)
+      await setLocalTenantContext(tx, context.tenantId || '', {
+        branchId: context.branchId,
+        userId: context.userId,
+        isSuperAdmin: context.isSuperAdmin,
+      });
 
       return await callback(tx);
     });

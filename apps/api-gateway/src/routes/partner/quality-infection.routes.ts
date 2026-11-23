@@ -1,6 +1,6 @@
 import type { FastifyPluginAsync } from 'fastify';
 import { QualityInfectionService } from '../../services/partner/QualityInfectionService.js';
-import { authenticate, requirePermission, requireRoles } from '../../plugins/auth-guard.js';
+import { authenticate, requirePermission, requireRoles, requireTenantId } from '../../plugins/auth-guard.js';
 import { requireModuleCommercialAccess } from '../../plugins/commercial-guard.js';
 
 const service = new QualityInfectionService();
@@ -263,12 +263,12 @@ export const qualityInfectionRoutes: FastifyPluginAsync = async (app) => {
     '/api/v1/partner/quality/hai-device-days',
     { preHandler: [authenticate, requirePermission('infection:hai', 'read')] },
     async (request, reply) => {
-      const { tenantId } = request.session;
+      const tenantId = requireTenantId(request);
       return reply.send({
         success: true,
         data: {
           id: 'hai-dev-month',
-          tenantId: tenantId || '11111111-1111-4111-8111-111111111111',
+          tenantId,
           departmentName: 'ICU / Critical Care Fleet',
           monthYear: new Date().toISOString().slice(0, 7),
           centralLineDays: 140,

@@ -526,6 +526,13 @@
       "when": 1788555000000,
       "tag": "0074_phase3_database_remediation",
       "breakpoints": true
+    },
+    {
+      "idx": 75,
+      "version": "7",
+      "when": 1788556000000,
+      "tag": "0075_secure_rls_and_audit_immutability",
+      "breakpoints": true
     }
   ]
 }

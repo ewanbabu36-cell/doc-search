@@ -739,7 +739,8 @@ export const commercialRoutes: FastifyPluginAsync = async (fastify) => {
       const db = getDatabase();
 
       const [prod] = await db.select().from(products).where(eq(products.code, 'DOCSEARCH_HEALTHCARE_OS')).limit(1);
-      const productId = prod?.id || '77777777-7777-4777-8777-777777777777';
+      if (!prod?.id) throw new Error('Base DOCSEARCH_HEALTHCARE_OS product not initialized');
+      const productId = prod.id;
 
       const planId = crypto.randomUUID();
       await db.insert(plans).values({

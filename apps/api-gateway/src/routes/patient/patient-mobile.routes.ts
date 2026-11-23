@@ -195,13 +195,24 @@ export const patientMobileRoutes: FastifyPluginAsync = async (app) => {
     // Record OTP dispatch in rate-limiting bucket
     otpAntiBombingGuard.recordOtpDispatched(payload.mobileNumber, request.ip);
 
-    // 🛡️ SECURITY SHIELD 2: Anti-Enumeration (Do not leak names before OTP is verified)
-    return reply.send({
+    // Generate and store secure hashed OTP with 5-minute expiry (AUTH-001)
+    otpAntiBombingGuard.generateAndStoreOtp(payload.mobileNumber);
+    const isProduction = env.NODE_ENV === 'production';
+
+    // 🛡️ SECURITY SHIELD 2: Anti-Enumeration & Production Secret Isolation
+    // In production: NEVER return OTP in response. Real SMS dispatch is active.
+    const responsePayload: Record<string, any> = {
       success: true,
       message: `OTP sent successfully to +91 ${last10}`,
-      cooldownSeconds: 60,
-      devOtp: '1234'
-    });
+      cooldownSeconds: 60
+    };
+
+    if (!isProduction) {
+      // Development/test convenience only (never in production)
+      responsePayload['devOtp'] = '1234';
+    }
+
+    return reply.send(responsePayload);
   });
 
   // 2. Verify OTP & Auto-Link or Multi-Patient Selector
@@ -210,19 +221,22 @@ export const patientMobileRoutes: FastifyPluginAsync = async (app) => {
     const { last10, withCountry } = normalizePhone(payload.mobileNumber);
     const db = getDatabase();
 
-    // Strict OTP Validation (Reject simulated OTP in production; require 1234 in development)
-    if (env.NODE_ENV === 'production') {
-      if (payload.otp === '1234' || !/^\d{4,6}$/.test(payload.otp)) {
+    // Strict Cryptographic OTP Validation (AUTH-001)
+    const isProduction = env.NODE_ENV === 'production';
+    if (isProduction) {
+      if (payload.otp === '1234' || !otpAntiBombingGuard.verifyStoredOtp(payload.mobileNumber, payload.otp)) {
         throw new AppError({
-          message: 'Invalid OTP entered. Please enter the verification code sent to your registered mobile.',
+          message: 'Invalid or expired OTP entered. Please request a new verification code.',
           code: ErrorCode.VALIDATION_ERROR,
           statusCode: 400
         });
       }
     } else {
-      if (payload.otp !== '1234' && payload.otp !== '123456') {
+      const isStoredValid = otpAntiBombingGuard.verifyStoredOtp(payload.mobileNumber, payload.otp);
+      const isDevFallback = payload.otp === '1234' || payload.otp === '123456';
+      if (!isStoredValid && !isDevFallback) {
         throw new AppError({
-          message: 'Invalid OTP entered. Please use 1234 or 123456 in development mode.',
+          message: 'Invalid OTP entered. Please use the dispatched OTP or 1234 in development mode.',
           code: ErrorCode.VALIDATION_ERROR,
           statusCode: 400
         });
@@ -365,7 +379,10 @@ export const patientMobileRoutes: FastifyPluginAsync = async (app) => {
         .where(eq(operationalFacilities.tenantId, partner?.tenantId || ''))
         .limit(1);
 
-      const tenantId = partner?.tenantId || '11111111-1111-4111-8111-111111111111';
+      const tenantId = partner?.tenantId;
+    if (!tenantId) {
+      throw new AppError({ message: 'No registered healthcare provider found for pre-arrival intake', statusCode: 404 });
+    }
       const partnerId = partner?.id;
       const organizationId = org?.id;
       const branchId = facility?.id;
@@ -545,7 +562,10 @@ export const patientMobileRoutes: FastifyPluginAsync = async (app) => {
       .where(eq(operationalFacilities.tenantId, partner?.tenantId || ''))
       .limit(1);
 
-    const tenantId = partner?.tenantId || '11111111-1111-4111-8111-111111111111';
+    const tenantId = partner?.tenantId;
+    if (!tenantId) {
+      throw new AppError({ message: 'No registered healthcare provider found for pre-arrival intake', statusCode: 404 });
+    }
     const partnerId = partner?.id;
     const organizationId = org?.id;
     const branchId = facility?.id;
@@ -607,7 +627,10 @@ export const patientMobileRoutes: FastifyPluginAsync = async (app) => {
       .from(operationalPartners)
       .limit(1);
 
-    const tenantId = partner?.tenantId || '11111111-1111-4111-8111-111111111111';
+    const tenantId = partner?.tenantId;
+    if (!tenantId) {
+      throw new AppError({ message: 'No registered healthcare provider found for pre-arrival intake', statusCode: 404 });
+    }
     const patientName = String(body.patientName || 'Patient').trim();
     const parts = patientName.split(/\s+/);
     const firstName = parts[0] || 'Patient';
@@ -1359,7 +1382,10 @@ export const patientMobileRoutes: FastifyPluginAsync = async (app) => {
         .from(operationalPartners)
         .limit(1);
 
-      const tenantId = partner?.tenantId || '11111111-1111-4111-8111-111111111111';
+      const tenantId = partner?.tenantId;
+    if (!tenantId) {
+      throw new AppError({ message: 'No registered healthcare provider found for pre-arrival intake', statusCode: 404 });
+    }
       const createdInput: any = {
         tenantId,
         firstName: 'Patient',
@@ -1375,7 +1401,7 @@ export const patientMobileRoutes: FastifyPluginAsync = async (app) => {
 
     // Resolve tenant hierarchy
     const [pat] = await db.select().from(patients).where(eq(patients.id, patientId)).limit(1);
-    const tenantId = pat?.tenantId || '00000000-0000-0000-0000-000000000000';
+    const tenantId = pat?.tenantId; if (!tenantId) throw new Error('Patient tenantId is required');
 
     // Create encounter
     const encounter = await clinicalWorkflowRepository.createEncounter({

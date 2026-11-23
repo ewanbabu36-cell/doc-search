@@ -1,7 +1,7 @@
 import { type FastifyPluginAsync } from 'fastify';
 import { getDatabase, sql } from '@docsearch/database';
 import { emergencyManagementService } from '../../services/partner/EmergencyManagementService.js';
-import { authenticate, requirePermission, requireRoles } from '../../plugins/auth-guard.js';
+import { authenticate, requirePermission, requireRoles, requireTenantId } from '../../plugins/auth-guard.js';
 import { requireModuleCommercialAccess } from '../../plugins/commercial-guard.js';
 import {
   type EmergencyRegistrationInput,
@@ -145,7 +145,7 @@ export const emergencyManagementRoutes: FastifyPluginAsync = async (fastify) => 
     '/api/v1/partner/emergency/ambulance/telemetry-stream',
     { preHandler: [authenticate, requireRoles(...EMERGENCY_STAFF_ROLES)] },
     async (request, reply) => {
-      const tenantId = (request as any).session?.tenantId || '11111111-1111-4111-8111-111111111111';
+      const tenantId = requireTenantId(request);
       const body = (request.body || {}) as {
         vehicleNumber?: string;
         patientName?: string;
@@ -208,7 +208,7 @@ export const emergencyManagementRoutes: FastifyPluginAsync = async (fastify) => 
     '/api/v1/partner/emergency/ambulance/stage-trauma-bay',
     { preHandler: [authenticate, requireRoles(...EMERGENCY_STAFF_ROLES)] },
     async (request, reply) => {
-      const tenantId = (request as any).session?.tenantId || '11111111-1111-4111-8111-111111111111';
+      const tenantId = requireTenantId(request);
       const body = (request.body || {}) as {
         vehicleNumber?: string;
         patientName?: string;
@@ -254,7 +254,7 @@ export const emergencyManagementRoutes: FastifyPluginAsync = async (fastify) => 
     '/api/v1/partner/emergency/ambulance/active-fleet',
     { preHandler: [authenticate, requireRoles(...EMERGENCY_STAFF_ROLES)] },
     async (request, reply) => {
-      const tenantId = (request as any).session?.tenantId || '11111111-1111-4111-8111-111111111111';
+      const tenantId = requireTenantId(request);
       const db = getDatabase();
       try {
         const res = await db.execute(sql`
@@ -277,7 +277,7 @@ export const emergencyManagementRoutes: FastifyPluginAsync = async (fastify) => 
 
   // Inbound Ambulances (Tenant Scoped & Guarded)
   const getInboundAmbulancesHandler = async (request: any) => {
-    const tenantId = request?.session?.tenantId || '11111111-1111-4111-8111-111111111111';
+    const tenantId = requireTenantId(request);
     const db = getDatabase();
     try {
       const res = await db.execute(sql`
@@ -312,7 +312,7 @@ export const emergencyManagementRoutes: FastifyPluginAsync = async (fastify) => 
 
   // MLC Cases (Protected Medico-Legal Records - Tenant Isolated)
   const getMlcCasesHandler = async (request: any) => {
-    const tenantId = request?.session?.tenantId || '11111111-1111-4111-8111-111111111111';
+    const tenantId = requireTenantId(request);
     const db = getDatabase();
     try {
       const res = await db.execute(sql`
@@ -347,7 +347,7 @@ export const emergencyManagementRoutes: FastifyPluginAsync = async (fastify) => 
 
   // Crash Cart Inventory (Tenant Isolated)
   const getCrashCartHandler = async (request: any) => {
-    const tenantId = request?.session?.tenantId || '11111111-1111-4111-8111-111111111111';
+    const tenantId = requireTenantId(request);
     const db = getDatabase();
     try {
       const res = await db.execute(sql`

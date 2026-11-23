@@ -32,7 +32,8 @@ const IGNORED_EXACT_DIRS = new Set([
   'coverage',
   '.tmp_sanitized_staging',
   'backups',
-  '.storage'
+  '.storage',
+  'scratch'
 ]);
 
 const IGNORED_PATH_PREFIXES = [

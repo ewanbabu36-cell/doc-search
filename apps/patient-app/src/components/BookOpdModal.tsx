@@ -26,10 +26,10 @@ export const BookOpdModal: React.FC<Props> = ({ language, patient, onClose, onSu
 
   const handleBook = async () => {
     setIsSubmitting(true);
-    await patientApiService.bookAppointment(patient.phone, selectedDept.name, complaint);
+    const res = await patientApiService.bookAppointment(patient.phone, selectedDept.name, complaint);
 
-    // Update active token locally & poll
-    const newToken = `#${Math.floor(15 + Math.random() * 20)}`;
+    // Update active token with real server token if available
+    const newToken = res?.tokenNumber || `#${Math.floor(15 + Math.random() * 20)}`;
     const updated: PatientProfile = {
       ...patient,
       activeToken: {
@@ -37,7 +37,7 @@ export const BookOpdModal: React.FC<Props> = ({ language, patient, onClose, onSu
         doctorName: selectedDoctor,
         chamberRoom: `${selectedDept.name.split(' ')[0]} - Room 104`,
         patientsAhead: 3,
-        estimatedWaitMins: 12,
+        estimatedWaitMins: res?.estimatedWaitMinutes || 12,
         isCalled: false
       }
     };

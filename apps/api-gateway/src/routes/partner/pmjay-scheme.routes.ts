@@ -1,6 +1,6 @@
 import type { FastifyPluginAsync } from 'fastify';
 import { getDatabase, sql } from '@docsearch/database';
-import { authenticate, requireRoles } from '../../plugins/auth-guard.js';
+import { authenticate, requireRoles, requireTenantId } from '../../plugins/auth-guard.js';
 
 interface VerifyBeneficiaryRequest {
   goldenCardId?: string;
@@ -83,7 +83,7 @@ export const pmjaySchemeRoutes: FastifyPluginAsync = async (fastify) => {
 
   // 3. Pre-Auth Initiation with Mandatory Documentation Gate (🛡️ Clinical & Billing Role Enforced)
   fastify.post('/api/v1/partner/pmjay/pre-auth/initiate', { preHandler: [requireRoles('DOCTOR', 'BILLING_CLERK', 'HOSPITAL_ADMIN', 'SUPER_ADMIN', 'COMPANY_ADMIN')] }, async (request, reply) => {
-    const tenantId = (request as any).session?.tenantId || '11111111-1111-4111-8111-111111111111';
+    const tenantId = requireTenantId(request);
     const body = request.body as InitiatePreauthRequest;
 
     const beneficiaryName = body.beneficiaryName || 'Chhote Lal';
@@ -143,7 +143,7 @@ export const pmjaySchemeRoutes: FastifyPluginAsync = async (fastify) => {
 
   // 4. Zero-Balance Billing Claim Adjudication (🛡️ Billing / Finance Role & Verified Preauth Enforced)
   fastify.post('/api/v1/partner/pmjay/claims/adjudicate-package', { preHandler: [requireRoles('BILLING_CLERK', 'FINANCE_MANAGER', 'HOSPITAL_ADMIN', 'SUPER_ADMIN', 'COMPANY_ADMIN')] }, async (request, reply) => {
-    const tenantId = (request as any).session?.tenantId || '11111111-1111-4111-8111-111111111111';
+    const tenantId = requireTenantId(request);
     const body = request.body as AdjudicatePackageClaimRequest;
 
     const caseRef = body.caseRef || 'PMJAY-CASE-DEMO';

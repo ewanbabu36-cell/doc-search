@@ -1,6 +1,6 @@
 import type { FastifyPluginAsync } from 'fastify';
 import { getDatabase, sql } from '@docsearch/database';
-import { authenticate, requireRoles } from '../../plugins/auth-guard.js';
+import { authenticate, requireRoles, requireTenantId } from '../../plugins/auth-guard.js';
 import { clinicalSweeperService } from '../../services/partner/ClinicalSweeperService.js';
 
 interface IotTelemetryRequest {
@@ -22,7 +22,7 @@ export const bloodBankSentinelRoutes: FastifyPluginAsync = async (fastify) => {
 
   // 1. Ingest Continuous Cold-Chain Temperature Telemetry
   fastify.post('/api/v1/partner/blood-bank/iot/telemetry-stream', { preHandler: [requireRoles('SUPER_ADMIN', 'COMPANY_ADMIN', 'HOSPITAL_ADMIN', 'CHIEF_MEDICAL_OFFICER', 'DOCTOR', 'NURSE', 'LAB_TECHNICIAN')] }, async (request, reply) => {
-    const tenantId = (request as any).session?.tenantId || '11111111-1111-4111-8111-111111111111';
+    const tenantId = requireTenantId(request);
     const body = request.body as IotTelemetryRequest;
 
     const storageUnitId = body.storageUnitId || 'PRBC-CHILLER-01';
@@ -76,7 +76,7 @@ export const bloodBankSentinelRoutes: FastifyPluginAsync = async (fastify) => {
 
   // 1b. Query Active Cold-Chain Temperature Breaches (Medical Superintendent & Blood Bank Admin)
   fastify.get('/api/v1/partner/blood-bank/iot/breaches', { preHandler: [requireRoles('SUPER_ADMIN', 'COMPANY_ADMIN', 'HOSPITAL_ADMIN', 'CHIEF_MEDICAL_OFFICER', 'DOCTOR', 'NURSE', 'LAB_TECHNICIAN')] }, async (request, reply) => {
-    const tenantId = (request as any).session?.tenantId || '11111111-1111-4111-8111-111111111111';
+    const tenantId = requireTenantId(request);
     const db = getDatabase();
     try {
       const res = await db.execute(sql`
@@ -103,7 +103,7 @@ export const bloodBankSentinelRoutes: FastifyPluginAsync = async (fastify) => {
 
   // 2. Surgical Cross-Match Reservation (48-Hour Hold - 🛡️ Clinical Role Guarded)
   fastify.post('/api/v1/partner/blood-bank/crossmatch/reserve', { preHandler: [requireRoles('DOCTOR', 'LAB_TECHNICIAN', 'CHIEF_MEDICAL_OFFICER', 'HOSPITAL_ADMIN', 'SUPER_ADMIN')] }, async (request, reply) => {
-    const tenantId = (request as any).session?.tenantId || '11111111-1111-4111-8111-111111111111';
+    const tenantId = requireTenantId(request);
     const body = request.body as CrossmatchReserveRequest;
 
     const reservationId = `RES-${Date.now().toString(36).toUpperCase()}`;
@@ -177,7 +177,7 @@ export const bloodBankSentinelRoutes: FastifyPluginAsync = async (fastify) => {
 
   // 3. Automated 48-Hour Cross-Match Reservation Sweep (🛡️ Clinical Role Guarded)
   fastify.post('/api/v1/partner/blood-bank/crossmatch/auto-expire-sweep', { preHandler: [requireRoles('DOCTOR', 'LAB_TECHNICIAN', 'CHIEF_MEDICAL_OFFICER', 'HOSPITAL_ADMIN', 'SUPER_ADMIN')] }, async (request, reply) => {
-    const tenantId = (request as any).session?.tenantId || '11111111-1111-4111-8111-111111111111';
+    const tenantId = requireTenantId(request);
     const result = await clinicalSweeperService.runBloodBankCrossmatchSweep(tenantId);
 
     return reply.status(200).send({
@@ -189,7 +189,7 @@ export const bloodBankSentinelRoutes: FastifyPluginAsync = async (fastify) => {
 
   // 4. Real-Time Blood Bank Inventory Summary
   fastify.get('/api/v1/partner/blood-bank/inventory/summary', { preHandler: [requireRoles('SUPER_ADMIN', 'COMPANY_ADMIN', 'HOSPITAL_ADMIN', 'CLINIC_ADMIN', 'CHIEF_MEDICAL_OFFICER', 'DOCTOR', 'NURSE', 'LAB_TECHNICIAN')] }, async (request, reply) => {
-    const tenantId = (request as any).session?.tenantId || '11111111-1111-4111-8111-111111111111';
+    const tenantId = requireTenantId(request);
     const db = getDatabase();
 
     let units: any[] = [];

@@ -53,12 +53,12 @@ jobs:
           tags: docsearch/${{ matrix.image }}:${{ github.sha }}
           load: true
 
-      - name: Run Trivy Vulnerability Scanner
+      - name: Run Trivy Vulnerability Scanner (Blocking Security Gate CI-003)
         uses: aquasecurity/trivy-action@master
         with:
           image-ref: docsearch/${{ matrix.image }}:${{ github.sha }}
           format: 'table'
-          exit-code: '0'
+          exit-code: '1'
           ignore-unfixed: true
           vuln-type: 'os,library'
           severity: 'CRITICAL,HIGH'

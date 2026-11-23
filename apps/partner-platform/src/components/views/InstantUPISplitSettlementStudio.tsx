@@ -18,7 +18,7 @@ export interface SplitTransaction {
   platformFeeInr: number;
   platformUtr: string;
   timestamp: string;
-  status: 'SETTLED_INSTANT_IMPS' | 'PROCESSING';
+  status: 'SETTLED_INSTANT_IMPS' | 'PROCESSING' | 'PENDING_SETTLEMENT' | 'FAILED';
 }
 
 export const InstantUPISplitSettlementStudio: React.FC = () => {
@@ -33,6 +33,7 @@ export const InstantUPISplitSettlementStudio: React.FC = () => {
   const [hospitalSplitPct, setHospitalSplitPct] = useState<number>(25);
   const [platformFeePct, setPlatformFeePct] = useState<number>(5);
   const [isSimulating, setIsSimulating] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [latestSuccess, setLatestSuccess] = useState<SplitTransaction | null>(null);
 
   const [settledHistory, setSettledHistory] = useState<SplitTransaction[]>([
@@ -79,6 +80,7 @@ export const InstantUPISplitSettlementStudio: React.FC = () => {
 
   const handleSimulatePayment = async () => {
     setIsSimulating(true);
+    setErrorMessage(null);
     try {
       const token = getAuthToken();
       const res = await fetch('/api/v1/partner/billing/doctor-payouts/settlements/generate', {
@@ -95,48 +97,36 @@ export const InstantUPISplitSettlementStudio: React.FC = () => {
           settlementCycle: 'REALTIME_UPI_SPLIT'
         })
       });
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData?.error?.message || `Settlement request failed with status ${res.status}`);
+      }
       const data = await res.json();
       const voucher = data?.data;
+      // FIN-001: Respect provider-confirmed state machine. No fabricated UTRs.
+      const isConfirmed = voucher?.status === 'SETTLED' && Boolean(voucher?.transactionReference);
       const newTxn: SplitTransaction = {
-        id: voucher?.voucherNumber || ('TXN-UPI-' + Date.now()),
+        id: voucher?.voucherNumber || ('VOUCH-' + Date.now()),
         patientName: patientName,
         encounterType: 'OPD Clinical Consultation',
         totalPaidInr: billAmount,
         doctorShareInr: voucher?.netPayableToDoctor ? Number(voucher.netPayableToDoctor) : doctorAmount,
         doctorName: doctorName,
         doctorVpa: 'dr.malhotra@hdfcbank',
-        doctorUtr: voucher?.transactionReference || ('NPCI-2026-' + Math.floor(100000 + Math.random() * 900000)),
+        doctorUtr: isConfirmed ? voucher.transactionReference : 'PENDING_BANK_CLEARANCE',
         hospitalShareInr: hospitalAmount,
         hospitalVpa: 'metrohealth.settle@icici',
-        hospitalUtr: 'NPCI-2026-' + Math.floor(100000 + Math.random() * 900000),
+        hospitalUtr: isConfirmed ? 'CONFIRMED' : 'PENDING_BANK_CLEARANCE',
         platformFeeInr: platformAmount,
-        platformUtr: 'NPCI-2026-' + Math.floor(100000 + Math.random() * 900000),
+        platformUtr: isConfirmed ? 'CONFIRMED' : 'PENDING_BANK_CLEARANCE',
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        status: 'SETTLED_INSTANT_IMPS'
+        status: isConfirmed ? 'SETTLED_INSTANT_IMPS' : 'PENDING_SETTLEMENT'
       };
       setSettledHistory([newTxn, ...settledHistory]);
       setLatestSuccess(newTxn);
-    } catch {
-      // Local fallback if API server is offline
-      const newTxn: SplitTransaction = {
-        id: 'TXN-UPI-' + Date.now(),
-        patientName: patientName,
-        encounterType: 'OPD Clinical Consultation',
-        totalPaidInr: billAmount,
-        doctorShareInr: doctorAmount,
-        doctorName: doctorName,
-        doctorVpa: 'dr.malhotra@hdfcbank',
-        doctorUtr: 'NPCI-2026-' + Math.floor(100000 + Math.random() * 900000),
-        hospitalShareInr: hospitalAmount,
-        hospitalVpa: 'metrohealth.settle@icici',
-        hospitalUtr: 'NPCI-2026-' + Math.floor(100000 + Math.random() * 900000),
-        platformFeeInr: platformAmount,
-        platformUtr: 'NPCI-2026-' + Math.floor(100000 + Math.random() * 900000),
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        status: 'SETTLED_INSTANT_IMPS'
-      };
-      setSettledHistory([newTxn, ...settledHistory]);
-      setLatestSuccess(newTxn);
+    } catch (err: any) {
+      // FIN-001: In case of error/offline, fail closed. NEVER fabricate success or fake UTRs.
+      setErrorMessage(err?.message || 'Settlement engine offline. Payout could not be processed.');
     } finally {
       setIsSimulating(false);
     }
@@ -222,6 +212,12 @@ export const InstantUPISplitSettlementStudio: React.FC = () => {
               </span>
             </div>
           </div>
+
+          {errorMessage && (
+            <div style={{ padding: '8px 12px', borderRadius: '8px', backgroundColor: 'rgba(239, 68, 68, 0.15)', border: '1px solid #EF4444', color: '#FCA5A5', fontSize: '0.75rem', fontWeight: 600 }}>
+              ⚠️ {errorMessage}
+            </div>
+          )}
 
           <Button type="button"
             variant="success"

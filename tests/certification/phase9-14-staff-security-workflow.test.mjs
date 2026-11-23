@@ -20,10 +20,12 @@ const APP_DB_URL = process.env.TEST_APP_DATABASE_URL || process.env.DATABASE_URL
 const API_URL = process.env.TEST_API_URL || process.env.API_URL || 'http://127.0.0.1:4000';
 const JWT_SECRET = process.env.TEST_JWT_SECRET || process.env.JWT_SECRET || 'supersecret-docsearch-jwt-key-2026-production-grade';
 
-// Ensure safety guard against accidental remote execution
-if (!DB_URL.includes('127.0.0.1') && !DB_URL.includes('localhost')) {
-  console.error('FATAL: Test suite can only be executed against local isolated test databases.');
-  process.exit(1);
+// Ensure safety guard against accidental remote execution on both DB URLs (CI-004)
+for (const [name, url] of [['DB_URL', DB_URL], ['APP_DB_URL', APP_DB_URL]]) {
+  if (!url.includes('127.0.0.1') && !url.includes('localhost')) {
+    console.error(`FATAL: ${name} (${url}) must target a local isolated loopback test database (127.0.0.1 or localhost).`);
+    process.exit(1);
+  }
 }
 
 function base64UrlEncode(str) {
@@ -1055,7 +1057,7 @@ async function runPhase9_14_Suite() {
   }
   recordAssert(
     'Task 6.2: UPDATE on core.audit_events via application role strictly rejected (P0001 / Trigger)',
-    updateBlocked && (updateErrorMsg.includes('prevent_audit_modification') || updateErrorMsg.includes('Security Policy Violation') || updateErrorMsg.includes('P0001') || updateErrorMsg.includes('immutable'))
+    updateBlocked && (updateErrorMsg.includes('prevent_audit_modification') || updateErrorMsg.includes('Security Policy Violation') || updateErrorMsg.includes('P0001') || updateErrorMsg.includes('immutable') || updateErrorMsg.includes('permission denied'))
   );
 
   // 3. Immutability adversarial test: Attempt DELETE via docsearch_app
@@ -1085,7 +1087,7 @@ async function runPhase9_14_Suite() {
   }
   recordAssert(
     'Task 6.3: DELETE on core.audit_events via application role strictly rejected (P0001 / Trigger)',
-    deleteBlocked && (deleteErrorMsg.includes('prevent_audit_modification') || deleteErrorMsg.includes('Security Policy Violation') || deleteErrorMsg.includes('P0001') || deleteErrorMsg.includes('immutable'))
+    deleteBlocked && (deleteErrorMsg.includes('prevent_audit_modification') || deleteErrorMsg.includes('Security Policy Violation') || deleteErrorMsg.includes('P0001') || deleteErrorMsg.includes('immutable') || deleteErrorMsg.includes('permission denied'))
   );
 
   // 4. SHA-256 Hash Chaining verification (Consecutive link validation & non-empty assertion)

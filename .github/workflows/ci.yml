@@ -55,6 +55,9 @@ jobs:
       - name: Run TypeScript Typecheck
         run: pnpm -r typecheck
 
+      - name: Build Packages & Core Dependencies (CI-001)
+        run: pnpm build
+
       - name: Run Automated Test Suites
         run: pnpm test
         env:
@@ -94,6 +97,26 @@ jobs:
           NODE_ENV: test
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/docsearch
 
+      - name: Apply Database Migrations for Integration Tests (CI-002)
+        run: pnpm --filter @docsearch/database run migrate:force
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/docsearch
+
+      - name: Start Background API Gateway for Phase 9.14 (CI-002)
+        run: |
+          node apps/api-gateway/dist/server.js &
+          for i in {1..30}; do
+            curl -s http://127.0.0.1:4000/health && break
+            echo "Waiting for API Gateway..."
+            sleep 1
+          done
+        env:
+          NODE_ENV: test
+          PORT: 4000
+          HOST: 0.0.0.0
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/docsearch
+          JWT_SECRET: docsearch_master_jwt_secret_dev_32char_key_only
+
       - name: Run Phase 9.14 Staff Security & Session Revocation Suite
         run: node tests/certification/phase9-14-staff-security-workflow.test.mjs
         env:
@@ -103,5 +126,6 @@ jobs:
           TEST_API_URL: http://127.0.0.1:4000
           TEST_JWT_SECRET: docsearch_master_jwt_secret_dev_32char_key_only
 
-      - name: Run Production Monorepo Build
-        run: pnpm -r build
+      - name: Teardown Background API Gateway (CI-002)
+        if: always()
+        run: pkill -f "apps/api-gateway/dist/server.js" || true

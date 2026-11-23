@@ -1,7 +1,7 @@
 import type { FastifyPluginAsync } from 'fastify';
 import { z } from 'zod';
 import { createLogger } from '@docsearch/shared-core';
-import { authenticate } from '../../plugins/auth-guard.js';
+import { authenticate, requireTenantId } from '../../plugins/auth-guard.js';
 
 const logger = createLogger('telemedicine-signaling');
 
@@ -79,7 +79,7 @@ export const telemedicineSignalingRoutes: FastifyPluginAsync = async (app) => {
    * 1. Initiate or Get Teleconsultation Session
    */
   app.post('/api/v1/telemedicine/session/initiate', async (req, reply) => {
-    const tenantId = (req as any).session?.tenantId || '11111111-1111-4111-8111-111111111111';
+    const tenantId = requireTenantId(req);
     const schema = z.object({
       callId: z.string().default('TELE-2026-9042'),
       doctorName: z.string().optional(),

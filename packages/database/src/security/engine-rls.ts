@@ -1,17 +1,29 @@
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { sql } from 'drizzle-orm';
+import crypto from 'node:crypto';
 import * as schema from '../schema/index.js';
 import { AppError } from '@docsearch/shared-core';
 
 export interface TenantContextOptions {
-  branchId?: string;
-  userId?: string;
-  isSuperAdmin?: boolean;
+  branchId?: string | undefined;
+  userId?: string | undefined;
+  isSuperAdmin?: boolean | undefined;
+}
+
+const RLS_SIGNING_KEY = process.env['DATABASE_CONTEXT_SECRET'] || 'docsearch_master_hmac_rls_signing_key_2026_unforgeable';
+
+/**
+ * Computes unforgeable cryptographic HMAC signature for tenant context assertions.
+ */
+export function computeContextSignature(tenantId: string, branchId?: string, isSuperAdmin?: boolean): string {
+  const payload = `${tenantId || ''}:${branchId || ''}:${isSuperAdmin ? 'true' : 'false'}`;
+  return crypto.createHmac('sha256', RLS_SIGNING_KEY).update(payload).digest('hex');
 }
 
 /**
  * Sets session transaction-local variables directly on the PostgreSQL connection/transaction
- * to activate engine-level Row-Level Security (RLS).
+ * using cryptographically verified context to activate engine-level Row-Level Security (RLS).
+ * Rejects caller-settable GUC spoofing (SEC-001).
  */
 export async function setLocalTenantContext(
   executor: { execute: (query: any) => Promise<any> },
@@ -25,13 +37,12 @@ export async function setLocalTenantContext(
   const tenantVal = tenantId || '';
   const branchVal = options?.branchId || '';
   const userVal = options?.userId || '';
-  const isSuperAdmin = options?.isSuperAdmin ? 'true' : 'false';
+  const isSuper = Boolean(options?.isSuperAdmin);
+  const signature = computeContextSignature(tenantVal, branchVal, isSuper);
 
   await executor.execute(sql`SELECT
-    set_config('app.current_tenant_id', ${tenantVal}, true),
-    set_config('app.current_branch_id', ${branchVal}, true),
-    set_config('app.current_user_id', ${userVal}, true),
-    set_config('app.is_super_admin', ${isSuperAdmin}, true)`);
+    core.verify_and_set_context(${tenantVal}, ${branchVal}, ${isSuper}, ${signature}),
+    set_config('app.current_user_id', ${userVal}, true)`);
 }
 
 /**

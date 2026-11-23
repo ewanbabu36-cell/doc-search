@@ -2,7 +2,7 @@ import { type FastifyPluginAsync } from 'fastify';
 import { z } from 'zod';
 import { pharmacyManagementService } from '../../services/partner/PharmacyManagementService.js';
 import { wholesaleInvoiceIngestionService } from '../../services/partner/WholesaleInvoiceIngestionService.js';
-import { authenticate, requirePermission } from '../../plugins/auth-guard.js';
+import { authenticate, requirePermission, requireTenantId } from '../../plugins/auth-guard.js';
 import { requireModuleCommercialAccess, requireFeatureEntitlement } from '../../plugins/commercial-guard.js';
 import { enforceIdempotency } from '../../plugins/idempotency.js';
 import { AppError, ErrorCode } from '@docsearch/shared-core';
@@ -419,7 +419,7 @@ export const pharmacyManagementRoutes: FastifyPluginAsync = async (fastify) => {
     },
     async (request, reply) => {
       const body = (request.body || {}) as any;
-      const tenantId = body.tenantId || request.session.tenantId || '33333333-3333-4333-8333-333333333333';
+      const tenantId = body.tenantId || requireTenantId(request);
       const patientId = body.patientPhone || body.patientName || 'WALKIN-PATIENT';
 
       const items = (body.items || []).map((it: any) => ({

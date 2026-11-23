@@ -1,6 +1,6 @@
 import type { FastifyPluginAsync } from 'fastify';
 import { getDatabase, sql } from '@docsearch/database';
-import { authenticate, requireRoles } from '../../plugins/auth-guard.js';
+import { authenticate, requireRoles, requireTenantId } from '../../plugins/auth-guard.js';
 
 interface AnalyzeScanRequest {
   studyUid?: string;
@@ -39,7 +39,7 @@ export const radiologyAiRoutes: FastifyPluginAsync = async (fastify) => {
     '/api/v1/partner/radiology-ai/analyze-scan',
     { preHandler: [authenticate, requireRoles(...CLINICAL_DIAGNOSTIC_ROLES)] },
     async (request, reply) => {
-      const tenantId = (request as any).session?.tenantId || '11111111-1111-4111-8111-111111111111';
+      const tenantId = requireTenantId(request);
       const body = (request.body || {}) as AnalyzeScanRequest;
       const modality = body.modality || 'CR';
       const studyUid = body.studyUid || `STUDY-${Date.now().toString().slice(-8)}`;
@@ -135,7 +135,7 @@ export const radiologyAiRoutes: FastifyPluginAsync = async (fastify) => {
     '/api/v1/partner/radiology-ai/critical-findings/alerts',
     { preHandler: [authenticate, requireRoles(...ALERT_VIEWING_ROLES)] },
     async (request, reply) => {
-      const tenantId = (request as any).session?.tenantId || '11111111-1111-4111-8111-111111111111';
+      const tenantId = requireTenantId(request);
       const db = getDatabase();
       try {
         const res = await db.execute(sql`
