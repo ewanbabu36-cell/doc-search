@@ -103,7 +103,7 @@ export const AppShell: React.FC<AppShellProps> = ({
         }}
       >
         {header && (
-          <div style={{ flexShrink: 0, zIndex: 1000, width: '100%', position: 'sticky', top: 0 }}>
+          <div style={{ flexShrink: 0, zIndex: 1000, width: '100%', position: 'sticky', top: 0, overflow: 'visible' }}>
             {header}
           </div>
         )}

@@ -2991,7 +2991,7 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
         }
       header={
         activeModule === 'clinical-consultation' ? null : (
-          <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', width: '100%', overflow: 'visible' }}>
           {isDoctorFocusMode ? (
             <div
             style={{

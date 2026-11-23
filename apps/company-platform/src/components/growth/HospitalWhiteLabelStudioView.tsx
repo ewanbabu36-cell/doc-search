@@ -96,8 +96,8 @@ export const HospitalWhiteLabelStudioView: React.FC = () => {
     updateWhiteLabel({
       hospitalName: whiteLabelConfig.hospitalName,
       customCnameDomain: whiteLabelConfig.customCnameDomain,
-      primaryColor: whiteLabelConfig.primaryColor,
-      accentColor: whiteLabelConfig.accentColor,
+      primaryColorHex: whiteLabelConfig.primaryColorHex,
+      accentColorHex: whiteLabelConfig.accentColorHex,
       smsSenderId: whiteLabelConfig.smsSenderId
     });
     setSaveNotice(`✓ White-Label branding profile updated for "${whiteLabelConfig.customCnameDomain || whiteLabelConfig.hospitalName}". Configuration active.`);

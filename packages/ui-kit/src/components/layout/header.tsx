@@ -108,7 +108,7 @@ export const Header: React.FC<HeaderProps> = ({
         boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.12), inset 0 -0.5px 0 0 rgba(255, 255, 255, 0.06)',
         flexShrink: 0,
         gap: '12px',
-        overflow: 'hidden',
+        overflow: 'visible',
         zIndex: 1000
       }}
     >
@@ -215,7 +215,7 @@ export const Header: React.FC<HeaderProps> = ({
             display: 'flex',
             justifyContent: 'center',
             alignItems: 'center',
-            overflow: 'hidden',
+            overflow: 'visible',
             padding: '0 8px'
           }}
         >
