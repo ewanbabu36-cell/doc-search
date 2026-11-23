@@ -533,6 +533,13 @@
       "when": 1788556000000,
       "tag": "0075_secure_rls_and_audit_immutability",
       "breakpoints": true
+    },
+    {
+      "idx": 76,
+      "version": "7",
+      "when": 1788557000000,
+      "tag": "0076_rotate_and_harden_rls_context",
+      "breakpoints": true
     }
   ]
 }

@@ -76,7 +76,8 @@ export const App: React.FC = () => {
         const urlParams = new URLSearchParams(window.location.search);
         const ssoToken = urlParams.get('token') || urlParams.get('sso_token');
         if (ssoToken) {
-          localStorage.setItem('docsearch_patient_token', ssoToken);
+          sessionStorage.setItem('docsearch_patient_token', ssoToken);
+          localStorage.removeItem('docsearch_patient_token');
           window.history.replaceState({}, document.title, window.location.pathname);
 
           // Verify with central API gateway
@@ -117,7 +118,8 @@ export const App: React.FC = () => {
     // Listen for SSO credentials if embedded inside Unified Gateway Hub
     const handleSsoMessage = (e: MessageEvent) => {
       if (e.data?.type === 'DOCSEARCH_SSO_CREDENTIALS' && e.data.token) {
-        localStorage.setItem('docsearch_patient_token', e.data.token);
+        sessionStorage.setItem('docsearch_patient_token', e.data.token);
+        localStorage.removeItem('docsearch_patient_token');
         void checkSso();
       }
     };

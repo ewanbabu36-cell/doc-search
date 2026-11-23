@@ -3,7 +3,7 @@
  * INDEPENDENT STAFF SECURITY, SESSION REVOCATION & APPOINTMENT WORKFLOW VALIDATION
  *
  * Repository: D:\DOC SEARCH
- * Baseline Commit: a56aaa6
+ * Baseline: Production Forensic Certification (Post-Audit ZIP 2 Remediation)
  * Branch: audit/master-forensic-remediation
  * Database: PostgreSQL 18.4 (127.0.0.1:5432/docsearch)
  * API Gateway: Fastify (127.0.0.1:4000)
@@ -387,6 +387,27 @@ async function runPhase9_14_Suite() {
   console.log('DOC SEARCH — PHASE 9.14 MASTER INDEPENDENT SECURITY TEST SUITE');
   console.log('STAFF SECURITY, SESSION REVOCATION, BRANCH ISOLATION & ROUTING');
   console.log('================================================================\n');
+
+  // -------------------------------------------------------------------------
+  // P0-02 PRE-FLIGHT LEAST-PRIVILEGE ROLE ATTRIBUTE ASSERTION
+  // -------------------------------------------------------------------------
+  console.log('[PRE-FLIGHT] Verifying appPool runtime database credentials and privileges...');
+  const roleCheck = await appPool.query(`
+    SELECT current_user, rolsuper, rolbypassrls
+    FROM pg_roles
+    WHERE rolname = current_user;
+  `);
+  if (!roleCheck.rows.length) {
+    throw new Error('FATAL (P0-02): Connected appPool role could not be resolved in pg_roles!');
+  }
+  const { current_user, rolsuper, rolbypassrls } = roleCheck.rows[0];
+  if (current_user !== 'docsearch_app') {
+    throw new Error(`FATAL (P0-02): appPool must connect as 'docsearch_app', but connected as '${current_user}'!`);
+  }
+  if (rolsuper === true || rolbypassrls === true) {
+    throw new Error(`FATAL (P0-02): 'docsearch_app' role failed security audit! rolsuper=${rolsuper}, rolbypassrls=${rolbypassrls}. Application role must never have superuser or bypassrls privileges.`);
+  }
+  console.log(`[PRE-FLIGHT VERIFIED] appPool successfully connected as '${current_user}' (rolsuper: ${rolsuper}, rolbypassrls: ${rolbypassrls}).`);
 
   await seedSyntheticData();
 

@@ -117,12 +117,25 @@ jobs:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/docsearch
           JWT_SECRET: docsearch_master_jwt_secret_dev_32char_key_only
 
+      - name: Provision Dedicated Least-Privilege Application Role (docsearch_app)
+        run: node packages/database/test/setup-docsearch-app-role.mjs
+        env:
+          TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/docsearch
+          DOCSEARCH_APP_PASSWORD: app_ci_test_password_2026
+
+      - name: Run Unforgeable RLS Context & Secret Rotation Security Suite (P0-01)
+        run: node packages/database/test/sec-rls-unforgeable-spoofing.test.mjs
+        env:
+          NODE_ENV: test
+          TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/docsearch
+          TEST_APP_DATABASE_URL: postgresql://docsearch_app:app_ci_test_password_2026@localhost:5432/docsearch
+
       - name: Run Phase 9.14 Staff Security & Session Revocation Suite
         run: node tests/certification/phase9-14-staff-security-workflow.test.mjs
         env:
           NODE_ENV: test
           TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/docsearch
-          TEST_APP_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/docsearch
+          TEST_APP_DATABASE_URL: postgresql://docsearch_app:app_ci_test_password_2026@localhost:5432/docsearch
           TEST_API_URL: http://127.0.0.1:4000
           TEST_JWT_SECRET: docsearch_master_jwt_secret_dev_32char_key_only
 

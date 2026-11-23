@@ -5,10 +5,19 @@
 --              in production application contexts.
 -- ==============================================================================
 
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+
 DO $$
+DECLARE
+  v_app_pass text;
 BEGIN
+  v_app_pass := NULLIF(current_setting('app.docsearch_app_password', true), '');
+  IF v_app_pass IS NULL THEN
+    v_app_pass := encode(gen_random_bytes(16), 'hex');
+  END IF;
+
   IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'docsearch_app') THEN
-    CREATE ROLE docsearch_app WITH LOGIN PASSWORD 'docsearch_app_secure_pass' NOSUPERUSER NOBYPASSRLS NOCREATEDB NOCREATEROLE;
+    EXECUTE format('CREATE ROLE docsearch_app WITH LOGIN PASSWORD %L NOSUPERUSER NOBYPASSRLS NOCREATEDB NOCREATEROLE', v_app_pass);
   ELSE
     ALTER ROLE docsearch_app WITH NOSUPERUSER NOBYPASSRLS;
   END IF;

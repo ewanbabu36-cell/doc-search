@@ -118,7 +118,8 @@ export const PaperlessPreArrivalIntakeModal: React.FC<PaperlessPreArrivalIntakeM
       if (serverRes?.fastPassQrCode) {
         intakeResult.fastPassQrCode = serverRes.fastPassQrCode;
       }
-      localStorage.setItem('docsearch_patient_pre_intake', JSON.stringify(intakeResult));
+      sessionStorage.setItem('docsearch_patient_pre_intake', JSON.stringify(intakeResult));
+      localStorage.removeItem('docsearch_patient_pre_intake');
       window.dispatchEvent(new CustomEvent('docsearch:patient_pre_intake_submitted', { detail: intakeResult }));
     } catch {
       // Ignored

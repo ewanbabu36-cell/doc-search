@@ -96,7 +96,7 @@ export const FamilyHealthCircleManagerModal: React.FC<FamilyHealthCircleManagerM
   const [members, setMembers] = useState<FamilyCircleMember[]>(() => {
     if (typeof window !== 'undefined') {
       try {
-        const saved = localStorage.getItem('docsearch_family_circle');
+        const saved = sessionStorage.getItem('docsearch_family_circle');
         if (saved) return JSON.parse(saved);
       } catch {}
     }
@@ -141,7 +141,8 @@ export const FamilyHealthCircleManagerModal: React.FC<FamilyHealthCircleManagerM
   useEffect(() => {
     if (typeof window !== 'undefined') {
       try {
-        localStorage.setItem('docsearch_family_circle', JSON.stringify(members));
+        sessionStorage.setItem('docsearch_family_circle', JSON.stringify(members));
+        localStorage.removeItem('docsearch_family_circle');
       } catch {}
     }
   }, [members]);
@@ -150,7 +151,8 @@ export const FamilyHealthCircleManagerModal: React.FC<FamilyHealthCircleManagerM
     setCurrentSelectedId(member.id);
     if (typeof window !== 'undefined') {
       try {
-        localStorage.setItem('docsearch_active_family_member', JSON.stringify(member));
+        sessionStorage.setItem('docsearch_active_family_member', JSON.stringify(member));
+        localStorage.removeItem('docsearch_active_family_member');
         window.dispatchEvent(
           new CustomEvent('docsearch:family_member_switched', { detail: member })
         );

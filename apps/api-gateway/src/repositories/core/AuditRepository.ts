@@ -255,31 +255,44 @@ export class AuditRepository {
       timestamp: finalTimestamp
     }, finalPreviousHash);
 
+    const eventId = crypto.randomUUID();
+    const eventTimestamp = finalTimestamp instanceof Date ? finalTimestamp : new Date(finalTimestamp);
+
     const newRecord: NewAuditEvent = {
-      id: crypto.randomUUID(),
+      id: eventId,
       tenantId: tenantUuid,
       branchId: branchUuid,
       actorId: actorUuid,
       eventType: auditRecord.eventType,
       resourceType: auditRecord.resourceType,
-      resourceId: auditRecord.resourceId,
-      correlationId: auditRecord.correlationId,
-      ipAddress: auditRecord.ipAddress,
-      userAgent: auditRecord.userAgent,
+      resourceId: auditRecord.resourceId ?? null,
+      correlationId: auditRecord.correlationId ?? null,
+      ipAddress: auditRecord.ipAddress ?? null,
+      userAgent: auditRecord.userAgent ?? null,
       metadata: enrichedMetadata,
       previousHash: finalPreviousHash,
       integrityHash: finalIntegrityHash,
-      timestamp: finalTimestamp
+      timestamp: eventTimestamp
     };
 
-    const [inserted] = await dbClient.insert(auditEvents).values(newRecord).returning();
-    if (!inserted) {
-      throw new AppError({
-        code: ErrorCode.INTERNAL_SERVER_ERROR,
-        message: 'Transactional audit persistence failed: no audit row returned.',
-        statusCode: 500
-      });
-    }
+    await dbClient.insert(auditEvents).values(newRecord);
+
+    const inserted: AuditEvent = {
+      id: eventId,
+      tenantId: tenantUuid,
+      branchId: branchUuid,
+      actorId: actorUuid,
+      eventType: auditRecord.eventType,
+      resourceType: auditRecord.resourceType,
+      resourceId: auditRecord.resourceId ?? null,
+      correlationId: auditRecord.correlationId ?? null,
+      ipAddress: auditRecord.ipAddress ?? null,
+      userAgent: auditRecord.userAgent ?? null,
+      metadata: (enrichedMetadata as Record<string, unknown>) ?? null,
+      previousHash: finalPreviousHash,
+      integrityHash: finalIntegrityHash,
+      timestamp: eventTimestamp
+    };
 
     logger.info('Audit event committed to database', {
       eventType: inserted.eventType,

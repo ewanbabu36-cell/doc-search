@@ -11,7 +11,7 @@ concurrency:
 
 jobs:
   test-and-verify:
-    name: 🧪 Automated Quality & Deployment Verification
+    name: 🧪 Automated Quality & Pre-Deployment Verification
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
@@ -44,18 +44,10 @@ jobs:
       - name: Install Monorepo Dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Create Pre-Migration Database Backup Checkpoint (CI-005)
-        run: |
-          echo "Automated pre-migration snapshot checkpoint recorded."
-        env:
-          DATABASE_URL: ${{ secrets.PROD_DATABASE_URL }}
+      - name: Build Core Monorepo Packages
+        run: pnpm build
 
-      - name: Execute Automated Database Migrations (Drizzle Kit Migrate)
-        run: pnpm --filter @docsearch/database run db:migrate
-        env:
-          DATABASE_URL: ${{ secrets.PROD_DATABASE_URL }}
-
-      - name: Run Production Smoke Tests & Gate Verifications
+      - name: Run Production Pre-Release Quality Gates
         run: node tests/production-truth/test-production-truth.js
 
   deploy-to-vps:
@@ -63,12 +55,46 @@ jobs:
     needs: [test-and-verify]
     runs-on: ubuntu-latest
     environment: production
-    timeout-minutes: 20
+    timeout-minutes: 25
     if: github.ref == 'refs/heads/main'
 
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 9.15.4
+
+      - name: Install Production Dependencies
+        run: pnpm install --frozen-lockfile
+
+      # P0-04 Remediation: Real AES-256-GCM encrypted backup with verified completion & non-zero byte check
+      - name: Execute and Verify Pre-Migration Database Backup Checkpoint
+        run: |
+          mkdir -p data/backups/encrypted
+          node scripts/automated-encrypted-backup-cron.mjs --once
+          BACKUP_COUNT=$(find data/backups/encrypted -name "*.enc" -size +100c | wc -l)
+          if [ "$BACKUP_COUNT" -eq 0 ]; then
+            echo "FATAL (P0-04): Pre-migration encrypted database backup failed or produced zero-byte archive!"
+            exit 1
+          fi
+          echo "Verified $BACKUP_COUNT encrypted pre-migration backup checkpoint(s) successfully created."
+        env:
+          DATABASE_URL: ${{ secrets.PROD_DATABASE_URL }}
+
+      # P0-04 Remediation: Migrations run ONLY under 'environment: production' behind human approval gate
+      - name: Execute Automated Database Migrations
+        run: pnpm --filter @docsearch/database run db:migrate
+        env:
+          DATABASE_URL: ${{ secrets.PROD_DATABASE_URL }}
+          DATABASE_CONTEXT_SECRET: ${{ secrets.DATABASE_CONTEXT_SECRET }}
 
       - name: Deploy via SSH to Production Host
         uses: appleboy/ssh-action@v1.0.3

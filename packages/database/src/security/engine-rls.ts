@@ -2,7 +2,7 @@ import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { sql } from 'drizzle-orm';
 import crypto from 'node:crypto';
 import * as schema from '../schema/index.js';
-import { AppError } from '@docsearch/shared-core';
+import { AppError, ErrorCode } from '@docsearch/shared-core';
 
 export interface TenantContextOptions {
   branchId?: string | undefined;
@@ -10,14 +10,41 @@ export interface TenantContextOptions {
   isSuperAdmin?: boolean | undefined;
 }
 
-const RLS_SIGNING_KEY = process.env['DATABASE_CONTEXT_SECRET'] || 'docsearch_master_hmac_rls_signing_key_2026_unforgeable';
+/**
+ * Retrieves the cryptographic RLS HMAC secret from the environment.
+ * P0-01 Remediation: Zero hardcoded production secrets in source code.
+ */
+export function getRlsSigningKey(): string {
+  const secret = process.env['DATABASE_CONTEXT_SECRET'];
+  if (!secret || secret.trim().length < 32) {
+    if (process.env['NODE_ENV'] === 'production') {
+      throw new AppError({
+        message: 'DATABASE_CONTEXT_SECRET must be configured with at least 32 characters in production.',
+        code: ErrorCode.INTERNAL_SERVER_ERROR,
+        statusCode: 500
+      });
+    }
+    throw new AppError({
+      message: 'DATABASE_CONTEXT_SECRET environment variable is missing or insecure. Configure DATABASE_CONTEXT_SECRET in your environment or .env file.',
+      code: ErrorCode.INTERNAL_SERVER_ERROR,
+      statusCode: 500
+    });
+  }
+  return secret.trim();
+}
 
 /**
  * Computes unforgeable cryptographic HMAC signature for tenant context assertions.
  */
-export function computeContextSignature(tenantId: string, branchId?: string, isSuperAdmin?: boolean): string {
+export function computeContextSignature(
+  tenantId: string,
+  branchId?: string,
+  isSuperAdmin?: boolean,
+  overrideKey?: string
+): string {
+  const key = overrideKey || getRlsSigningKey();
   const payload = `${tenantId || ''}:${branchId || ''}:${isSuperAdmin ? 'true' : 'false'}`;
-  return crypto.createHmac('sha256', RLS_SIGNING_KEY).update(payload).digest('hex');
+  return crypto.createHmac('sha256', key).update(payload).digest('hex');
 }
 
 /**

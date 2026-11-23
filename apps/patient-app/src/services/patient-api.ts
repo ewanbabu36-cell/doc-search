@@ -160,10 +160,24 @@ class PatientApiService {
   private currentPatient: PatientProfile | null = null;
   private token: string | null = null;
 
+  constructor() {
+    if (typeof window !== 'undefined') {
+      try {
+        // P1-05 Remediation: Purge any legacy PHI and persistent tokens from localStorage
+        localStorage.removeItem('docsearch_scanned_parchis');
+        localStorage.removeItem('docsearch_patient_profile');
+        localStorage.removeItem('docsearch_patient_token');
+        localStorage.removeItem('docsearch_auth_token');
+        localStorage.removeItem('docsearch_sso_master_token');
+      } catch {}
+    }
+  }
+
   getScannedParchis(): ScannedParchiRecord[] {
     if (typeof window !== 'undefined') {
       try {
-        const stored = localStorage.getItem('docsearch_scanned_parchis');
+        // P1-05 Remediation: Ephemeral sessionStorage only, zero persistent PHI in localStorage
+        const stored = sessionStorage.getItem('docsearch_scanned_parchis');
         if (stored) {
           const parsed = JSON.parse(stored);
           if (Array.isArray(parsed) && parsed.length > 0) return parsed;
@@ -178,7 +192,7 @@ class PatientApiService {
     const updated = [record, ...list.filter((r) => r.id !== record.id)];
     if (typeof window !== 'undefined') {
       try {
-        localStorage.setItem('docsearch_scanned_parchis', JSON.stringify(updated));
+        sessionStorage.setItem('docsearch_scanned_parchis', JSON.stringify(updated));
       } catch {}
     }
   }
@@ -188,7 +202,7 @@ class PatientApiService {
     const updated = list.filter((r) => r.id !== id);
     if (typeof window !== 'undefined') {
       try {
-        localStorage.setItem('docsearch_scanned_parchis', JSON.stringify(updated));
+        sessionStorage.setItem('docsearch_scanned_parchis', JSON.stringify(updated));
       } catch {}
     }
   }
@@ -247,10 +261,11 @@ class PatientApiService {
   }
 
   // PHI-001: Ephemeral secure session storage helper to prevent sensitive PHI leakage
+  // P1-05 Remediation: Strictly avoid browser localStorage for clinical records and auth tokens.
   private getSecureItem(key: string): string | null {
     if (typeof window === 'undefined') return null;
     try {
-      return sessionStorage.getItem(key) || localStorage.getItem(key);
+      return sessionStorage.getItem(key);
     } catch {
       return null;
     }
@@ -363,8 +378,11 @@ class PatientApiService {
             this.currentPatient = data.patient;
             this.token = data.token;
             if (typeof window !== 'undefined') {
-              localStorage.setItem('docsearch_patient_profile', JSON.stringify(data.patient));
-              if (data.token) localStorage.setItem('docsearch_patient_token', data.token);
+              this.setSecureItem('docsearch_patient_profile', JSON.stringify(data.patient));
+              if (data.token) this.setSecureItem('docsearch_patient_token', data.token);
+              // Clean any stale legacy localStorage entries
+              localStorage.removeItem('docsearch_patient_profile');
+              localStorage.removeItem('docsearch_patient_token');
             }
             return {
               success: true,
@@ -524,7 +542,8 @@ class PatientApiService {
           if (this.currentPatient) {
             this.currentPatient.activeToken = data.activeToken;
             if (typeof window !== 'undefined') {
-              localStorage.setItem('docsearch_patient_profile', JSON.stringify(this.currentPatient));
+              this.setSecureItem('docsearch_patient_profile', JSON.stringify(this.currentPatient));
+              localStorage.removeItem('docsearch_patient_profile');
             }
           }
           return data.activeToken;

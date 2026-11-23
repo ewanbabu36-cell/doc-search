@@ -2,6 +2,7 @@ import type { FastifyPluginAsync, FastifyRequest } from 'fastify';
 import { z } from 'zod';
 import {
   getDatabase,
+  withSecurityContext,
   patients,
   patientContacts,
   encounters,
@@ -29,6 +30,7 @@ import { AppError, ErrorCode, createLogger } from '@docsearch/shared-core';
 import { signJwt, verifyJwt, type BaseJwtClaims } from '@docsearch/auth';
 import { env } from '../../config/env.js';
 import { otpAntiBombingGuard } from '../../services/security/otpAntiBombingGuard.js';
+import { notificationDispatchService } from '../../services/notification-dispatch.service.js';
 import { extractAuthTokenFromRequest } from '../../plugins/auth-guard.js';
 
 const logger = createLogger('patient-mobile-routes');
@@ -52,7 +54,7 @@ function normalizePhone(raw: string): { rawDigits: string; last10: string; withC
 function verifyPatientSessionToken(
   requestOrHeader: FastifyRequest | string | undefined,
   targetPhone?: string
-): { valid: boolean; statusCode?: number; reason?: string; patientId?: string; phone?: string | undefined } {
+): { valid: boolean; statusCode?: number; reason?: string; patientId?: string; phone?: string | undefined; tenantId?: string | undefined } {
   const normalizedTarget = targetPhone ? normalizePhone(targetPhone).last10 : null;
 
   let token: string | null = null;
@@ -95,7 +97,8 @@ function verifyPatientSessionToken(
     return {
       valid: true,
       patientId: claims.sub,
-      phone: resolvedPhone
+      phone: resolvedPhone,
+      tenantId: claims['tenantId'] as string | undefined
     };
   } catch (err: any) {
     return {
@@ -159,7 +162,11 @@ export const PatientBookAppointmentSchema = z.object({
   mobileNumber: z.string().trim().min(10),
   departmentName: z.string().trim().default('General Medicine'),
   chiefComplaint: z.string().trim().default('OPD General Consultation'),
-  preferredSlot: z.string().trim().optional()
+  preferredSlot: z.string().trim().optional(),
+  tenantId: z.string().trim().optional(),
+  doctorId: z.string().trim().optional(),
+  doctorName: z.string().trim().optional(),
+  appointmentDate: z.string().trim().optional()
 });
 
 export const PatientLogDoseSchema = z.object({
@@ -196,11 +203,45 @@ export const patientMobileRoutes: FastifyPluginAsync = async (app) => {
     otpAntiBombingGuard.recordOtpDispatched(payload.mobileNumber, request.ip);
 
     // Generate and store secure hashed OTP with 5-minute expiry (AUTH-001)
-    otpAntiBombingGuard.generateAndStoreOtp(payload.mobileNumber);
+    const generatedOtp = otpAntiBombingGuard.generateAndStoreOtp(payload.mobileNumber);
     const isProduction = env.NODE_ENV === 'production';
 
-    // 🛡️ SECURITY SHIELD 2: Anti-Enumeration & Production Secret Isolation
-    // In production: NEVER return OTP in response. Real SMS dispatch is active.
+    // 🛡️ SECURITY SHIELD 2: Real Healthcare SMS Gateway Dispatch (P1-01)
+    let dispatchSuccess = true;
+    let dispatchError: string | undefined;
+
+    try {
+      const dispatchResult = await notificationDispatchService.dispatch({
+        recipientPhone: payload.mobileNumber,
+        channel: 'SMS',
+        templateId: 'PATIENT_OTP',
+        params: {
+          otp: generatedOtp
+        }
+      });
+      dispatchSuccess = dispatchResult.success;
+      if (!dispatchSuccess) {
+        dispatchError = dispatchResult.error;
+      }
+    } catch (err: any) {
+      dispatchSuccess = false;
+      dispatchError = err?.message || String(err);
+    }
+
+    if (isProduction && !dispatchSuccess) {
+      logger.error('Patient OTP SMS delivery failed in production environment', {
+        phone: last10,
+        error: dispatchError
+      });
+      return reply.status(502).send({
+        success: false,
+        statusCode: 502,
+        error: 'SMS_DELIVERY_FAILED',
+        message: 'Unable to deliver verification code via SMS. Please verify your phone number and try again.'
+      });
+    }
+
+    // Anti-Enumeration & Production Secret Isolation
     const responsePayload: Record<string, any> = {
       success: true,
       message: `OTP sent successfully to +91 ${last10}`,
@@ -208,8 +249,8 @@ export const patientMobileRoutes: FastifyPluginAsync = async (app) => {
     };
 
     if (!isProduction) {
-      // Development/test convenience only (never in production)
-      responsePayload['devOtp'] = '1234';
+      // In development/test: return the actual generated OTP
+      responsePayload['devOtp'] = generatedOtp;
     }
 
     return reply.send(responsePayload);
@@ -794,7 +835,7 @@ export const patientMobileRoutes: FastifyPluginAsync = async (app) => {
       .limit(1);
 
     if (!contact?.patientId) {
-      return reply.send({ success: true, prescriptions: [] });
+      return reply.send({ success: true, count: 0, prescriptions: [] });
     }
 
     // 2. Fetch Consultations for this patient
@@ -876,43 +917,23 @@ export const patientMobileRoutes: FastifyPluginAsync = async (app) => {
         };
       });
 
-      // If consultation exists but medications table is empty, parse from treatmentPlan
-      if (formattedMeds.length === 0) {
-        formattedMeds.push(
-          { name: 'Paracetamol 650mg', dosage: '1 Tab (TDS)', timing: 'AFTER_FOOD', duration: '3 Days', takenToday: false },
-          { name: 'Pantoprazole 40mg', dosage: '1 Tab (OD)', timing: 'EMPTY_STOMACH', duration: '5 Days', takenToday: false }
-        );
-      }
-
       prescriptions.push({
         id: c.consultationNumber || `RX-${c.id.slice(0, 8).toUpperCase()}`,
         date: new Date(c.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }),
         doctorName,
         specialty,
-        diagnosis: c.clinicalAssessment || c.chiefComplaint || 'Acute Viral Pyrexia with Dyspepsia',
+        diagnosis: c.clinicalAssessment || c.chiefComplaint || 'Consultation Record',
         medicines: formattedMeds
       });
     }
 
-    // Default high-grade clinical fallback if new patient
-    if (prescriptions.length === 0) {
-      prescriptions.push({
-        id: 'RX-LIVE-101',
-        date: new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }),
-        doctorName: 'Dr. Vivek Sharma (MD)',
-        specialty: 'General Medicine',
-        diagnosis: 'Acute Viral Pyrexia (Routine Follow-up)',
-        medicines: [
-          { name: 'Pantoprazole 40mg', dosage: '1 Tab (Daily)', timing: 'EMPTY_STOMACH', duration: '5 Days', takenToday: true },
-          { name: 'Paracetamol 650mg', dosage: '1 Tab (TDS)', timing: 'AFTER_FOOD', duration: '3 Days', takenToday: false },
-          { name: 'Cetirizine 10mg', dosage: '1 Tab (HS)', timing: 'NIGHT', duration: '3 Days', takenToday: false }
-        ]
-      });
-    }
-
+    // P1-02 Remediation: Zero fabricated clinical prescriptions.
+    // If patient has zero prescriptions in database, return empty array with count: 0.
     return reply.send({
       success: true,
-      prescriptions
+      count: prescriptions.length,
+      prescriptions,
+      message: prescriptions.length === 0 ? 'No clinical prescriptions found for this patient record.' : undefined
     });
   });
 
@@ -959,17 +980,17 @@ export const patientMobileRoutes: FastifyPluginAsync = async (app) => {
       )
       .limit(1);
 
-    let patientName = 'Vikramaditya Roy';
+    let patientName = 'Patient';
     if (contact?.patientId) {
       const [pat] = await db.select().from(patients).where(eq(patients.id, contact.patientId)).limit(1);
       if (pat) patientName = `${pat.firstName} ${pat.lastName}`.trim();
     }
 
     // 2. Fetch Latest Consultation & Doctor
-    let doctorName = 'Dr. Vivek Sharma (MD General Medicine)';
-    let diagnosis = 'Acute Viral Pyrexia with Dyspepsia';
-    let prescriptionId = 'CON-270768';
-    let prescribedDate = new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+    let doctorName: string | null = null;
+    let diagnosis: string | null = null;
+    let prescriptionId: string | null = null;
+    let prescribedDate: string | null = null;
 
     let rawMeds: any[] = [];
     if (contact?.patientId) {
@@ -1006,13 +1027,18 @@ export const patientMobileRoutes: FastifyPluginAsync = async (app) => {
       }
     }
 
-    // If no direct DB medication rows, seed clinically accurate viral fever protocol
-    if (rawMeds.length === 0) {
-      rawMeds = [
-        { medicationName: 'Pantoprazole 40mg', dosage: '1 Tab', beforeAfterFood: 'EMPTY_STOMACH', instructions: 'OD AC', duration: '5' },
-        { medicationName: 'Paracetamol 650mg', dosage: '1 Tab', beforeAfterFood: 'AFTER_FOOD', instructions: 'TDS PC', duration: '3' },
-        { medicationName: 'Cetirizine 10mg', dosage: '1 Tab', beforeAfterFood: 'NIGHT', instructions: 'HS', duration: '3' }
-      ];
+    // P1-02 Remediation: Zero fabricated doses. If no direct DB medication rows, return empty schedule.
+    if (!contact?.patientId || rawMeds.length === 0) {
+      return reply.send({
+        success: true,
+        patientName,
+        doctorName: doctorName || 'No Active Consultation',
+        diagnosis: diagnosis || 'No active prescription found',
+        prescriptionId: prescriptionId || null,
+        prescribedDate: prescribedDate || null,
+        scheduledDoses: [],
+        message: 'No active medication schedule for this patient.'
+      });
     }
 
     const scheduledDoses = rawMeds.map((m, idx) => {
@@ -1343,87 +1369,140 @@ export const patientMobileRoutes: FastifyPluginAsync = async (app) => {
   app.post('/api/v1/patient/appointments/book', async (request, reply) => {
     const payload = PatientBookAppointmentSchema.parse(request.body);
 
-    // 🛡️ IDOR PROTECTION: If token is provided, verify caller owns this phone number
-    if (request.headers.authorization) {
-      const authCheck = verifyPatientSessionToken(request.headers.authorization, payload.mobileNumber);
-      if (!authCheck.valid) {
-        const status = authCheck.statusCode || 401;
-        return reply.status(status).send({
-          success: false,
-          statusCode: status,
-          error: status === 401 ? 'UNAUTHORIZED' : 'FORBIDDEN',
-          message: authCheck.reason
-        });
-      }
+    // P1-03 Remediation: Authentication is mandatory for booking appointments.
+    if (!request.headers.authorization) {
+      return reply.status(401).send({
+        success: false,
+        statusCode: 401,
+        error: 'UNAUTHORIZED',
+        message: 'Patient session authentication is strictly required to book an appointment.'
+      });
+    }
+
+    const authCheck = verifyPatientSessionToken(request.headers.authorization, payload.mobileNumber);
+    if (!authCheck.valid) {
+      const status = authCheck.statusCode || 401;
+      return reply.status(status).send({
+        success: false,
+        statusCode: status,
+        error: status === 401 ? 'UNAUTHORIZED' : 'FORBIDDEN',
+        message: authCheck.reason
+      });
     }
 
     const { last10, withCountry } = normalizePhone(payload.mobileNumber);
     const db = getDatabase();
+    const targetTenantId = payload.tenantId || authCheck.tenantId || '11111111-1111-4111-8111-111111111111';
 
-    // Resolve patient
-    let [contact] = await db
-      .select()
-      .from(patientContacts)
-      .where(
-        or(
-          eq(patientContacts.primaryMobile, last10),
-          eq(patientContacts.primaryMobile, withCountry),
-          sql`${patientContacts.primaryMobile} LIKE ${`%${last10}`}`
+    return await withSecurityContext(db, { tenantId: targetTenantId, userId: authCheck.patientId }, async (tx) => {
+      // Resolve patient
+      let [contact] = await tx
+        .select()
+        .from(patientContacts)
+        .where(
+          or(
+            eq(patientContacts.primaryMobile, last10),
+            eq(patientContacts.primaryMobile, withCountry),
+            sql`${patientContacts.primaryMobile} LIKE ${`%${last10}`}`
+          )
         )
-      )
-      .limit(1);
-
-    let patientId = contact?.patientId;
-
-    if (!patientId) {
-      // Auto-create patient
-      const [partner] = await db
-        .select({ id: operationalPartners.id, tenantId: operationalPartners.tenantId })
-        .from(operationalPartners)
         .limit(1);
 
-      const tenantId = partner?.tenantId;
-    if (!tenantId) {
-      throw new AppError({ message: 'No registered healthcare provider found for pre-arrival intake', statusCode: 404 });
-    }
-      const createdInput: any = {
+      let patientId = contact?.patientId;
+
+      if (!patientId) {
+        let partnerId: string | undefined = undefined;
+        try {
+          const [partner] = await tx
+            .select({ id: operationalPartners.id })
+            .from(operationalPartners)
+            .where(eq(operationalPartners.tenantId, targetTenantId))
+            .limit(1);
+          partnerId = partner?.id;
+        } catch {}
+
+        const createdInput: any = {
+          tenantId: targetTenantId,
+          firstName: 'Patient',
+          lastName: last10.slice(-4),
+          gender: 'OTHER',
+          mobileNumber: withCountry
+        };
+        if (partnerId) createdInput.partnerId = partnerId;
+
+        const created = await clinicalWorkflowRepository.createPatient(createdInput, tx as any);
+        patientId = created.id;
+      }
+
+      // Resolve tenant hierarchy
+      const [pat] = await tx.select().from(patients).where(eq(patients.id, patientId)).limit(1);
+      const tenantId = pat?.tenantId || targetTenantId;
+
+      // P1-04 Remediation: Validate and bind server-owned doctor profile and schedule
+      let boundDoctorId: string | undefined = undefined;
+      let boundDoctorName: string = payload.doctorName || 'Doctor';
+
+      if (payload.doctorId) {
+        const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(payload.doctorId);
+        if (isUuid) {
+          const [doc] = await tx
+            .select({
+              id: doctorProfiles.id,
+              staffId: doctorProfiles.staffId,
+              primarySpecialty: doctorProfiles.primarySpecialty
+            })
+            .from(doctorProfiles)
+            .where(eq(doctorProfiles.id, payload.doctorId))
+            .limit(1);
+
+          if (doc) {
+            boundDoctorId = doc.id;
+            if (doc.staffId) {
+              const [st] = await tx
+                .select({ fullName: operationalStaff.fullName })
+                .from(operationalStaff)
+                .where(eq(operationalStaff.id, doc.staffId))
+                .limit(1);
+              if (st?.fullName) {
+                boundDoctorName = `Dr. ${st.fullName}`;
+              }
+            }
+          }
+        }
+      }
+
+      // Create encounter
+      const encounterInput: any = {
         tenantId,
-        firstName: 'Patient',
-        lastName: last10.slice(-4),
-        gender: 'OTHER',
-        mobileNumber: withCountry
+        patientId,
+        encounterType: 'OPD',
+        chiefComplaint: payload.chiefComplaint
       };
-      if (partner?.id) createdInput.partnerId = partner.id;
+      if (boundDoctorId) {
+        encounterInput.doctorId = boundDoctorId;
+      }
+      const encounter = await clinicalWorkflowRepository.createEncounter(encounterInput, tx as any);
 
-      const created = await clinicalWorkflowRepository.createPatient(createdInput);
-      patientId = created.id;
-    }
+      // Create Queue Token
+      const queueInput: any = {
+        tenantId,
+        encounterId: encounter.id,
+        estimatedWaitMinutes: 15
+      };
+      if (boundDoctorId) {
+        queueInput.doctorId = boundDoctorId;
+      }
+      const queueToken = await clinicalWorkflowRepository.createQueueToken(queueInput, tx as any);
 
-    // Resolve tenant hierarchy
-    const [pat] = await db.select().from(patients).where(eq(patients.id, patientId)).limit(1);
-    const tenantId = pat?.tenantId; if (!tenantId) throw new Error('Patient tenantId is required');
-
-    // Create encounter
-    const encounter = await clinicalWorkflowRepository.createEncounter({
-      tenantId,
-      patientId,
-      encounterType: 'OPD',
-      chiefComplaint: payload.chiefComplaint
-    });
-
-    // Create Queue Token
-    const queueToken = await clinicalWorkflowRepository.createQueueToken({
-      tenantId,
-      encounterId: encounter.id,
-      estimatedWaitMinutes: 15
-    });
-
-    return reply.status(201).send({
-      success: true,
-      message: 'Aapka OPD Token successfully book ho gaya!',
-      encounterId: encounter.id,
-      tokenNumber: `#${queueToken.tokenNumber}`,
-      estimatedWaitMinutes: 15
+      return reply.status(201).send({
+        success: true,
+        message: 'Aapka OPD Token successfully book ho gaya!',
+        encounterId: encounter.id,
+        tokenNumber: `#${queueToken.tokenNumber}`,
+        doctorId: boundDoctorId,
+        doctorName: boundDoctorName,
+        estimatedWaitMinutes: 15
+      });
     });
   });
 
@@ -1615,7 +1694,7 @@ export const patientMobileRoutes: FastifyPluginAsync = async (app) => {
     }
 
     if (!patientId || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(patientId)) {
-      return reply.send({ success: true, prescriptions: [] });
+      return reply.send({ success: true, count: 0, prescriptions: [] });
     }
 
     const db = getDatabase();
@@ -1640,7 +1719,7 @@ export const patientMobileRoutes: FastifyPluginAsync = async (app) => {
         p.prescribed_at,
         p.status,
         p.notes,
-        COALESCE(dp.metadata->>'doctorName', dp.qualification, 'Dr. Alok Sharma, MD') as doctor_name,
+        COALESCE(dp.metadata->>'doctorName', dp.qualification, 'Consulting Physician') as doctor_name,
         COALESCE(
           json_agg(
             json_build_object(
@@ -1670,7 +1749,7 @@ export const patientMobileRoutes: FastifyPluginAsync = async (app) => {
       diagnosis: r.notes || 'Routine Follow-up',
       medicines: r.medicines || []
     }));
-    return reply.send({ success: true, prescriptions: list });
+    return reply.send({ success: true, count: list.length, prescriptions: list });
   };
 
   app.get('/api/v1/patient/prescriptions/:patientId', getPrescriptionsByPatientIdHandler);
