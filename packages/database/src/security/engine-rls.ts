@@ -1,6 +1,8 @@
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { sql } from 'drizzle-orm';
 import crypto from 'node:crypto';
+import fs from 'node:fs';
+import path from 'node:path';
 import * as schema from '../schema/index.js';
 import { AppError, ErrorCode } from '@docsearch/shared-core';
 
@@ -15,7 +17,28 @@ export interface TenantContextOptions {
  * P0-01 Remediation: Zero hardcoded production secrets in source code.
  */
 export function getRlsSigningKey(): string {
-  const secret = process.env['DATABASE_CONTEXT_SECRET'];
+  let secret = process.env['DATABASE_CONTEXT_SECRET'];
+  if (!secret || secret.trim().length < 32) {
+    try {
+      const candidatePaths = [
+        path.resolve(process.cwd(), '.env'),
+        path.resolve(process.cwd(), '../../.env'),
+        path.resolve('D:/DOC SEARCH/.env')
+      ];
+      for (const envPath of candidatePaths) {
+        if (fs.existsSync(envPath)) {
+          const content = fs.readFileSync(envPath, 'utf8');
+          const match = content.match(/^DATABASE_CONTEXT_SECRET=(.+)$/m);
+          if (match && match[1]?.trim()) {
+            secret = match[1].trim();
+            process.env['DATABASE_CONTEXT_SECRET'] = secret;
+            break;
+          }
+        }
+      }
+    } catch {}
+  }
+
   if (!secret || secret.trim().length < 32) {
     if (process.env['NODE_ENV'] === 'production') {
       throw new AppError({

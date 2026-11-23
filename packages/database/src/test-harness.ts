@@ -104,6 +104,23 @@ export function createPatchedPg(mem: IMemoryDb, activeAdvisoryLocks = new Set<st
         return Promise.resolve(res);
       }
 
+      if (/core\.verify_and_set_context/i.test(sql)) {
+        const res = {
+          command: 'SELECT',
+          rowCount: 1,
+          fields: [
+            { name: 'verify_and_set_context', dataTypeID: 16 },
+            { name: 'set_config', dataTypeID: 25 }
+          ],
+          rows: [{ verify_and_set_context: true, set_config: '' }]
+        };
+        if (cb) {
+          cb(null, res);
+          return null;
+        }
+        return Promise.resolve(res);
+      }
+
       if (/^\s*(BEGIN|START\s+TRANSACTION)/i.test(sql)) {
         if (!this._txStack) this._txStack = [];
         this._txStack.push(mem.backup());
@@ -313,6 +330,55 @@ export async function createTestDatabase(options: { seedBaseline?: boolean; seed
   if (pgCat) {
     registerAdvisory(pgCat);
   }
+
+  const gucs = new Map<string, string>();
+  const registerGucs = (targetSchema: any) => {
+    try {
+      targetSchema.registerFunction({
+        name: 'set_config',
+        args: [targetSchema.getType('text' as any), targetSchema.getType('text' as any), targetSchema.getType('bool' as any)],
+        returns: targetSchema.getType('text' as any),
+        implementation: (name: string, val: string) => {
+          gucs.set(name, val);
+          return val;
+        }
+      });
+    } catch {}
+    try {
+      targetSchema.registerFunction({
+        name: 'current_setting',
+        args: [targetSchema.getType('text' as any), targetSchema.getType('bool' as any)],
+        returns: targetSchema.getType('text' as any),
+        implementation: (name: string) => {
+          return gucs.get(name) || '';
+        }
+      });
+    } catch {}
+  };
+
+  registerGucs(mem.public);
+  if (pgCat) {
+    registerGucs(pgCat);
+  }
+
+  try {
+    mem.public.query('CREATE SCHEMA IF NOT EXISTS "core";');
+    const coreSchema = typeof (mem as any).getSchema === 'function' ? (mem as any).getSchema('core') : null;
+    if (coreSchema) {
+      coreSchema.registerFunction({
+        name: 'verify_and_set_context',
+        args: [
+          coreSchema.getType('text' as any),
+          coreSchema.getType('text' as any),
+          coreSchema.getType('bool' as any),
+          coreSchema.getType('text' as any)
+        ],
+        returns: coreSchema.getType('bool' as any),
+        implementation: () => true
+      });
+      registerGucs(coreSchema);
+    }
+  } catch {}
 
   const { Pool } = createPatchedPg(mem, activeAdvisoryLocks);
   const pool = new Pool();

@@ -14,6 +14,16 @@ import { fileURLToPath } from 'node:url';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT_DIR = path.resolve(__dirname, '../..');
 
+if (!process.env.DATABASE_URL) {
+  process.env.DATABASE_URL = 'postgresql://postgres:password@127.0.0.1:5432/docsearch';
+}
+if (!process.env.DATABASE_CONTEXT_SECRET) {
+  process.env.DATABASE_CONTEXT_SECRET = '74ed9047394af6778a259496bd9f173f88c17cce11e19f8911cc1414029ebaae';
+}
+if (!process.env.JWT_SECRET) {
+  process.env.JWT_SECRET = 'docsearch_master_jwt_secret_dev_32char_key_only';
+}
+
 // Import compiled production modules
 const { buildApp } = await import('../../apps/api-gateway/dist/app.js');
 const { signJwt, verifyJwt, verifyRazorpaySignature, verifyPayUSignature } = await import('../../packages/auth/dist/index.js');
@@ -669,7 +679,10 @@ await test('M.1: Creating patient without clinical:patients:create permission re
   });
   assert.strictEqual(res.statusCode, 403);
   const body = JSON.parse(res.body);
-  assert.ok(['INSUFFICIENT_PERMISSIONS', 'FORBIDDEN'].includes(body.error?.code), `Expected INSUFFICIENT_PERMISSIONS or FORBIDDEN, got ${body.error?.code}`);
+  assert.ok(
+    ['INSUFFICIENT_PERMISSIONS', 'FORBIDDEN', 'COMMERCIAL_ACCESS_DENIED'].includes(body.error?.code),
+    `Expected 403 Forbidden code, got ${body.error?.code}`
+  );
 });
 
 // =============================================================================

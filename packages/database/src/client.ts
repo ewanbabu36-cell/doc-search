@@ -1,11 +1,38 @@
 import { drizzle, NodePgDatabase } from 'drizzle-orm/node-postgres';
 import pg from 'pg';
+import fs from 'node:fs';
+import path from 'node:path';
 import * as schema from './schema/index.js';
 import { createLogger, AppError, ErrorCode } from '@docsearch/shared-core';
 import { setLocalTenantContext } from './security/engine-rls.js';
 
 const { Pool } = pg;
 const logger = createLogger('database');
+
+function resolveEnvDatabaseUrl(): string | undefined {
+  let url = process.env['DATABASE_URL'];
+  if (!url) {
+    try {
+      const candidatePaths = [
+        path.resolve(process.cwd(), '.env'),
+        path.resolve(process.cwd(), '../../.env'),
+        path.resolve('D:/DOC SEARCH/.env')
+      ];
+      for (const envPath of candidatePaths) {
+        if (fs.existsSync(envPath)) {
+          const content = fs.readFileSync(envPath, 'utf8');
+          const match = content.match(/^DATABASE_URL=(.+)$/m);
+          if (match && match[1]?.trim()) {
+            url = match[1].trim();
+            process.env['DATABASE_URL'] = url;
+            break;
+          }
+        }
+      }
+    } catch {}
+  }
+  return url;
+}
 
 export interface DatabaseConfig {
   connectionString?: string | undefined;
@@ -69,7 +96,7 @@ export function getDatabasePool(config?: DatabaseConfig): pg.Pool {
     return activeEmbeddedPool;
   }
   if (!pool) {
-    const envUrl = process.env['DATABASE_URL'];
+    const envUrl = resolveEnvDatabaseUrl();
     const connectionString = config?.connectionString ?? envUrl;
 
     if (!connectionString) {
@@ -212,7 +239,7 @@ export async function ensureDatabaseReady(config?: DatabaseConfig): Promise<Node
     return testDatabaseInstance;
   }
 
-  const envUrl = config?.connectionString ?? process.env['DATABASE_URL'];
+  const envUrl = config?.connectionString ?? resolveEnvDatabaseUrl();
 
   // 1. Try external PostgreSQL pool connection
   try {

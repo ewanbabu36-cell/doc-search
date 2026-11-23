@@ -1,39 +1,34 @@
 {
-  "timestamp": "2026-11-19T12:47:26.189Z",
+  "timestamp": "2026-11-23T15:27:59.486Z",
   "certifiedCommit": "3dba51d4ce98449f81480f7ec9d9d4686fb99d67",
-  "step5Status": "PASS",
-  "totalInvariantsChecked": 212,
-  "failuresCount": 0,
+  "step5Status": "FAIL",
+  "totalInvariantsChecked": 3,
+  "failuresCount": 7,
   "suites": [
     {
       "name": "STEP 5A: Production AI Chat Certification Matrix",
-      "status": "PASS",
-      "passed": 40,
-      "failed": 0
+      "status": "FAIL",
+      "error": "Exit code 1"
     },
     {
       "name": "STEP 5B: Production AI Voice Certification Matrix",
-      "status": "PASS",
-      "passed": 35,
-      "failed": 0
+      "status": "FAIL",
+      "error": "Exit code 1"
     },
     {
       "name": "STEP 3: AI Foundation Security Matrix",
-      "status": "PASS",
-      "passed": 42,
-      "failed": 0
+      "status": "FAIL",
+      "error": "Exit code 1"
     },
     {
       "name": "STEP 4: AI Role Security Matrix",
-      "status": "PASS",
-      "passed": 31,
-      "failed": 0
+      "status": "FAIL",
+      "error": "Exit code 1"
     },
     {
       "name": "CLINICAL: Ambient AI Scribe & CDSS Vertical Slice",
-      "status": "PASS",
-      "passed": 23,
-      "failed": 0
+      "status": "FAIL",
+      "error": "Exit code 1"
     },
     {
       "name": "DATABASE: Migration & RLS Policy Integrity",
@@ -43,15 +38,13 @@
     },
     {
       "name": "PHASE 7: Critical Clinical Workflows Certification",
-      "status": "PASS",
-      "passed": 15,
-      "failed": 0
+      "status": "FAIL",
+      "error": "Exit code 1"
     },
     {
       "name": "PHASE 8: Commercial Revenue Launch & Entitlement Certification",
-      "status": "PASS",
-      "passed": 23,
-      "failed": 0
+      "status": "FAIL",
+      "error": "Exit code 1"
     }
   ]
 }
