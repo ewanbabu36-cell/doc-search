@@ -5,10 +5,11 @@ import { execSync } from 'node:child_process';
 
 const ROOT_DIR = path.resolve('D:/DOC SEARCH');
 const STAGING_DIR = path.join(ROOT_DIR, '.tmp_sanitized_staging');
-const OUTPUT_ZIP = path.join(ROOT_DIR, 'DOC_SEARCH_SANITIZED_SOURCE.zip');
+const targetZipName = process.argv[2] || 'DOC_SEARCH_COMPLETE_PROJECT.zip';
+const OUTPUT_ZIP = path.join(ROOT_DIR, targetZipName);
 
 console.log('================================================================');
-console.log('DOC SEARCH — SANITIZED SOURCE ARCHIVE GENERATOR (FINDING F-01)');
+console.log(`DOC SEARCH — COMPLETE PROJECT ARCHIVE GENERATOR (${targetZipName})`);
 console.log('================================================================\n');
 
 // 1. Clean previous staging or zip if exists
@@ -21,7 +22,7 @@ if (fs.existsSync(OUTPUT_ZIP)) {
 fs.mkdirSync(STAGING_DIR, { recursive: true });
 
 // 2. Define Exclusion Rules
-const IGNORED_DIRS = new Set([
+const IGNORED_EXACT_DIRS = new Set([
   'node_modules',
   '.git',
   '.turbo',
@@ -30,10 +31,20 @@ const IGNORED_DIRS = new Set([
   '.next',
   'coverage',
   '.tmp_sanitized_staging',
-  'data',
   'backups',
   '.storage'
 ]);
+
+const IGNORED_PATH_PREFIXES = [
+  'data/db-native-utf8',
+  'data/backups',
+  'data/pacs-storage',
+  'data/mail-inbox',
+  'data/analyzers',
+  'data/printers',
+  'data/dsc-vault',
+  'data/storage'
+];
 
 function shouldExclude(relPath, isDirectory) {
   const normalized = relPath.replace(/\\/g, '/');
@@ -41,12 +52,19 @@ function shouldExclude(relPath, isDirectory) {
   const segments = normalized.split('/');
 
   // Check directories to skip anywhere in the tree
-  if (segments.some(s => IGNORED_DIRS.has(s))) {
+  if (segments.some(s => IGNORED_EXACT_DIRS.has(s))) {
     return true;
   }
 
+  // Check path prefixes
+  for (const prefix of IGNORED_PATH_PREFIXES) {
+    if (normalized === prefix || normalized.startsWith(prefix + '/')) {
+      return true;
+    }
+  }
+
   // Check ZIPs
-  if (base.endsWith('.zip')) {
+  if (base.endsWith('.zip') || base.endsWith('.tar.gz') || base.endsWith('.tgz')) {
     return true;
   }
 
@@ -95,12 +113,12 @@ function copyRecursive(currentDir, targetDir, relBase = '') {
   }
 }
 
-console.log('Copying sanitized source tree to staging area...');
+console.log('Copying complete sanitized project tree to staging area...');
 copyRecursive(ROOT_DIR, STAGING_DIR);
 console.log(`Staged ${fileCount} files across ${dirCount} directories.\n`);
 
 // 4. Audit & Verification Gate on Staged Material
-console.log('--- EXPLICIT SANITIZATION CHECKS ---');
+console.log('--- EXPLICIT SANITIZATION & COMPLETENESS CHECKS ---');
 
 function walkStaging(dir, foundList = []) {
   const entries = fs.readdirSync(dir, { withFileTypes: true });
@@ -159,7 +177,18 @@ if (leakedNodeModules.length > 0) {
   process.exit(1);
 }
 
-console.log('\nAll sanitization assertions PASSED!\n');
+// Verification 5: Key source directories are present
+const requiredDirs = ['apps', 'packages', 'tooling', 'tests', 'scripts', 'docs'];
+for (const req of requiredDirs) {
+  const hasDir = allStagedFiles.some(f => f.startsWith(req + '/'));
+  console.log(`Required directory '${req}' present: ${hasDir}`);
+  if (!hasDir) {
+    console.error(`FATAL: Required directory '${req}' missing from archive!`);
+    process.exit(1);
+  }
+}
+
+console.log('\nAll sanitization & completeness assertions PASSED!\n');
 
 // 5. Create ZIP Archive
 console.log(`Creating ${OUTPUT_ZIP} via native tar compression...`);
@@ -177,10 +206,15 @@ const sizeMB = (stats.size / (1024 * 1024)).toFixed(2);
 const fileBuffer = fs.readFileSync(OUTPUT_ZIP);
 const sha256 = crypto.createHash('sha256').update(fileBuffer).digest('hex');
 
+// Also keep DOC_SEARCH_SANITIZED_SOURCE.zip synced
+const sanitizedCopyPath = path.join(ROOT_DIR, 'DOC_SEARCH_SANITIZED_SOURCE.zip');
+fs.copyFileSync(OUTPUT_ZIP, sanitizedCopyPath);
+
 console.log('\n================================================================');
-console.log('SANITIZED DISTRIBUTION ARCHIVE GENERATED SUCCESSFULLY');
+console.log('COMPLETE PROJECT ARCHIVE GENERATED SUCCESSFULLY');
 console.log('================================================================');
-console.log(`Archive Path: ${OUTPUT_ZIP}`);
-console.log(`File Size:    ${sizeMB} MB (${stats.size} bytes)`);
-console.log(`SHA-256:      ${sha256}`);
+console.log(`Primary Archive:   ${OUTPUT_ZIP}`);
+console.log(`Sanitized Copy:    ${sanitizedCopyPath}`);
+console.log(`File Size:         ${sizeMB} MB (${stats.size} bytes)`);
+console.log(`SHA-256 Checksum:  ${sha256}`);
 console.log('================================================================\n');
