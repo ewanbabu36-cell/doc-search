@@ -878,6 +878,9 @@ export class StaffAdministrationService {
         if (String(input.newStatus).toUpperCase() === 'SUSPENDED' || String(input.newStatus).toUpperCase() === 'TERMINATED') {
           await sessionRevocationService.revokeUser(existing.id, input.reason || `Staff status updated to ${input.newStatus}`);
           identitySecurityFoundationService.invalidateSecurityCache(session.tenantId, existing.id, existing.id);
+        } else if (String(input.newStatus).toUpperCase() === 'ACTIVE') {
+          await sessionRevocationService.unrevokeUser(existing.id);
+          identitySecurityFoundationService.invalidateSecurityCache(session.tenantId, existing.id, existing.id);
         }
 
         await auditRepository.recordEvent(

@@ -3,6 +3,8 @@ name: Security Audit & Vulnerability Scan
 on:
   push:
     branches: [ main ]
+  pull_request:
+    branches: [ main ]
   schedule:
     - cron: '0 0 * * 0' # Weekly scan
 
@@ -10,11 +12,18 @@ jobs:
   security-audit:
     name: Dependency Audit & Secret Scan
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
 
     steps:
-      - name: Checkout Repository
+      - name: Checkout Repository (Full History for Secret Scanning)
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run Gitleaks Secret Scan
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Setup Node.js 20
         uses: actions/setup-node@v4
@@ -26,5 +35,8 @@ jobs:
         with:
           version: 9.15.4
 
-      - name: Run Audit
-        run: pnpm audit --prod --audit-level high || true
+      - name: Install Dependencies for Audit
+        run: pnpm install --frozen-lockfile --ignore-scripts
+
+      - name: Run Production Dependency Audit
+        run: pnpm audit --prod --audit-level high

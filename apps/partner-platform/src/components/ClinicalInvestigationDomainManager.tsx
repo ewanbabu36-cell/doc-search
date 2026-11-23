@@ -262,7 +262,18 @@ export const ClinicalInvestigationDomainManager: React.FC<ClinicalInvestigationD
     };
   };
 
+  const isDevOrQaEnvironment = Boolean(
+    (typeof import.meta !== 'undefined' && (import.meta.env?.DEV || import.meta.env?.MODE === 'development' || import.meta.env?.MODE === 'test')) ||
+    (typeof process !== 'undefined' && process.env?.NODE_ENV !== 'production')
+  );
+
   const handleSimulatePanicAlert = (type: 'platelets' | 'potassium' = 'platelets') => {
+    // 🛡️ CLINICAL SAFETY GUARD: Strictly block synthetic alert generation in production
+    if (!isDevOrQaEnvironment) {
+      console.warn('[ClinicalSafety Guard] Panic alert simulator is strictly disabled in production environments.');
+      return;
+    }
+
     const isPlatelets = type === 'platelets';
     const testOrder: InvestigationOrderDto = {
       id: `panic-sim-${Date.now()}`,
@@ -1096,33 +1107,35 @@ export const ClinicalInvestigationDomainManager: React.FC<ClinicalInvestigationD
               </>
             )}
 
-            {/* QA & Utilities Drawer Toggle (Separates Sandbox from Live Bench) */}
-            <button
-              type="button"
-              onClick={() => setShowDevQaTools(!showDevQaTools)}
-              style={{
-                backgroundColor: showDevQaTools ? 'rgba(148, 163, 184, 0.2)' : 'transparent',
-                border: '1px solid rgba(148, 163, 184, 0.3)',
-                color: '#94A3B8',
-                borderRadius: '8px',
-                padding: '7px 12px',
-                fontSize: '0.78rem',
-                fontWeight: 600,
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px'
-              }}
-              title="Toggle QA Simulators and Advanced Bench Tools"
-            >
-              <span>🛠️</span>
-              <span>{showDevQaTools ? 'Hide QA Tools ⏶' : 'QA Simulators ⏷'}</span>
-            </button>
+            {/* QA & Utilities Drawer Toggle (Separates Sandbox from Live Bench - Disabled in Production) */}
+            {isDevOrQaEnvironment && (
+              <button
+                type="button"
+                onClick={() => setShowDevQaTools(!showDevQaTools)}
+                style={{
+                  backgroundColor: showDevQaTools ? 'rgba(148, 163, 184, 0.2)' : 'transparent',
+                  border: '1px solid rgba(148, 163, 184, 0.3)',
+                  color: '#94A3B8',
+                  borderRadius: '8px',
+                  padding: '7px 12px',
+                  fontSize: '0.78rem',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px'
+                }}
+                title="Toggle QA Simulators and Advanced Bench Tools"
+              >
+                <span>🛠️</span>
+                <span>{showDevQaTools ? 'Hide QA Tools ⏶' : 'QA Simulators ⏷'}</span>
+              </button>
+            )}
           </div>
         </div>
 
-        {/* Collapsible Sandbox & QA Utility Drawer */}
-        {showDevQaTools && (
+        {/* Collapsible Sandbox & QA Utility Drawer - Guarded by environment */}
+        {isDevOrQaEnvironment && showDevQaTools && (
           <div style={{
             backgroundColor: 'rgba(15, 23, 42, 0.8)',
             border: '1px dashed rgba(148, 163, 184, 0.4)',

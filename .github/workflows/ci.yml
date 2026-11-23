@@ -18,7 +18,7 @@ jobs:
 
     services:
       postgres:
-        image: postgres:16-alpine
+        image: postgres:18-alpine
         env:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
@@ -93,6 +93,15 @@ jobs:
         env:
           NODE_ENV: test
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/docsearch
+
+      - name: Run Phase 9.14 Staff Security & Session Revocation Suite
+        run: node tests/certification/phase9-14-staff-security-workflow.test.mjs
+        env:
+          NODE_ENV: test
+          TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/docsearch
+          TEST_APP_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/docsearch
+          TEST_API_URL: http://127.0.0.1:4000
+          TEST_JWT_SECRET: docsearch_master_jwt_secret_dev_32char_key_only
 
       - name: Run Production Monorepo Build
         run: pnpm -r build

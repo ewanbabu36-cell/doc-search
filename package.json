@@ -18,6 +18,7 @@
     "test:db": "node --test --test-concurrency=1 packages/database/test/*.test.mjs",
     "test:integration": "node --test --test-concurrency=1 apps/api-gateway/test/*.test.mjs",
     "test:security": "node tests/security/adversarial-security-audit.mjs && node tests/security/p0-production-security-audit.mjs",
+    "test:certification:phase9-14": "node --env-file=.env tests/certification/phase9-14-staff-security-workflow.test.mjs",
     "test:production-certification": "node scripts/production-certification-runner.mjs",
     "format": "prettier --write \"**/*.{ts,tsx,md,json,css}\"",
     "format:check": "prettier --check \"**/*.{ts,tsx,md,json,css}\"",

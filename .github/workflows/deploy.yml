@@ -44,10 +44,10 @@ jobs:
       - name: Install Monorepo Dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Execute Automated Database Migrations (Prisma Migration Deploy)
-        run: pnpm --filter @docsearch/database prisma migrate deploy
+      - name: Execute Automated Database Migrations (Drizzle Kit Migrate)
+        run: pnpm --filter @docsearch/database run db:migrate
         env:
-          DATABASE_URL: ${{ secrets.PROD_DATABASE_URL || 'postgresql://postgres:password@localhost:5432/docsearch' }}
+          DATABASE_URL: ${{ secrets.PROD_DATABASE_URL }}
 
       - name: Run Production Smoke Tests & Gate Verifications
         run: node tests/production-truth/test-production-truth.js
