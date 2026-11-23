@@ -130,6 +130,7 @@ export const PathologistTargetCockpitView: React.FC<PathologistTargetCockpitView
   onOpenBatchDscModal,
   onOpenDeltaModal,
   onOpenWsiModal,
+  onNavigateModule,
   triggerToast,
   activeRolePerspective,
   onChangeRolePerspective
@@ -445,6 +446,30 @@ export const PathologistTargetCockpitView: React.FC<PathologistTargetCockpitView
               </div>
             </div>
           </div>
+
+          {/* Lab Team & Hiring Quick Access */}
+          <button
+            type="button"
+            onClick={() => onNavigateModule('staff-administration')}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              padding: '6px 12px',
+              borderRadius: '8px',
+              backgroundColor: 'rgba(168, 85, 247, 0.2)',
+              border: '1px solid rgba(168, 85, 247, 0.5)',
+              color: '#F8FAFC',
+              fontSize: '0.75rem',
+              fontWeight: 700,
+              cursor: 'pointer',
+              transition: 'all 0.15s ease'
+            }}
+            title="Onboard Lab Technicians, Phlebotomists & Signatory Pathologists"
+          >
+            <span>👥</span>
+            <span>Team &amp; Hiring</span>
+          </button>
 
           {/* Role Switcher Pill for Testing Cross-Role Navigation */}
           <div style={{ display: 'flex', gap: '2px', backgroundColor: 'rgba(0,0,0,0.3)', padding: '2px', borderRadius: '8px' }}>

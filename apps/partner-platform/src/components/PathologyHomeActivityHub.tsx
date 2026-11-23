@@ -1033,6 +1033,28 @@ export const PathologyHomeActivityHub: React.FC<PathologyHomeActivityHubProps> =
           <Badge variant="primary" style={{ backgroundColor: 'rgba(16, 185, 129, 0.15)', color: '#34D399', borderColor: 'rgba(16, 185, 129, 0.3)' }}>
             NABL &amp; ISO-15189 Standard
           </Badge>
+          <button
+            type="button"
+            onClick={() => onNavigateModule('staff-administration')}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              padding: '6px 12px',
+              borderRadius: '8px',
+              backgroundColor: 'rgba(168, 85, 247, 0.15)',
+              border: '1px solid rgba(168, 85, 247, 0.4)',
+              color: '#C084FC',
+              fontSize: '0.75rem',
+              fontWeight: 700,
+              cursor: 'pointer',
+              transition: 'all 0.15s ease'
+            }}
+            title="Manage Laboratory Staff, Phlebotomists, and Signatory Pathologists"
+          >
+            <span>👥</span>
+            <span>Lab Staff &amp; Hiring</span>
+          </button>
           <span style={{ fontSize: '0.75rem', color: '#64748B' }}>Role-Isolated Architecture</span>
         </div>
       </div>

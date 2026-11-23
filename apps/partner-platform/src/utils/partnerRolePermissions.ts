@@ -737,7 +737,13 @@ export function isPartnerModuleAllowed(
       'CENTRE_MANAGER',
       'CLINIC_DOCTOR',
       'CLINIC_OWNER',
-      'CLINIC_ADMIN'
+      'CLINIC_ADMIN',
+      'PATHOLOGIST',
+      'PATHOLOGIST_MD',
+      'CHIEF_PHARMACIST',
+      'PHARMACIST',
+      'RADIOLOGIST',
+      'RADIOLOGIST_MD'
     ];
     if (
       authorizedAdminRoles.includes(norm) ||
@@ -897,7 +903,16 @@ export function isHospitalExecutive(userRole?: string): boolean {
     'ADMINISTRATOR',
     'CHIEF_MEDICAL_OFFICER',
     'CLINICAL_DIRECTOR',
-    'CENTRE_MANAGER'
+    'CENTRE_MANAGER',
+    'LAB_DIRECTOR',
+    'PATHOLOGIST',
+    'PATHOLOGIST_MD',
+    'PHARMACY_DIRECTOR',
+    'CHIEF_PHARMACIST',
+    'CLINIC_OWNER',
+    'CLINIC_DOCTOR',
+    'RADIOLOGIST',
+    'RADIOLOGIST_MD'
   ]);
   return execRoles.has(upper) || upper === '*' || upper.includes('ADMIN') || upper.includes('DIRECTOR') || upper.includes('FOUNDER') || upper.includes('OWNER');
 }
