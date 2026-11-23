@@ -207,15 +207,10 @@ const sizeMB = (stats.size / (1024 * 1024)).toFixed(2);
 const fileBuffer = fs.readFileSync(OUTPUT_ZIP);
 const sha256 = crypto.createHash('sha256').update(fileBuffer).digest('hex');
 
-// Also keep DOC_SEARCH_SANITIZED_SOURCE.zip synced
-const sanitizedCopyPath = path.join(ROOT_DIR, 'DOC_SEARCH_SANITIZED_SOURCE.zip');
-fs.copyFileSync(OUTPUT_ZIP, sanitizedCopyPath);
-
 console.log('\n================================================================');
 console.log('COMPLETE PROJECT ARCHIVE GENERATED SUCCESSFULLY');
 console.log('================================================================');
 console.log(`Primary Archive:   ${OUTPUT_ZIP}`);
-console.log(`Sanitized Copy:    ${sanitizedCopyPath}`);
 console.log(`File Size:         ${sizeMB} MB (${stats.size} bytes)`);
 console.log(`SHA-256 Checksum:  ${sha256}`);
 console.log('================================================================\n');
