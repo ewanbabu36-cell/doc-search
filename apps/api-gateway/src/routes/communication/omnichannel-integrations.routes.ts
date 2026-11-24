@@ -42,6 +42,31 @@ export const omnichannelIntegrationsRoutes: FastifyPluginAsync = async (fastify)
     });
   });
 
+  fastify.get('/api/v1/integrations/gmail/verify', async (_request, reply) => {
+    const verification = await gmailMailerService.verifyConnection();
+    return reply.status(verification.success ? 200 : 400).send(verification);
+  });
+
+  fastify.post('/api/v1/integrations/gmail/send-test', async (request: any, reply) => {
+    const { toEmail } = request.body || {};
+    const targetEmail = toEmail || process.env['GMAIL_USER'] || 'test@example.com';
+    const result = await gmailMailerService.send({
+      to: targetEmail,
+      subject: '✅ DocSearch Healthcare: Gmail SMTP Setup Verified Successfully',
+      html: `
+<div style="font-family:sans-serif;background:#0f172a;color:#f8fafc;padding:24px;border-radius:12px;max-width:500px;margin:auto;">
+  <h2 style="color:#38bdf8;">🎉 Gmail SMTP Setup Successful!</h2>
+  <p>Congratulations! Your DocSearch API Gateway has successfully connected to Google Mail SMTP and sent this live verification email.</p>
+  <div style="background:#1e293b;padding:12px;border-radius:8px;font-family:monospace;font-size:12px;color:#34d399;">
+    Status: CONNECTED & AUTHENTICATED<br/>
+    Timestamp: ${new Date().toISOString()}
+  </div>
+</div>`.trim(),
+      category: 'GENERAL'
+    });
+    return reply.status(200).send({ success: true, result });
+  });
+
   fastify.post('/api/v1/integrations/gmail/send-otp', async (request: any, reply) => {
     const { toEmail, otp, expiresMinutes } = request.body || {};
     if (!toEmail || !otp) {

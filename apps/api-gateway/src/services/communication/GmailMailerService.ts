@@ -62,8 +62,9 @@ export class GmailMailerService {
   private readonly smtpPort: number;
 
   constructor() {
-    this.gmailUser = process.env['GMAIL_USER'] || process.env['SMTP_USER'];
-    this.gmailAppPassword = process.env['GMAIL_APP_PASSWORD'] || process.env['SMTP_PASSWORD'];
+    this.gmailUser = (process.env['GMAIL_USER'] || process.env['SMTP_USER'])?.trim();
+    const rawPass = process.env['GMAIL_APP_PASSWORD'] || process.env['SMTP_PASSWORD'];
+    this.gmailAppPassword = rawPass ? rawPass.replace(/\s+/g, '').trim() : undefined;
     this.smtpHost = process.env['SMTP_HOST'];
     this.smtpPort = parseInt(process.env['SMTP_PORT'] || '587', 10);
 
@@ -121,6 +122,33 @@ export class GmailMailerService {
       mode: this.isConfigured() ? 'GMAIL_SMTP' : 'LOCAL_SIMULATION',
       user: this.gmailUser ? this.redactEmail(this.gmailUser) : undefined
     };
+  }
+
+  /**
+   * Verify live SMTP connection with Google Mail servers
+   */
+  public async verifyConnection(): Promise<{ success: boolean; message: string; error?: string }> {
+    if (!this.isConfigured() || !this.transporter) {
+      return {
+        success: false,
+        message: 'Gmail credentials (GMAIL_USER or GMAIL_APP_PASSWORD) are not configured. Running in LOCAL_SIMULATION mode.'
+      };
+    }
+
+    try {
+      await this.transporter.verify();
+      return {
+        success: true,
+        message: `Successfully authenticated with Gmail SMTP server for ${this.redactEmail(this.gmailUser!)}`
+      };
+    } catch (err: any) {
+      logger.error('[GMAIL] Connection verification failed: ' + err?.message);
+      return {
+        success: false,
+        message: 'Failed to authenticate with Gmail SMTP server. Please check your Gmail address and 16-character App Password.',
+        error: err?.message
+      };
+    }
   }
 
   private redactEmail(email: string): string {
