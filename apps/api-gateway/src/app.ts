@@ -71,6 +71,7 @@ import { workflowRoutes } from './routes/workflow.routes.js';
 import { businessHistoryRoutes } from './routes/partner/business-history.routes.js';
 import { paymentWebhookRoutes } from './routes/webhooks/payment-webhook.routes.js';
 import { whatsappWebhookRoutes } from './routes/communication/whatsapp-webhook.routes.js';
+import { omnichannelIntegrationsRoutes } from './routes/communication/omnichannel-integrations.routes.js';
 import { codeBlueRoutes } from './routes/emergency/code-blue.routes.js';
 import { notificationWebhookRoutes } from './routes/webhooks/notification-webhook.routes.js';
 import { licenseGovernanceRoutes } from './routes/company/license-governance.routes.js';
@@ -439,6 +440,7 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
   await app.register(billingWebhookRoutes);
   await app.register(paymentWebhookRoutes);
   await app.register(whatsappWebhookRoutes);
+  await app.register(omnichannelIntegrationsRoutes);
   await app.register(codeBlueRoutes);
   await app.register(notificationWebhookRoutes);
   await app.register(mrdManagementRoutes);
