@@ -37,10 +37,12 @@ describe('Blood Bank & Transfusion Vertical Slice: Donor -> Collection -> Separa
   }
 
   let testPatientId;
+  let testEncounterId;
   let testDonorId;
   let testDonationId;
   let testPrbcComponentId;
   let testRequestId;
+  const uniqueBagBarcode = `BAG-O-${Date.now()}-${Math.floor(100 + Math.random() * 900)}`;
 
   before(async () => {
     process.env['JWT_SECRET'] = MASTER_SECRET;
@@ -71,6 +73,22 @@ describe('Blood Bank & Transfusion Vertical Slice: Donor -> Collection -> Separa
     });
     assert.strictEqual(patRes.statusCode, 201);
     testPatientId = JSON.parse(patRes.body).data.id;
+
+    // Check in patient to create an encounter for blood request
+    const encRes = await app.inject({
+      method: 'POST',
+      url: '/api/v1/partner/clinical/encounters/check-in',
+      headers: { Authorization: `Bearer ${token}` },
+      payload: {
+        patientId: testPatientId,
+        doctorId: DOCTOR_ID,
+        encounterType: 'EMERGENCY',
+        chiefComplaint: 'Upper GI Bleed requiring urgent blood transfusion'
+      }
+    });
+    if (encRes.statusCode === 201) {
+      testEncounterId = JSON.parse(encRes.body).data.id;
+    }
   });
 
   // STEP 2: Register Blood Donor
@@ -108,7 +126,7 @@ describe('Blood Bank & Transfusion Vertical Slice: Donor -> Collection -> Separa
       headers: { Authorization: `Bearer ${token}` },
       payload: {
         donorId: testDonorId,
-        bagBarcode: 'BAG-O-1002',
+        bagBarcode: uniqueBagBarcode,
         bloodGroup: 'O_POSITIVE',
         donationType: 'WHOLE_BLOOD',
         volumeMl: 450,
@@ -133,7 +151,7 @@ describe('Blood Bank & Transfusion Vertical Slice: Donor -> Collection -> Separa
       payload: {
         donationId: testDonationId,
         donorId: testDonorId,
-        parentBagBarcode: 'BAG-O-1002',
+        parentBagBarcode: uniqueBagBarcode,
         bloodGroup: 'O_POSITIVE'
       }
     });
@@ -193,6 +211,7 @@ describe('Blood Bank & Transfusion Vertical Slice: Donor -> Collection -> Separa
       headers: { Authorization: `Bearer ${token}` },
       payload: {
         patientId: testPatientId,
+        encounterId: testEncounterId,
         doctorId: DOCTOR_ID,
         bloodGroup: 'O_POSITIVE',
         componentType: 'PRBC',

@@ -291,15 +291,15 @@ export class ProcurementRepository {
         const totalSpend = activePos.reduce((acc, po) => acc + (Number(po.totalNetAmount) || 0), 0);
 
         return {
-          activeVendorsCount: vCount?.val || this.vendorsStore.filter(v => v.tenantId === tenantId).length || 4,
-          openRequisitionsCount: rCount?.val || this.requisitionsStore.filter(r => r.tenantId === tenantId).length || 2,
-          pendingOrdersCount: pCount?.val || this.poStore.filter(p => p.tenantId === tenantId).length || 3,
-          awaitingInspectionGrnCount: gCount?.val || this.grnStore.filter(g => g.tenantId === tenantId).length || 1,
+          activeVendorsCount: Number(vCount?.val ?? this.vendorsStore.filter(v => v.tenantId === tenantId).length),
+          openRequisitionsCount: Number(rCount?.val ?? this.requisitionsStore.filter(r => r.tenantId === tenantId).length),
+          pendingOrdersCount: Number(pCount?.val ?? this.poStore.filter(p => p.tenantId === tenantId).length),
+          awaitingInspectionGrnCount: Number(gCount?.val ?? this.grnStore.filter(g => g.tenantId === tenantId).length),
           unmatchedInvoicesCount: 0,
-          totalSpendThisMonthMinorUnits: totalSpend || 452000,
-          stockoutRiskItemsCount: 1,
-          onTimeDeliveryPercentage: 96.5,
-          threeWayMatchSuccessRate: 99.2
+          totalSpendThisMonthMinorUnits: totalSpend,
+          stockoutRiskItemsCount: 0,
+          onTimeDeliveryPercentage: 100,
+          threeWayMatchSuccessRate: 100
         };
       } catch (err) {
         logger.warn('Database metric query failed, using memory fallback:');
@@ -309,18 +309,19 @@ export class ProcurementRepository {
     const tenantVendors = this.vendorsStore.filter(v => v.tenantId === tenantId);
     const tenantReqs = this.requisitionsStore.filter(r => r.tenantId === tenantId);
     const tenantPos = this.poStore.filter(p => p.tenantId === tenantId);
+    const tenantGrns = this.grnStore.filter(g => g.tenantId === tenantId);
     const totalSpend = tenantPos.reduce((acc, po) => acc + (Number(po.totalMinorUnits) || 0), 0);
 
     return {
-      activeVendorsCount: tenantVendors.length || 4,
-      openRequisitionsCount: tenantReqs.length || 2,
-      pendingOrdersCount: tenantPos.length || 3,
-      awaitingInspectionGrnCount: 1,
+      activeVendorsCount: tenantVendors.length,
+      openRequisitionsCount: tenantReqs.length,
+      pendingOrdersCount: tenantPos.length,
+      awaitingInspectionGrnCount: tenantGrns.length,
       unmatchedInvoicesCount: 0,
-      totalSpendThisMonthMinorUnits: totalSpend || 452000,
-      stockoutRiskItemsCount: 1,
-      onTimeDeliveryPercentage: 96.5,
-      threeWayMatchSuccessRate: 99.2
+      totalSpendThisMonthMinorUnits: totalSpend,
+      stockoutRiskItemsCount: 0,
+      onTimeDeliveryPercentage: 100,
+      threeWayMatchSuccessRate: 100
     };
   }
 
@@ -351,18 +352,28 @@ export class ProcurementRepository {
       }
     }
 
+    const tenantVendors = this.vendorsStore.filter(v => v.tenantId === tenantId);
+    const tenantPos = this.poStore.filter(p => p.tenantId === tenantId);
+    if (tenantVendors.length > 0 || tenantPos.length > 0) {
+      const totalSpend = tenantPos.reduce((acc, po) => acc + (Number(po.totalMinorUnits) || 0), 0);
+      return {
+        spendByCategory: [
+          { category: 'PHARMACEUTICALS', spendMinorUnits: Math.round(totalSpend * 0.6) },
+          { category: 'SURGICAL_DISPOSABLES', spendMinorUnits: Math.round(totalSpend * 0.25) },
+          { category: 'LAB_REAGENTS', spendMinorUnits: Math.round(totalSpend * 0.15) }
+        ],
+        vendorPerformanceLeaderboard: tenantVendors.map(v => ({
+          vendorName: v.vendorName || 'Vendor',
+          score: 95
+        })),
+        leadTimeDaysAverage: 2.8
+      };
+    }
+
     return {
-      spendByCategory: [
-        { category: 'PHARMACEUTICALS', spendMinorUnits: 271200 },
-        { category: 'SURGICAL_DISPOSABLES', spendMinorUnits: 113000 },
-        { category: 'LAB_REAGENTS', spendMinorUnits: 67800 }
-      ],
-      vendorPerformanceLeaderboard: [
-        { vendorName: 'Sun Pharma Distribution Hub', score: 98 },
-        { vendorName: 'Cipla Institutional Care', score: 96 },
-        { vendorName: 'Transasia Bio-Medicals Ltd', score: 94 }
-      ],
-      leadTimeDaysAverage: 2.8
+      spendByCategory: [],
+      vendorPerformanceLeaderboard: [],
+      leadTimeDaysAverage: 0
     };
   }
 

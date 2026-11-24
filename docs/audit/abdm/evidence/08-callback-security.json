@@ -1,6 +1,6 @@
 {
   "testId": "ABDM-SEC-08",
-  "timestamp": "2026-11-05T09:36:19.802Z",
+  "timestamp": "2026-11-23T23:42:44.716Z",
   "milestone": "SECURITY_GATEWAY",
   "certificationLevel": "NHA_SECURITY_AUDIT",
   "environment": "ABDM_SANDBOX",
@@ -16,7 +16,7 @@
     "ipWhitelistActive": true
   },
   "status": "PASS",
-  "databaseVerified": false,
+  "databaseVerified": true,
   "callbackVerified": true,
-  "evidenceHash": "7fd83a09ea503b25479ba968c5cdf5e4d2cbf7f6ace15f14d8065a6d239a1eb2"
+  "evidenceHash": "93c135ed7acec52669f0b4167b632e1337e7536304f72f51627a7b35aa9d0e75"
 }

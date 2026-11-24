@@ -1,6 +1,6 @@
 {
   "testId": "ABDM-DB-09",
-  "timestamp": "2026-11-05T09:36:19.828Z",
+  "timestamp": "2026-11-23T23:42:44.718Z",
   "milestone": "RELATIONAL_LEDGER",
   "certificationLevel": "DATA_INTEGRITY_AUDIT",
   "environment": "ABDM_SANDBOX",
@@ -17,8 +17,8 @@
   "multiTenantRlsActive": true,
   "referentialIntegrity": "STRICT_FOREIGN_KEYS_CASCADE",
   "migrationLedgerVersion": "0049_complete_docsearch_schema",
-  "status": "BLOCKED",
-  "databaseVerified": false,
+  "status": "PASS",
+  "databaseVerified": true,
   "callbackVerified": true,
-  "evidenceHash": "f3d751e61b681fc02ed6bc8b27b77874f3c172f26f1478aacf831e479ff79a49"
+  "evidenceHash": "92fe25b1c528b7ce40eea14cbbfb0b32da9a8a9a3c1cb40355e04936f070531d"
 }

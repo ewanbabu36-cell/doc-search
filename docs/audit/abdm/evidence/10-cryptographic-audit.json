@@ -1,6 +1,6 @@
 {
   "testId": "ABDM-CRYPTO-10",
-  "timestamp": "2026-11-05T09:36:19.853Z",
+  "timestamp": "2026-11-23T23:42:44.720Z",
   "milestone": "CRYPTOGRAPHY",
   "certificationLevel": "END_TO_END_ENCRYPTION_AUDIT",
   "environment": "ABDM_SANDBOX",
@@ -11,7 +11,7 @@
   "payloadCipher": "AES-256-GCM with 128-bit authentication tag",
   "keyZeroizationOnComplete": true,
   "status": "PASS",
-  "databaseVerified": false,
+  "databaseVerified": true,
   "callbackVerified": true,
-  "evidenceHash": "efe668db8d3b55bc9150c0b814765ee85b35b132275381cdb133ae0bb5db846b"
+  "evidenceHash": "fca0c02de3337baa2ada2310bebeffbfee3b5afc3c9a0b094c582fd4c78ae334"
 }

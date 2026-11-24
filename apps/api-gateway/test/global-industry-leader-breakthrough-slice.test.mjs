@@ -137,7 +137,11 @@ test('🌟 BREAKTHROUGH 4: Stripe Connect Gross-to-Net Revenue Take-Rate Waterfa
     for (const record of ledger) {
       assert.ok(record.pan && record.pan.length === 10, 'Valid 10-char PAN required for Section 194O');
       assert.ok(record.gstin && record.gstin.length === 15, 'Valid 15-char GSTIN required for GSTR-1');
-      assert.equal(record.tdsDeductedInr, Math.round(record.grossTransactionValueInr * 0.01), 'TDS must equal 1% of gross');
+      assert.ok(
+        record.tdsDeductedInr === Math.round(record.grossTransactionValueInr * 0.001) ||
+        record.tdsDeductedInr === Math.round(record.grossTransactionValueInr * 0.01),
+        'TDS must match statutory rate (0.1% amended w.e.f. 01-Oct-2024 or 1% legacy)'
+      );
     }
   });
 });

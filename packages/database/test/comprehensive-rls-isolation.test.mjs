@@ -10,6 +10,23 @@ const APP_DB_URL = 'postgresql://docsearch_app:docsearch_app_secure_pass@127.0.0
 describe('Comprehensive Row-Level Security (RLS) Isolation Gate', () => {
   let adminClient;
   let appClient;
+  let rlsSecret;
+
+  function computeSig(tenantId, branchId = '', isSuper = false) {
+    const payload = `${tenantId || ''}:${branchId || ''}:${isSuper ? 'true' : 'false'}`;
+    return crypto.createHmac('sha256', rlsSecret).update(payload).digest('hex');
+  }
+
+  async function setAppContext(client, tenantId, branchId = '', isSuper = false) {
+    const sig = computeSig(tenantId, branchId, isSuper);
+    const res = await client.query('SELECT core.verify_and_set_context($1, $2, $3, $4) AS verified', [
+      tenantId || '',
+      branchId || '',
+      Boolean(isSuper),
+      sig
+    ]);
+    assert.strictEqual(res.rows[0].verified, true, 'Context signature verification must succeed');
+  }
 
   const tenantA_id = crypto.randomUUID();
   const tenantB_id = crypto.randomUUID();
@@ -28,6 +45,10 @@ describe('Comprehensive Row-Level Security (RLS) Isolation Gate', () => {
 
     appClient = new Client({ connectionString: APP_DB_URL });
     await appClient.connect();
+
+    // Fetch cryptographic RLS secret provisioned in vault
+    const secretRes = await adminClient.query('SELECT secret FROM core.context_secrets WHERE id = 1');
+    rlsSecret = secretRes.rows[0]?.secret || process.env.DATABASE_CONTEXT_SECRET || 'docsearch_master_hmac_rls_signing_key_2026_unforgeable';
 
     // Verify RLS is enabled on key tables across schemas
     const rlsCheck = await adminClient.query(`
@@ -117,8 +138,7 @@ describe('Comprehensive Row-Level Security (RLS) Isolation Gate', () => {
 
   test('1. Tenant A context isolates operational partners (only Alpha returned)', async () => {
     await appClient.query('BEGIN');
-    await appClient.query(`SET LOCAL app.is_super_admin = 'false'`);
-    await appClient.query(`SET LOCAL app.current_tenant_id = '${tenantA_id}'`);
+    await setAppContext(appClient, tenantA_id, '', false);
 
     const res = await appClient.query(`SELECT id, tenant_id, legal_business_name FROM clinical.operational_partners WHERE tenant_id IN ($1, $2)`, [tenantA_id, tenantB_id]);
     await appClient.query('COMMIT');
@@ -130,8 +150,7 @@ describe('Comprehensive Row-Level Security (RLS) Isolation Gate', () => {
 
   test('2. Tenant A context isolates patients (only Doe-Alpha returned, Smith-Beta invisible)', async () => {
     await appClient.query('BEGIN');
-    await appClient.query(`SET LOCAL app.is_super_admin = 'false'`);
-    await appClient.query(`SET LOCAL app.current_tenant_id = '${tenantA_id}'`);
+    await setAppContext(appClient, tenantA_id, '', false);
 
     const res = await appClient.query(`SELECT id, tenant_id, first_name, last_name FROM clinical.patients WHERE tenant_id IN ($1, $2)`, [tenantA_id, tenantB_id]);
     await appClient.query('COMMIT');
@@ -143,8 +162,7 @@ describe('Comprehensive Row-Level Security (RLS) Isolation Gate', () => {
 
   test('3. Tenant B context isolates patients (only Smith-Beta returned, Doe-Alpha invisible)', async () => {
     await appClient.query('BEGIN');
-    await appClient.query(`SET LOCAL app.is_super_admin = 'false'`);
-    await appClient.query(`SET LOCAL app.current_tenant_id = '${tenantB_id}'`);
+    await setAppContext(appClient, tenantB_id, '', false);
 
     const res = await appClient.query(`SELECT id, tenant_id, first_name, last_name FROM clinical.patients WHERE tenant_id IN ($1, $2)`, [tenantA_id, tenantB_id]);
     await appClient.query('COMMIT');
@@ -158,6 +176,7 @@ describe('Comprehensive Row-Level Security (RLS) Isolation Gate', () => {
     await appClient.query('BEGIN');
     await appClient.query(`SET LOCAL app.is_super_admin = 'false'`);
     await appClient.query(`RESET app.current_tenant_id`);
+    await appClient.query(`SET LOCAL app.context_verified = 'false'`);
 
     const patRes = await appClient.query(`SELECT id FROM clinical.patients WHERE tenant_id IN ($1, $2)`, [tenantA_id, tenantB_id]);
     const prtRes = await appClient.query(`SELECT id FROM clinical.operational_partners WHERE tenant_id IN ($1, $2)`, [tenantA_id, tenantB_id]);
@@ -169,8 +188,7 @@ describe('Comprehensive Row-Level Security (RLS) Isolation Gate', () => {
 
   test('5. SuperAdmin context bypasses tenant isolation to see all tenants', async () => {
     await appClient.query('BEGIN');
-    await appClient.query(`SET LOCAL app.is_super_admin = 'true'`);
-    await appClient.query(`RESET app.current_tenant_id`);
+    await setAppContext(appClient, '', '', true);
 
     const res = await appClient.query(`SELECT id, tenant_id, last_name FROM clinical.patients WHERE tenant_id IN ($1, $2) ORDER BY last_name`, [tenantA_id, tenantB_id]);
     await appClient.query('COMMIT');
@@ -183,8 +201,7 @@ describe('Comprehensive Row-Level Security (RLS) Isolation Gate', () => {
 
   test('6. Tenant A cannot insert a record with Tenant B tenant_id (WITH CHECK policy violation)', async () => {
     await appClient.query('BEGIN');
-    await appClient.query(`SET LOCAL app.is_super_admin = 'false'`);
-    await appClient.query(`SET LOCAL app.current_tenant_id = '${tenantA_id}'`);
+    await setAppContext(appClient, tenantA_id, '', false);
 
     let threw = false;
     try {
@@ -204,8 +221,7 @@ describe('Comprehensive Row-Level Security (RLS) Isolation Gate', () => {
 
   test('7. Least-privilege application role (docsearch_app) is strictly constrained by RLS', async () => {
     await appClient.query('BEGIN');
-    await appClient.query(`SET LOCAL app.is_super_admin = 'false'`);
-    await appClient.query(`SET LOCAL app.current_tenant_id = '${tenantA_id}'`);
+    await setAppContext(appClient, tenantA_id, '', false);
 
     const res = await appClient.query(`SELECT COUNT(*) FROM clinical.operational_partners WHERE tenant_id = $1`, [tenantB_id]);
     await appClient.query('COMMIT');

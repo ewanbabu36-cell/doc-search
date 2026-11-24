@@ -1,6 +1,6 @@
 {
   "testId": "ABDM-OBSERVABILITY-13",
-  "timestamp": "2026-11-05T09:36:19.942Z",
+  "timestamp": "2026-11-23T23:42:44.724Z",
   "milestone": "TELEMETRY_OBSERVABILITY",
   "certificationLevel": "ENTERPRISE_AUDIT_LOGGING",
   "environment": "ABDM_SANDBOX",
@@ -16,7 +16,7 @@
     "abdm_m1_m2_m3_success_ratio"
   ],
   "status": "PASS",
-  "databaseVerified": false,
+  "databaseVerified": true,
   "callbackVerified": true,
-  "evidenceHash": "9cfdd07ce4725fa9f12585f8a37ea4e966bc7407dcffa8e22e9562f2e1a18222"
+  "evidenceHash": "bb8fe2c8bd840ee03a6239af2cd1773f9e4082e22b31dfe3460ec31c13403bd3"
 }

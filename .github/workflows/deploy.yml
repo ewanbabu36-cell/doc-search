@@ -117,3 +117,8 @@ jobs:
             git reset --hard origin/main
             chmod +x deploy/*.sh
             ./deploy/deploy-production.sh
+
+      - name: Execute Post-Deployment Smoke Tests
+        run: node tests/production-truth/test-production-truth.js
+        env:
+          DATABASE_URL: ${{ secrets.PROD_DATABASE_URL }}

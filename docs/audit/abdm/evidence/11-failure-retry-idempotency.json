@@ -1,6 +1,6 @@
 {
   "testId": "ABDM-IDEMP-11",
-  "timestamp": "2026-11-05T09:36:19.883Z",
+  "timestamp": "2026-11-23T23:42:44.721Z",
   "milestone": "RESILIENCE_IDEMPOTENCY",
   "certificationLevel": "FAULT_TOLERANCE_AUDIT",
   "environment": "ABDM_SANDBOX",
@@ -16,7 +16,7 @@
   "deadLetterQueue": "abdm-gateway-dlq",
   "circuitBreakerThreshold": "5 failures in 30 seconds",
   "status": "PASS",
-  "databaseVerified": false,
+  "databaseVerified": true,
   "callbackVerified": true,
-  "evidenceHash": "e91ea2a9d8b457636ab1bc817f5f821e60a5030b502360a20b9e6a79bd4100b9"
+  "evidenceHash": "74c890eefcd1e732145fa57f4815511afdd772734e7b56ac94d0a7f779a27527"
 }

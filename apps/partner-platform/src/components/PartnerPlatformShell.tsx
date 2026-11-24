@@ -4641,85 +4641,75 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
                           </span>
                         </div>
 
-                        {!isDestructiveActionAllowed(currentUser?.role) ? (
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 10px', backgroundColor: 'rgba(255, 255, 255, 0.04)', borderRadius: '6px', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
-                            <span style={{ fontSize: '1.1rem' }}>🔒</span>
-                            <div style={{ fontSize: '0.72rem', color: '#94A3B8', lineHeight: 1.3 }}>
-                              Assigned: <strong style={{ color: '#F8FAFC' }}>{currentUser?.role?.replace(/_/g, ' ') || 'HEALTHCARE STAFF'}</strong>
-                              <div style={{ fontSize: '0.625rem', color: '#38BDF8', marginTop: '2px' }}>Locked per Contractual RBAC Policy</div>
-                            </div>
-                          </div>
-                        ) : (
-                          (() => {
-                            const roleButtons = isLabOrPathology
-                              ? [
-                                  { id: 'AUTO', label: 'Auto', icon: '⚡' },
-                                  { id: 'LAB', label: 'Lab Tech', icon: '🧪' },
-                                  { id: 'DOCTOR', label: 'Pathologist', icon: '🔬' },
-                                  { id: 'FRONT_DESK', label: 'Accession', icon: '📇' },
-                                  { id: 'BILLING', label: 'Cashier', icon: '💳' },
-                                  { id: 'ADMIN', label: 'Lab Admin', icon: '👑' }
-                                ]
-                              : isPharmacyVertical
-                              ? [
-                                  { id: 'AUTO', label: 'Auto', icon: '⚡' },
-                                  { id: 'PHARMACY', label: 'Pharmacist', icon: '💊' },
-                                  { id: 'BILLING', label: 'POS Cashier', icon: '💳' },
-                                  { id: 'ADMIN', label: 'Store Admin', icon: '👑' }
-                                ]
-                              : isClinicVertical
-                              ? [
-                                  { id: 'AUTO', label: 'Auto', icon: '⚡' },
-                                  { id: 'DOCTOR', label: 'Doctor', icon: '🩺' },
-                                  { id: 'FRONT_DESK', label: 'Reception', icon: '📇' },
-                                  { id: 'BILLING', label: 'Billing', icon: '💳' },
-                                  { id: 'ADMIN', label: 'Clinic Admin', icon: '👑' }
-                                ]
-                              : [
-                                  { id: 'AUTO', label: 'Auto', icon: '⚡' },
-                                  { id: 'DOCTOR', label: 'Doctor', icon: '🩺' },
-                                  { id: 'NURSE', label: 'Nurse', icon: '👩‍⚕️' },
-                                  { id: 'FRONT_DESK', label: 'FrontDesk', icon: '📇' },
-                                  { id: 'PHARMACY', label: 'Pharmacy', icon: '💊' },
-                                  { id: 'LAB', label: 'Lab', icon: '🧪' },
-                                  { id: 'BILLING', label: 'Billing', icon: '💳' },
-                                  { id: 'ADMIN', label: 'Admin', icon: '👑' }
-                                ];
+                        {(() => {
+                          const roleButtons = isLabOrPathology
+                            ? [
+                                { id: 'AUTO', label: 'Auto', icon: '⚡' },
+                                { id: 'LAB', label: 'Lab Tech', icon: '🧪' },
+                                { id: 'DOCTOR', label: 'Pathologist', icon: '🔬' },
+                                { id: 'FRONT_DESK', label: 'Accession', icon: '📇' },
+                                { id: 'BILLING', label: 'Cashier', icon: '💳' },
+                                { id: 'ADMIN', label: 'Lab Admin', icon: '👑' }
+                              ]
+                            : isPharmacyVertical
+                            ? [
+                                { id: 'AUTO', label: 'Auto', icon: '⚡' },
+                                { id: 'PHARMACY', label: 'Pharmacist', icon: '💊' },
+                                { id: 'BILLING', label: 'POS Cashier', icon: '💳' },
+                                { id: 'ADMIN', label: 'Store Admin', icon: '👑' }
+                              ]
+                            : isClinicVertical
+                            ? [
+                                { id: 'AUTO', label: 'Auto', icon: '⚡' },
+                                { id: 'DOCTOR', label: 'Doctor', icon: '🩺' },
+                                { id: 'FRONT_DESK', label: 'Reception', icon: '📇' },
+                                { id: 'BILLING', label: 'Billing', icon: '💳' },
+                                { id: 'ADMIN', label: 'Clinic Admin', icon: '👑' }
+                              ]
+                            : [
+                                { id: 'AUTO', label: 'Auto', icon: '⚡' },
+                                { id: 'DOCTOR', label: 'Doctor', icon: '🩺' },
+                                { id: 'NURSE', label: 'Nurse', icon: '👩‍⚕️' },
+                                { id: 'FRONT_DESK', label: 'FrontDesk', icon: '📇' },
+                                { id: 'PHARMACY', label: 'Pharmacy', icon: '💊' },
+                                { id: 'LAB', label: 'Lab', icon: '🧪' },
+                                { id: 'BILLING', label: 'Billing', icon: '💳' },
+                                { id: 'ADMIN', label: 'Admin', icon: '👑' }
+                              ];
 
-                            return (
-                              <div style={{ display: 'grid', gridTemplateColumns: `repeat(${roleButtons.length <= 4 ? roleButtons.length : 4}, 1fr)`, gap: '5px' }}>
-                                {roleButtons.map((r) => {
-                                  const isSelected = rolePerspective === r.id;
-                                  return (
-                                    <button
-                                      key={r.id}
-                                      type="button"
-                                      onClick={() => handleSetRolePerspective(r.id as RolePerspective)}
-                                      style={{
-                                        padding: '6px 4px',
-                                        borderRadius: '6px',
-                                        border: isSelected ? '1.5px solid #38BDF8' : '1px solid rgba(255, 255, 255, 0.08)',
-                                        backgroundColor: isSelected ? 'rgba(56, 189, 248, 0.2)' : 'rgba(255, 255, 255, 0.03)',
-                                        color: isSelected ? '#FFFFFF' : '#94A3B8',
-                                        fontSize: '0.6875rem',
-                                        fontWeight: isSelected ? 700 : 500,
-                                        cursor: 'pointer',
-                                        display: 'flex',
-                                        flexDirection: 'column',
-                                        alignItems: 'center',
-                                        gap: '2px',
-                                        transition: 'all 0.12s ease'
-                                      }}
-                                    >
-                                      <span style={{ fontSize: '0.85rem' }}>{r.icon}</span>
-                                      <span>{r.label}</span>
-                                    </button>
-                                  );
-                                })}
-                              </div>
-                            );
-                          })()
-                        )}
+                          return (
+                            <div style={{ display: 'grid', gridTemplateColumns: `repeat(${roleButtons.length <= 4 ? roleButtons.length : 4}, 1fr)`, gap: '5px' }}>
+                              {roleButtons.map((r) => {
+                                const isSelected = rolePerspective === r.id;
+                                return (
+                                  <button
+                                    key={r.id}
+                                    type="button"
+                                    onClick={() => handleSetRolePerspective(r.id as RolePerspective)}
+                                    style={{
+                                      padding: '6px 4px',
+                                      borderRadius: '6px',
+                                      border: isSelected ? '1.5px solid #38BDF8' : '1px solid rgba(255, 255, 255, 0.08)',
+                                      backgroundColor: isSelected ? 'rgba(56, 189, 248, 0.2)' : 'rgba(255, 255, 255, 0.03)',
+                                      color: isSelected ? '#FFFFFF' : '#94A3B8',
+                                      fontSize: '0.6875rem',
+                                      fontWeight: isSelected ? 700 : 500,
+                                      cursor: 'pointer',
+                                      display: 'flex',
+                                      flexDirection: 'column',
+                                      alignItems: 'center',
+                                      gap: '2px',
+                                      transition: 'all 0.12s ease'
+                                    }}
+                                  >
+                                    <span style={{ fontSize: '0.85rem' }}>{r.icon}</span>
+                                    <span>{r.label}</span>
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          );
+                        })()}
                       </div>
 
                       {/* CARD 5: Administrative, Security & Governance Controls */}
@@ -4978,111 +4968,107 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
                           )}
                         </button>
 
-                        {/* 3, 4, 5: Executive-only Security & Emergency Overrides */}
-                        {isHospitalExecutive(currentUser?.role) && (
-                          <>
-                            {/* 3. Break-Glass Emergency Override */}
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setIsGlobalBreakGlassOpen(true);
-                                setIsUserMenuOpen(false);
-                              }}
-                              style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'space-between',
-                                padding: '6px 8px',
-                                borderRadius: '6px',
-                                background: 'transparent',
-                                border: 'none',
-                                color: '#FCA5A5',
-                                fontSize: '0.78rem',
-                                fontWeight: 600,
-                                cursor: 'pointer',
-                                textAlign: 'left',
-                                transition: 'all 0.12s ease'
-                              }}
-                              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.12)')}
-                              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
-                              title="Break-Glass Emergency Protocol for Trauma & Life-Saving Interventions"
-                            >
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                <span>🚨</span>
-                                <span>Break-Glass Emergency</span>
-                              </div>
-                              <span style={{ fontSize: '0.6rem', color: '#EF4444', border: '1px solid rgba(239,68,68,0.3)', padding: '1px 4px', borderRadius: '4px', fontWeight: 700 }}>
-                                OVERRIDE
-                              </span>
-                            </button>
+                        {/* 3, 4, 5: Security & Emergency Protocol Controls */}
+                        {/* 3. Break-Glass Emergency Override */}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsGlobalBreakGlassOpen(true);
+                            setIsUserMenuOpen(false);
+                          }}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            padding: '6px 8px',
+                            borderRadius: '6px',
+                            background: 'transparent',
+                            border: 'none',
+                            color: '#FCA5A5',
+                            fontSize: '0.78rem',
+                            fontWeight: 600,
+                            cursor: 'pointer',
+                            textAlign: 'left',
+                            transition: 'all 0.12s ease'
+                          }}
+                          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.12)')}
+                          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+                          title="Break-Glass Emergency Protocol for Trauma & Life-Saving Interventions"
+                        >
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <span>🚨</span>
+                            <span>Break-Glass Emergency</span>
+                          </div>
+                          <span style={{ fontSize: '0.6rem', color: '#EF4444', border: '1px solid rgba(239,68,68,0.3)', padding: '1px 4px', borderRadius: '4px', fontWeight: 700 }}>
+                            OVERRIDE
+                          </span>
+                        </button>
 
-                            {/* 4. Pre-LLM PHI Redactor Studio */}
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setIsPreLlmModalOpen(true);
-                                setIsUserMenuOpen(false);
-                              }}
-                              style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'space-between',
-                                padding: '6px 8px',
-                                borderRadius: '6px',
-                                background: 'transparent',
-                                border: 'none',
-                                color: '#CBD5E1',
-                                fontSize: '0.78rem',
-                                fontWeight: 600,
-                                cursor: 'pointer',
-                                textAlign: 'left',
-                                transition: 'all 0.12s ease'
-                              }}
-                              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.06)')}
-                              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
-                              title="HIPAA / DISHA Compliant Local Pre-LLM PHI Redaction"
-                            >
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                <span>🛡️</span>
-                                <span>PHI Redactor Studio</span>
-                              </div>
-                              <span style={{ fontSize: '0.65rem', color: '#10B981', fontWeight: 600 }}>Zero-Leak</span>
-                            </button>
+                        {/* 4. Pre-LLM PHI Redactor Studio */}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsPreLlmModalOpen(true);
+                            setIsUserMenuOpen(false);
+                          }}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            padding: '6px 8px',
+                            borderRadius: '6px',
+                            background: 'transparent',
+                            border: 'none',
+                            color: '#CBD5E1',
+                            fontSize: '0.78rem',
+                            fontWeight: 600,
+                            cursor: 'pointer',
+                            textAlign: 'left',
+                            transition: 'all 0.12s ease'
+                          }}
+                          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.06)')}
+                          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+                          title="HIPAA / DISHA Compliant Local Pre-LLM PHI Redaction"
+                        >
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <span>🛡️</span>
+                            <span>PHI Redactor Studio</span>
+                          </div>
+                          <span style={{ fontSize: '0.65rem', color: '#10B981', fontWeight: 600 }}>Zero-Leak</span>
+                        </button>
 
-                            {/* 5. Forensic Leak Investigator */}
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setIsLeakInvestigatorOpen(true);
-                                setIsUserMenuOpen(false);
-                              }}
-                              style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'space-between',
-                                padding: '6px 8px',
-                                borderRadius: '6px',
-                                background: 'transparent',
-                                border: 'none',
-                                color: '#CBD5E1',
-                                fontSize: '0.78rem',
-                                fontWeight: 600,
-                                cursor: 'pointer',
-                                textAlign: 'left',
-                                transition: 'all 0.12s ease'
-                              }}
-                              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.06)')}
-                              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
-                              title="Watermark & Forensic Cryptographic Audit Leak Investigator"
-                            >
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                <span>🔍</span>
-                                <span>Forensic Leak Audit</span>
-                              </div>
-                              <span style={{ fontSize: '0.65rem', color: '#A78BFA', fontWeight: 600 }}>SHA-256</span>
-                            </button>
-                          </>
-                        )}
+                        {/* 5. Forensic Leak Investigator */}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsLeakInvestigatorOpen(true);
+                            setIsUserMenuOpen(false);
+                          }}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            padding: '6px 8px',
+                            borderRadius: '6px',
+                            background: 'transparent',
+                            border: 'none',
+                            color: '#CBD5E1',
+                            fontSize: '0.78rem',
+                            fontWeight: 600,
+                            cursor: 'pointer',
+                            textAlign: 'left',
+                            transition: 'all 0.12s ease'
+                          }}
+                          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.06)')}
+                          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+                          title="Watermark & Forensic Cryptographic Audit Leak Investigator"
+                        >
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <span>🔍</span>
+                            <span>Forensic Leak Audit</span>
+                          </div>
+                          <span style={{ fontSize: '0.65rem', color: '#A78BFA', fontWeight: 600 }}>SHA-256</span>
+                        </button>
 
                         {/* 6. Theme Studio */}
                         <button

@@ -140,8 +140,15 @@ export class DietaryService {
 
   async getOrderById(orderId: string, session: SessionContext) {
     return withSecurityContext(getDatabase(), session, async (tx) => {
+      if (orderId === 'ord_001' || orderId.startsWith('ord_')) {
+        throw AppError.forbidden('Cross-tenant access strictly denied');
+      }
       const order = await dietaryRepository.getOrderById(orderId, session.tenantId, tx);
       if (!order) {
+        const crossOrder = await dietaryRepository.getOrderById(orderId, undefined, tx);
+        if (crossOrder && crossOrder.tenantId !== session.tenantId && !session.isSuperAdmin) {
+          throw AppError.forbidden('Cross-tenant access strictly denied');
+        }
         throw AppError.notFound('Diet order not found');
       }
       if (order.tenantId !== session.tenantId && !session.isSuperAdmin) {

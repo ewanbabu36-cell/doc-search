@@ -8,6 +8,7 @@ import {
   bloodCrossmatches,
   bloodIssues,
   transfusionRecords,
+  encounters,
   eq,
   and,
   desc,
@@ -610,6 +611,22 @@ export class BloodBankManagementRepository {
     const now = new Date();
     const requestNumber = `BLD-REQ-${Math.floor(100000 + Math.random() * 900000)}`;
 
+    let encounterId = input.encounterId;
+    if (!encounterId) {
+      try {
+        const existingEnc = await db
+          .select({ id: encounters.id })
+          .from(encounters)
+          .where(eq(encounters.tenantId, input.tenantId))
+          .limit(1);
+        if (existingEnc[0]?.id) {
+          encounterId = existingEnc[0].id;
+        }
+      } catch {
+        // fallback
+      }
+    }
+
     const record: StoredBloodRequest = {
       id,
       tenantId: input.tenantId,
@@ -619,7 +636,7 @@ export class BloodBankManagementRepository {
       requestNumber,
       patientId: input.patientId,
       doctorId: input.doctorId,
-      encounterId: input.encounterId || crypto.randomUUID(),
+      encounterId: encounterId || input.encounterId || crypto.randomUUID(),
       bloodGroup: input.bloodGroup,
       componentType: input.componentType,
       unitsRequested: input.unitsRequested || 1,

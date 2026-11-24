@@ -1,4 +1,5 @@
 import { type FastifyPluginAsync } from 'fastify';
+import { AppError } from '@docsearch/shared-core';
 import { radiologyService } from '../../services/partner/RadiologyService.js';
 import { authenticate, requirePermission, requireRoles } from '../../plugins/auth-guard.js';
 import { requireModuleCommercialAccess } from '../../plugins/commercial-guard.js';
@@ -140,7 +141,12 @@ export const radiologyRoutes: FastifyPluginAsync = async (fastify) => {
     },
     async (request, reply) => {
       const { id } = request.params as { id: string };
-      const { fromStatus, toStatus } = request.body as { fromStatus: string; toStatus: string };
+      const body = (request.body || {}) as Record<string, any>;
+      const fromStatus = String(body['fromStatus'] || '');
+      const toStatus = String(body['toStatus'] || body['status'] || '');
+      if (toStatus === 'DRAFT' || !toStatus) {
+        throw AppError.badRequest('Invalid state transition to DRAFT');
+      }
       const updated = await radiologyService.updateOrderStatus(id, fromStatus, toStatus, request.session);
       return reply.send({ success: true, data: updated, ...updated });
     }

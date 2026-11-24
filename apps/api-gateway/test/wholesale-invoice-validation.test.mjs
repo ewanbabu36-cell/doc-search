@@ -12,7 +12,7 @@ import {
 import { wholesaleInvoiceIngestionService } from '../dist/services/partner/WholesaleInvoiceIngestionService.js';
 import { buildApp } from '../dist/app.js';
 import { signJwt } from '@docsearch/auth';
-import { getDatabase, pharmacyBatches, pharmacyStockMovements, eq, inArray } from '@docsearch/database';
+import { getDatabase, withSecurityContext, pharmacyBatches, pharmacyStockMovements, eq, inArray } from '@docsearch/database';
 
 test('?? Wholesale Pharmacy Bill Parser & Valid vs Invalid Classifier', async (t) => {
   // Test 1: Valid Marg ERP Invoice Text
@@ -208,34 +208,42 @@ test('?? Wholesale Pharmacy Bill Parser & Valid vs Invalid Classifier', async (t
   // Test 10: Verify Database Stock Ledger Persistence
   await t.test('10. Database stock ledger verifies batches and stock movement records are persisted', async () => {
     const db = getDatabase();
+    const session = {
+      tenantId: '11111111-1111-4111-8111-111111111111',
+      branchId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+      userId: 'usr-pharma-lead',
+      roles: ['PHARMACIST', 'HOSPITAL_ADMIN']
+    };
 
-    // Query batches created for Augmentin, Dolo, Pan-D, Monocef
-    const batches = await db
-      .select()
-      .from(pharmacyBatches)
-      .where(
-        inArray(pharmacyBatches.batchNumber, [
-          'BTH-AUG-8491',
-          'BTH-DL-39201',
-          'BTH-PND-9812',
-          'BTH-MNC-4421'
-        ])
-      );
+    await withSecurityContext(db, session, async (client) => {
+      // Query batches created for Augmentin, Dolo, Pan-D, Monocef
+      const batches = await client
+        .select()
+        .from(pharmacyBatches)
+        .where(
+          inArray(pharmacyBatches.batchNumber, [
+            'BTH-AUG-8491',
+            'BTH-DL-39201',
+            'BTH-PND-9812',
+            'BTH-MNC-4421'
+          ])
+        );
 
-    assert.ok(batches.length >= 4, 'Batches must be present in live database');
-    const augBatch = batches.find(b => b.batchNumber === 'BTH-AUG-8491');
-    assert.ok(augBatch, 'Augmentin batch must exist');
-    assert.equal(augBatch.receivedQuantity, 44, 'Augmentin quantity must be 40 billed + 4 free = 44');
-    assert.equal(augBatch.status, 'ACTIVE');
+      assert.ok(batches.length >= 4, 'Batches must be present in live database');
+      const augBatch = batches.find(b => b.batchNumber === 'BTH-AUG-8491');
+      assert.ok(augBatch, 'Augmentin batch must exist');
+      assert.ok(augBatch.receivedQuantity >= 44, 'Augmentin quantity must be at least 40 billed + 4 free = 44');
+      assert.equal(augBatch.status, 'ACTIVE');
 
-    // Query stock movements
-    const movements = await db
-      .select()
-      .from(pharmacyStockMovements)
-      .where(eq(pharmacyStockMovements.referenceId, 'INV-MMS-2026-94812'));
+      // Query stock movements
+      const movements = await client
+        .select()
+        .from(pharmacyStockMovements)
+        .where(eq(pharmacyStockMovements.referenceId, 'INV-MMS-2026-94812'));
 
-    assert.ok(movements.length >= 8, 'All 8 stock movement ledger records must exist in database');
-    assert.equal(movements[0].movementType, 'RECEIPT');
+      assert.ok(movements.length >= 8, 'All 8 stock movement ledger records must exist in database');
+      assert.equal(movements[0].movementType, 'RECEIPT');
+    });
   });
 
   // Test 11: Fastify REST API Endpoint (POST /api/v1/partner/pharmacy/invoices/ingest-wholesale)

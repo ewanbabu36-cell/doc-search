@@ -642,9 +642,8 @@ export function isPartnerModuleAllowed(
 ): boolean {
   if (!role) return false;
 
-  // Strict executive isolation wall: Governance, HR/Staff Administration, Subscription Plans, Data Migration & Hospital Executive Cockpit
+  // Strict executive isolation wall: Facility Foundation, Subscription Management, Data Migration & Hospital Director Cockpit
   if (
-    moduleKey === 'staff-administration' ||
     moduleKey === 'organization-foundation' ||
     moduleKey === 'account-plan-features' ||
     moduleKey === 'legacy-data-migration' ||
@@ -911,10 +910,18 @@ export function isHospitalExecutive(userRole?: string): boolean {
     'CHIEF_PHARMACIST',
     'CLINIC_OWNER',
     'CLINIC_DOCTOR',
+    'DOCTOR',
+    'PHYSICIAN',
+    'CONSULTANT_PHYSICIAN',
+    'SURGEON',
+    'SENIOR_DOCTOR',
+    'LAB_INCHARGE',
+    'CHIEF_LAB_TECH',
+    'LEAD_TECHNICIAN',
     'RADIOLOGIST',
     'RADIOLOGIST_MD'
   ]);
-  return execRoles.has(upper) || upper === '*' || upper.includes('ADMIN') || upper.includes('DIRECTOR') || upper.includes('FOUNDER') || upper.includes('OWNER');
+  return execRoles.has(upper) || upper === '*' || upper.includes('ADMIN') || upper.includes('DIRECTOR') || upper.includes('FOUNDER') || upper.includes('OWNER') || upper.includes('DOCTOR') || upper.includes('PHYSICIAN') || upper.includes('SURGEON') || upper.includes('PATHOLOG');
 }
 
 /**
@@ -1383,9 +1390,8 @@ export function isModuleAllowedForPartnerProfile(
   userPermissions?: StaffPermissions,
   entitledFeatures?: string[]
 ): boolean {
-  // Strict executive isolation wall: Governance, HR/Staff Administration, Subscription Plans, Data Migration & Hospital Executive Cockpit
+  // Strict executive isolation wall: Facility Foundation, Subscription Management, Data Migration & Hospital Director Cockpit
   if (
-    moduleKey === 'staff-administration' ||
     moduleKey === 'organization-foundation' ||
     moduleKey === 'account-plan-features' ||
     moduleKey === 'legacy-data-migration' ||
