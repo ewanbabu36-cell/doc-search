@@ -212,6 +212,15 @@ export const StaffAdministrationDomainManager: React.FC<StaffAdministrationDomai
     void loadData();
   }, []);
 
+  useEffect(() => {
+    const handleOpenCreateStaff = () => {
+      setActiveTab('directory');
+      setPartnerView('roster');
+    };
+    window.addEventListener('docsearch:open_create_staff', handleOpenCreateStaff);
+    return () => window.removeEventListener('docsearch:open_create_staff', handleOpenCreateStaff);
+  }, []);
+
   const handleContextChange = async (newContext: Partial<PanelContextDto>) => {
     const updated = await partnerFoundationService.setPanelContext(newContext);
     setContext(updated);

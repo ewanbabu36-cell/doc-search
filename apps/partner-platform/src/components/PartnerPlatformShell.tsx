@@ -1577,9 +1577,7 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
           { id: 'encounters-visits', label: 'Queue & Token Dispatch', icon: <span>⏱️</span>, isActive: activeModule === 'encounters-visits', onClick: () => setActiveModule('encounters-visits') },
           { id: 'inpatient-management', label: 'Inpatient Bed Rounds', icon: <span>🛏️</span>, isActive: activeModule === 'inpatient-management' && inpatientTab === 'patient-census', onClick: () => { setActiveModule('inpatient-management'); setInpatientTab('patient-census'); } },
           { id: 'telemedicine-rpm', label: 'Telehealth Video Consult', icon: <span>📹</span>, isActive: activeModule === 'telemedicine-rpm', onClick: () => setActiveModule('telemedicine-rpm') },
-          ...(roleUpper.includes('CLINIC') || currentUser?.organizationType === 'CLINIC' ? [
-            { id: 'staff-administration' as PartnerModuleKey, label: 'Staff & Team Directory', icon: <span>👥</span>, isActive: activeModule === 'staff-administration', onClick: () => setActiveModule('staff-administration') }
-          ] : [])
+          { id: 'staff-administration' as PartnerModuleKey, label: 'Staff & Team Directory', icon: <span>👥</span>, isActive: activeModule === 'staff-administration', onClick: () => setActiveModule('staff-administration') }
         ];
       } else if (isNurseRole) {
         roleTitle = '👩‍⚕️ Nursing Station';
@@ -1587,7 +1585,8 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
           { id: 'nurse-triage-station', label: 'Acuity Triage Station', icon: <span>🚨</span>, isActive: activeModule === 'nurse-triage-station', onClick: () => setActiveModule('nurse-triage-station') },
           { id: 'inpatient-management', label: 'Ward Bed Map Board', icon: <span>🛏️</span>, isActive: activeModule === 'inpatient-management' && inpatientTab === 'bed-board', onClick: () => { setActiveModule('inpatient-management'); setInpatientTab('bed-board'); } },
           { id: 'nurse-triage-station', label: 'Vitals & Early Warning', icon: <span>🫀</span>, isActive: activeModule === 'nurse-triage-station', onClick: () => setActiveModule('nurse-triage-station') },
-          { id: 'inpatient-management', label: 'MAR Medication Care', icon: <span>💊</span>, isActive: activeModule === 'inpatient-management' && inpatientTab === 'nursing-care', onClick: () => { setActiveModule('inpatient-management'); setInpatientTab('nursing-care'); } }
+          { id: 'inpatient-management', label: 'MAR Medication Care', icon: <span>💊</span>, isActive: activeModule === 'inpatient-management' && inpatientTab === 'nursing-care', onClick: () => { setActiveModule('inpatient-management'); setInpatientTab('nursing-care'); } },
+          { id: 'staff-administration', label: 'Nursing Staff & Team', icon: <span>👥</span>, isActive: activeModule === 'staff-administration', onClick: () => setActiveModule('staff-administration') }
         ];
       } else if (isFrontDeskRole) {
         roleTitle = '📇 Front Desk & Reception';
@@ -1595,7 +1594,8 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
           { id: 'patient-registration', label: 'Express OPD Reg & ABHA', icon: <span>⚡</span>, isActive: activeModule === 'patient-registration' || isFastOpdDrawerOpen, onClick: () => { setActiveModule('patient-registration'); setIsFastOpdDrawerOpen(true); } },
           { id: 'encounters-visits', label: 'Tokens & Live Queue', icon: <span>⏱️</span>, isActive: activeModule === 'encounters-visits', onClick: () => setActiveModule('encounters-visits') },
           { id: 'billing-revenue-cycle', label: 'Cashier & UPI Receipt', icon: <span>🧾</span>, isActive: activeModule === 'billing-revenue-cycle', onClick: () => setActiveModule('billing-revenue-cycle') },
-          { id: 'doctor-management', label: 'Doctor OPD Rosters', icon: <span>📅</span>, isActive: activeModule === 'doctor-management', onClick: () => setActiveModule('doctor-management') }
+          { id: 'doctor-management', label: 'Doctor OPD Rosters', icon: <span>📅</span>, isActive: activeModule === 'doctor-management', onClick: () => setActiveModule('doctor-management') },
+          { id: 'staff-administration', label: 'Front Desk & Staff Directory', icon: <span>👥</span>, isActive: activeModule === 'staff-administration', onClick: () => setActiveModule('staff-administration') }
         ];
       } else if (isPharmacistRole) {
         roleTitle = '💊 Pharmacy Counter';
@@ -1603,7 +1603,8 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
           { id: 'pharmacy-medication', label: 'Fast POS Dispense Counter', icon: <span>🛒</span>, isActive: activeModule === 'pharmacy-medication' && pharmacyTab === 'pos', onClick: () => { setActiveModule('pharmacy-medication'); setPharmacyTab('pos'); } },
           { id: 'procurement-supply-chain', label: 'Stock Inward & Marg CSV', icon: <span>📦</span>, isActive: activeModule === 'procurement-supply-chain', onClick: () => setActiveModule('procurement-supply-chain') },
           { id: 'pharmacy-medication', label: 'Expiry Radar & Loss Alert', icon: <span>⏳</span>, isActive: activeModule === 'pharmacy-medication' && pharmacyTab === 'expiry', onClick: () => { setActiveModule('pharmacy-medication'); setPharmacyTab('expiry'); } },
-          { id: 'pharmacy-medication', label: 'CDSCO H1 & Galla Ledger', icon: <span>📒</span>, isActive: activeModule === 'pharmacy-medication' && pharmacyTab === 'khata', onClick: () => { setActiveModule('pharmacy-medication'); setPharmacyTab('khata'); } }
+          { id: 'pharmacy-medication', label: 'CDSCO H1 & Galla Ledger', icon: <span>📒</span>, isActive: activeModule === 'pharmacy-medication' && pharmacyTab === 'khata', onClick: () => { setActiveModule('pharmacy-medication'); setPharmacyTab('khata'); } },
+          { id: 'staff-administration', label: 'Pharmacy Staff & Chemists', icon: <span>👥</span>, isActive: activeModule === 'staff-administration', onClick: () => setActiveModule('staff-administration') }
         ];
       } else if (isDiagnosticsRole) {
         roleTitle = '🧪 Pathology Desk';
@@ -1611,7 +1612,8 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
           { id: 'clinical-investigation', label: 'Phlebotomy Queue & Barcodes', icon: <span>🩸</span>, isActive: activeModule === 'clinical-investigation' && (investigationTab === 'specimens' || activeModule === 'clinical-investigation'), onClick: () => { setActiveModule('clinical-investigation'); setInvestigationTab('specimens'); } },
           { id: 'clinical-investigation', label: 'Analyzer Workbench', icon: <span>🧪</span>, isActive: activeModule === 'clinical-investigation' && investigationTab === 'processing', onClick: () => { setActiveModule('clinical-investigation'); setInvestigationTab('processing'); } },
           { id: 'clinical-investigation', label: 'NABL Sign-Off & Panic Center', icon: <span>🚨</span>, isActive: activeModule === 'clinical-investigation' && investigationTab === 'doctorReview', onClick: () => { setActiveModule('clinical-investigation'); setInvestigationTab('doctorReview'); } },
-          { id: 'clinical-investigation', label: 'Report Dispatch & Billing', icon: <span>📲</span>, isActive: activeModule === 'clinical-investigation' && investigationTab === 'reports', onClick: () => { setActiveModule('clinical-investigation'); setInvestigationTab('reports'); } }
+          { id: 'clinical-investigation', label: 'Report Dispatch & Billing', icon: <span>📲</span>, isActive: activeModule === 'clinical-investigation' && investigationTab === 'reports', onClick: () => { setActiveModule('clinical-investigation'); setInvestigationTab('reports'); } },
+          { id: 'staff-administration', label: 'Lab Staff & Technicians', icon: <span>👥</span>, isActive: activeModule === 'staff-administration', onClick: () => setActiveModule('staff-administration') }
         ];
       } else if (isBillingRole) {
         roleTitle = '💳 Cashier & Revenue Cycle';
@@ -1619,7 +1621,8 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
           { id: 'billing-revenue-cycle', label: 'Cashier POS & Claims', icon: <span>⚡</span>, isActive: activeModule === 'billing-revenue-cycle', onClick: () => setActiveModule('billing-revenue-cycle') },
           { id: 'pharmacy-medication', label: 'Credit Khata Ledger', icon: <span>📒</span>, isActive: activeModule === 'pharmacy-medication' && pharmacyTab === 'khata', onClick: () => { setActiveModule('pharmacy-medication'); setPharmacyTab('khata'); } },
           { id: 'patient-registration', label: 'OPD Receipts', icon: <span>🧾</span>, isActive: activeModule === 'patient-registration', onClick: () => setActiveModule('patient-registration') },
-          { id: 'inpatient-management', label: 'IPD Discharge Settlement', icon: <span>🛏️</span>, isActive: activeModule === 'inpatient-management' && inpatientTab === 'discharge-workbench', onClick: () => { setActiveModule('inpatient-management'); setInpatientTab('discharge-workbench'); } }
+          { id: 'inpatient-management', label: 'IPD Discharge Settlement', icon: <span>🛏️</span>, isActive: activeModule === 'inpatient-management' && inpatientTab === 'discharge-workbench', onClick: () => { setActiveModule('inpatient-management'); setInpatientTab('discharge-workbench'); } },
+          { id: 'staff-administration', label: 'Billing Staff & Cashiers', icon: <span>👥</span>, isActive: activeModule === 'staff-administration', onClick: () => setActiveModule('staff-administration') }
         ];
       } else {
         roleTitle = '📊 Director & Admin Suite';
@@ -3354,23 +3357,324 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
                       position: 'absolute',
                       top: 'calc(100% + 8px)',
                       right: 0,
-                      width: '240px',
+                      width: '280px',
                       backgroundColor: 'var(--ds-color-surface, #0F172A)',
                       border: '1px solid var(--ds-color-border, #334155)',
                       borderRadius: '12px',
                       boxShadow: '0 16px 40px rgba(0, 0, 0, 0.75), 0 0 0 1px rgba(255, 255, 255, 0.08)',
-                      zIndex: 9999,
-                      padding: '6px',
+                      zIndex: 10002,
+                      padding: '8px',
                       display: 'flex',
                       flexDirection: 'column',
                       gap: '4px'
                     }}
                   >
                     <div style={{ padding: '6px 8px', fontSize: '0.6875rem', fontWeight: 800, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                      {rolePerspective === 'FRONT_DESK' ? 'Front Desk Fast Actions' : 'Fast Clinical Actions'}
+                      {isLabOrPathology
+                        ? 'Laboratory Fast Actions'
+                        : isPharmacyVertical
+                        ? 'Pharmacy Fast Actions'
+                        : isClinicVertical
+                        ? 'Clinic Fast Actions'
+                        : rolePerspective === 'FRONT_DESK'
+                        ? 'Front Desk Fast Actions'
+                        : 'Hospital Fast Actions'}
                     </div>
 
-                    {rolePerspective === 'FRONT_DESK' ? (
+                    {isLabOrPathology ? (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsQuickAddOpen(false);
+                            setActiveModule('clinical-investigation');
+                            setInvestigationTab('specimens');
+                          }}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            gap: '8px',
+                            padding: '8px 10px',
+                            borderRadius: '6px',
+                            background: 'transparent',
+                            border: 'none',
+                            color: '#F1F5F9',
+                            fontSize: '0.8125rem',
+                            fontWeight: 600,
+                            cursor: 'pointer',
+                            textAlign: 'left',
+                            transition: 'all 0.12s ease'
+                          }}
+                          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'rgba(56, 189, 248, 0.15)')}
+                          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+                        >
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <span>🩸</span>
+                            <span>+ New Specimen Intake</span>
+                          </div>
+                          <kbd style={{ fontSize: '0.625rem', padding: '1px 5px', borderRadius: '4px', background: 'rgba(255,255,255,0.1)', color: '#38BDF8', border: '1px solid rgba(56,189,248,0.3)' }}>F2</kbd>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsQuickAddOpen(false);
+                            setActiveModule('clinical-investigation');
+                            setInvestigationTab('processing');
+                          }}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            gap: '8px',
+                            padding: '8px 10px',
+                            borderRadius: '6px',
+                            background: 'transparent',
+                            border: 'none',
+                            color: '#F1F5F9',
+                            fontSize: '0.8125rem',
+                            fontWeight: 600,
+                            cursor: 'pointer',
+                            textAlign: 'left',
+                            transition: 'all 0.12s ease'
+                          }}
+                          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'rgba(56, 189, 248, 0.15)')}
+                          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+                        >
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <span>🧪</span>
+                            <span>Direct Analyzer Sync / Results</span>
+                          </div>
+                          <kbd style={{ fontSize: '0.625rem', padding: '1px 5px', borderRadius: '4px', background: 'rgba(255,255,255,0.1)', color: '#94A3B8', border: '1px solid rgba(255,255,255,0.15)' }}>ASTM</kbd>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsQuickAddOpen(false);
+                            setActiveModule('clinical-investigation');
+                            setInvestigationTab('doctorReview');
+                          }}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            gap: '8px',
+                            padding: '8px 10px',
+                            borderRadius: '6px',
+                            background: 'transparent',
+                            border: 'none',
+                            color: '#F1F5F9',
+                            fontSize: '0.8125rem',
+                            fontWeight: 600,
+                            cursor: 'pointer',
+                            textAlign: 'left',
+                            transition: 'all 0.12s ease'
+                          }}
+                          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'rgba(56, 189, 248, 0.15)')}
+                          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+                        >
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <span>🔬</span>
+                            <span>Pathologist MD Sign-Off</span>
+                          </div>
+                          <kbd style={{ fontSize: '0.625rem', padding: '1px 5px', borderRadius: '4px', background: 'rgba(255,255,255,0.1)', color: '#38BDF8', border: '1px solid rgba(56,189,248,0.3)' }}>NABL</kbd>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsQuickAddOpen(false);
+                            setActiveModule('staff-administration');
+                            setTimeout(() => {
+                              window.dispatchEvent(new CustomEvent('docsearch:open_create_staff'));
+                            }, 120);
+                          }}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            gap: '8px',
+                            padding: '8px 10px',
+                            borderRadius: '6px',
+                            background: 'rgba(16, 185, 129, 0.1)',
+                            border: '1px solid rgba(16, 185, 129, 0.3)',
+                            color: '#34D399',
+                            fontSize: '0.8125rem',
+                            fontWeight: 700,
+                            cursor: 'pointer',
+                            textAlign: 'left',
+                            transition: 'all 0.12s ease'
+                          }}
+                          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'rgba(16, 185, 129, 0.2)')}
+                          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'rgba(16, 185, 129, 0.1)')}
+                          title="Hire Laboratory Technicians, Phlebotomists, and Pathologists"
+                        >
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <span>👥</span>
+                            <span>+ Hire Lab Staff (Tech / Phlebotomist)</span>
+                          </div>
+                          <span style={{ fontSize: '0.625rem', color: '#10B981', fontWeight: 800 }}>HIRE</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsQuickAddOpen(false);
+                            setActiveModule('billing-revenue-cycle');
+                          }}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            padding: '8px 10px',
+                            borderRadius: '6px',
+                            background: 'transparent',
+                            border: 'none',
+                            color: '#F1F5F9',
+                            fontSize: '0.8125rem',
+                            fontWeight: 600,
+                            cursor: 'pointer',
+                            textAlign: 'left',
+                            transition: 'all 0.12s ease'
+                          }}
+                          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'rgba(56, 189, 248, 0.15)')}
+                          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+                        >
+                          <span>💳</span>
+                          <span>Diagnostic Billing & Receipt</span>
+                        </button>
+                      </>
+                    ) : isPharmacyVertical ? (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsQuickAddOpen(false);
+                            setActiveModule('pharmacy-medication');
+                            setPharmacyTab('pos');
+                          }}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            gap: '8px',
+                            padding: '8px 10px',
+                            borderRadius: '6px',
+                            background: 'transparent',
+                            border: 'none',
+                            color: '#F1F5F9',
+                            fontSize: '0.8125rem',
+                            fontWeight: 600,
+                            cursor: 'pointer',
+                            textAlign: 'left',
+                            transition: 'all 0.12s ease'
+                          }}
+                          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'rgba(56, 189, 248, 0.15)')}
+                          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+                        >
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <span>💊</span>
+                            <span>+ Fast POS Rx Bill</span>
+                          </div>
+                          <kbd style={{ fontSize: '0.625rem', padding: '1px 5px', borderRadius: '4px', background: 'rgba(255,255,255,0.1)', color: '#38BDF8', border: '1px solid rgba(56,189,248,0.3)' }}>Alt+B</kbd>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsQuickAddOpen(false);
+                            setActiveModule('procurement-supply-chain');
+                          }}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            padding: '8px 10px',
+                            borderRadius: '6px',
+                            background: 'transparent',
+                            border: 'none',
+                            color: '#F1F5F9',
+                            fontSize: '0.8125rem',
+                            fontWeight: 600,
+                            cursor: 'pointer',
+                            textAlign: 'left',
+                            transition: 'all 0.12s ease'
+                          }}
+                          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'rgba(56, 189, 248, 0.15)')}
+                          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+                        >
+                          <span>📦</span>
+                          <span>Stock Inward & Marg CSV</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsQuickAddOpen(false);
+                            setActiveModule('staff-administration');
+                            setTimeout(() => {
+                              window.dispatchEvent(new CustomEvent('docsearch:open_create_staff'));
+                            }, 120);
+                          }}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            gap: '8px',
+                            padding: '8px 10px',
+                            borderRadius: '6px',
+                            background: 'rgba(16, 185, 129, 0.1)',
+                            border: '1px solid rgba(16, 185, 129, 0.3)',
+                            color: '#34D399',
+                            fontSize: '0.8125rem',
+                            fontWeight: 700,
+                            cursor: 'pointer',
+                            textAlign: 'left',
+                            transition: 'all 0.12s ease'
+                          }}
+                          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'rgba(16, 185, 129, 0.2)')}
+                          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'rgba(16, 185, 129, 0.1)')}
+                          title="Hire Pharmacists, Dispensing Chemists, and Cashiers"
+                        >
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <span>👥</span>
+                            <span>+ Hire Pharmacy Staff (Chemist / Cashier)</span>
+                          </div>
+                          <span style={{ fontSize: '0.625rem', color: '#10B981', fontWeight: 800 }}>HIRE</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsQuickAddOpen(false);
+                            setActiveModule('pharmacy-medication');
+                            setPharmacyTab('khata');
+                          }}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            padding: '8px 10px',
+                            borderRadius: '6px',
+                            background: 'transparent',
+                            border: 'none',
+                            color: '#F1F5F9',
+                            fontSize: '0.8125rem',
+                            fontWeight: 600,
+                            cursor: 'pointer',
+                            textAlign: 'left',
+                            transition: 'all 0.12s ease'
+                          }}
+                          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'rgba(56, 189, 248, 0.15)')}
+                          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+                        >
+                          <span>📒</span>
+                          <span>Daily Galla & Khata Ledger</span>
+                        </button>
+                      </>
+                    ) : (
                       <>
                         <button
                           type="button"
@@ -3408,38 +3712,6 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
                           type="button"
                           onClick={() => {
                             setIsQuickAddOpen(false);
-                            window.dispatchEvent(new CustomEvent('docsearch:open_frontdesk_book'));
-                          }}
-                          style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'space-between',
-                            gap: '8px',
-                            padding: '8px 10px',
-                            borderRadius: '6px',
-                            background: 'transparent',
-                            border: 'none',
-                            color: '#F1F5F9',
-                            fontSize: '0.8125rem',
-                            fontWeight: 600,
-                            cursor: 'pointer',
-                            textAlign: 'left',
-                            transition: 'all 0.12s ease'
-                          }}
-                          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'rgba(56, 189, 248, 0.15)')}
-                          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
-                        >
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <span>📅</span>
-                            <span>+ Book Future Slot</span>
-                          </div>
-                          <kbd style={{ fontSize: '0.625rem', padding: '1px 5px', borderRadius: '4px', background: 'rgba(255,255,255,0.1)', color: '#38BDF8', border: '1px solid rgba(56,189,248,0.3)' }}>F3</kbd>
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setIsQuickAddOpen(false);
                             setIsFastOpdDrawerOpen(true);
                           }}
                           style={{
@@ -3467,103 +3739,6 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
                           </div>
                           <kbd style={{ fontSize: '0.625rem', padding: '1px 5px', borderRadius: '4px', background: 'rgba(255,255,255,0.1)', color: '#94A3B8', border: '1px solid rgba(255,255,255,0.15)' }}>Alt+N</kbd>
                         </button>
-
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setIsQuickAddOpen(false);
-                            setActiveModule('billing-revenue-cycle');
-                          }}
-                          style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '8px',
-                            padding: '8px 10px',
-                            borderRadius: '6px',
-                            background: 'transparent',
-                            border: 'none',
-                            color: '#F1F5F9',
-                            fontSize: '0.8125rem',
-                            fontWeight: 600,
-                            cursor: 'pointer',
-                            textAlign: 'left',
-                            transition: 'all 0.12s ease'
-                          }}
-                          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'rgba(56, 189, 248, 0.15)')}
-                          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
-                        >
-                          <span>💳</span>
-                          <span>Walk-In Bill & Receipt</span>
-                        </button>
-                      </>
-                    ) : (
-                      <>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setIsQuickAddOpen(false);
-                            setIsFastOpdDrawerOpen(true);
-                          }}
-                          style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'space-between',
-                            gap: '8px',
-                            padding: '8px 10px',
-                            borderRadius: '6px',
-                            background: 'transparent',
-                            border: 'none',
-                            color: '#F1F5F9',
-                            fontSize: '0.8125rem',
-                            fontWeight: 600,
-                            cursor: 'pointer',
-                            textAlign: 'left',
-                            transition: 'all 0.12s ease'
-                          }}
-                          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'rgba(56, 189, 248, 0.15)')}
-                          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
-                        >
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <span>⚡</span>
-                            <span>Express OPD Registration</span>
-                          </div>
-                          <kbd style={{ fontSize: '0.625rem', padding: '1px 5px', borderRadius: '4px', background: 'rgba(255,255,255,0.1)', color: '#94A3B8', border: '1px solid rgba(255,255,255,0.15)' }}>Alt+N</kbd>
-                        </button>
-
-                        {(rolePerspective === 'PHARMACY' || isHospitalExecutive(currentUser?.role)) && (
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setIsQuickAddOpen(false);
-                              setActiveModule('pharmacy-medication');
-                              setPharmacyTab('pos');
-                            }}
-                            style={{
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'space-between',
-                              gap: '8px',
-                              padding: '8px 10px',
-                              borderRadius: '6px',
-                              background: 'transparent',
-                              border: 'none',
-                              color: '#F1F5F9',
-                              fontSize: '0.8125rem',
-                              fontWeight: 600,
-                              cursor: 'pointer',
-                              textAlign: 'left',
-                              transition: 'all 0.12s ease'
-                            }}
-                            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'rgba(56, 189, 248, 0.15)')}
-                            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
-                          >
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                              <span>💊</span>
-                              <span>Fast Pharmacy POS Counter</span>
-                            </div>
-                            <kbd style={{ fontSize: '0.625rem', padding: '1px 5px', borderRadius: '4px', background: 'rgba(255,255,255,0.1)', color: '#94A3B8', border: '1px solid rgba(255,255,255,0.15)' }}>Alt+B</kbd>
-                          </button>
-                        )}
 
                         {isVoiceScribeAllowed(currentUser?.role) && (
                           <button
@@ -3634,42 +3809,41 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
                           </button>
                         )}
 
-                        {(workspace === 'CLINIC' || String(currentUser?.role || '').toUpperCase().includes('CLINIC') || rolePerspective === 'DOCTOR' || isHospitalExecutive(currentUser?.role)) && (
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setIsQuickAddOpen(false);
-                              setActiveModule('staff-administration');
-                              setTimeout(() => {
-                                window.dispatchEvent(new CustomEvent('docsearch:open_create_staff'));
-                              }, 120);
-                            }}
-                            style={{
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'space-between',
-                              gap: '8px',
-                              padding: '8px 10px',
-                              borderRadius: '6px',
-                              background: 'transparent',
-                              border: 'none',
-                              color: '#F1F5F9',
-                              fontSize: '0.8125rem',
-                              fontWeight: 600,
-                              cursor: 'pointer',
-                              textAlign: 'left',
-                              transition: 'all 0.12s ease'
-                            }}
-                            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'rgba(16, 185, 129, 0.15)')}
-                            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
-                          >
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                              <span>👥</span>
-                              <span style={{ color: '#34D399' }}>+ Add Staff (Nurse / Reception)</span>
-                            </div>
-                            <span style={{ fontSize: '0.625rem', color: '#10B981', fontWeight: 800 }}>INVITE</span>
-                          </button>
-                        )}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsQuickAddOpen(false);
+                            setActiveModule('staff-administration');
+                            setTimeout(() => {
+                              window.dispatchEvent(new CustomEvent('docsearch:open_create_staff'));
+                            }, 120);
+                          }}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            gap: '8px',
+                            padding: '8px 10px',
+                            borderRadius: '6px',
+                            background: 'rgba(16, 185, 129, 0.1)',
+                            border: '1px solid rgba(16, 185, 129, 0.3)',
+                            color: '#34D399',
+                            fontSize: '0.8125rem',
+                            fontWeight: 700,
+                            cursor: 'pointer',
+                            textAlign: 'left',
+                            transition: 'all 0.12s ease'
+                          }}
+                          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'rgba(16, 185, 129, 0.2)')}
+                          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'rgba(16, 185, 129, 0.1)')}
+                          title="Hire & Onboard Facility Staff per Active Profile"
+                        >
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <span>👥</span>
+                            <span>{isClinicVertical ? '+ Add Staff (Doctor / Nurse / Reception)' : '+ Add Staff (Doctor / Nurse / TPA / Reception)'}</span>
+                          </div>
+                          <span style={{ fontSize: '0.625rem', color: '#10B981', fontWeight: 800 }}>HIRE</span>
+                        </button>
 
                         <button
                           type="button"
@@ -3925,16 +4099,15 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
                         </div>
                       </div>
 
-                      {/* CARD 2: Active SaaS Plan & Upgrade Suite (Restricted to Hospital Executives / Owners) */}
-                      {isHospitalExecutive(currentUser?.role) && (
-                        <div
-                          style={{
-                            backgroundColor: 'rgba(15, 23, 42, 0.75)',
-                            border: '1px solid rgba(255, 255, 255, 0.08)',
-                            borderRadius: '10px',
-                            padding: '10px 12px'
-                          }}
-                        >
+                      {/* CARD 2: Active SaaS Plan & Upgrade Suite (Universal Visibility Across All Roles) */}
+                      <div
+                        style={{
+                          backgroundColor: 'rgba(15, 23, 42, 0.75)',
+                          border: '1px solid rgba(255, 255, 255, 0.08)',
+                          borderRadius: '10px',
+                          padding: '10px 12px'
+                        }}
+                      >
                           {(() => {
                             const currentPlan = partnerAccountPlan?.currentPlan;
                             const subscription = partnerAccountPlan?.subscription;
@@ -3994,87 +4167,111 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
                             );
                           })()}
 
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setIsUserMenuOpen(false);
-                              setUpgradeModalTargetFeature(drawerUpgradeTargetFeature);
-                              setIsHospitalUpgradeModalOpen(true);
-                            }}
-                            style={{
-                              width: '100%',
-                              padding: '8px 12px',
-                              borderRadius: '6px',
-                              background: 'linear-gradient(135deg, #7C3AED 0%, #4F46E5 100%)',
-                              border: '1px solid #A78BFA',
-                              color: '#FFFFFF',
-                              fontWeight: 800,
-                              fontSize: '0.75rem',
-                              cursor: 'pointer',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              gap: '6px',
-                              boxShadow: '0 2px 10px rgba(124, 58, 237, 0.35)',
-                              marginBottom: '6px',
-                              transition: 'all 0.15s ease'
-                            }}
-                          >
-                            <span>{drawerUpgradeSuiteTitle}</span>
-                          </button>
+                          {isHospitalExecutive(currentUser?.role) ? (
+                            <>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setIsUserMenuOpen(false);
+                                  setUpgradeModalTargetFeature(drawerUpgradeTargetFeature);
+                                  setIsHospitalUpgradeModalOpen(true);
+                                }}
+                                style={{
+                                  width: '100%',
+                                  padding: '8px 12px',
+                                  borderRadius: '6px',
+                                  background: 'linear-gradient(135deg, #7C3AED 0%, #4F46E5 100%)',
+                                  border: '1px solid #A78BFA',
+                                  color: '#FFFFFF',
+                                  fontWeight: 800,
+                                  fontSize: '0.75rem',
+                                  cursor: 'pointer',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  gap: '6px',
+                                  boxShadow: '0 2px 10px rgba(124, 58, 237, 0.35)',
+                                  marginBottom: '6px',
+                                  transition: 'all 0.15s ease'
+                                }}
+                              >
+                                <span>{drawerUpgradeSuiteTitle}</span>
+                              </button>
 
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setIsUserMenuOpen(false);
-                              setIsOfflineLicenseModalOpen(true);
-                            }}
-                            style={{
-                              width: '100%',
-                              padding: '6px 10px',
-                              borderRadius: '6px',
-                              backgroundColor: 'rgba(56, 189, 248, 0.12)',
-                              border: '1px solid #0284C7',
-                              color: '#38BDF8',
-                              fontWeight: 700,
-                              fontSize: '0.72rem',
-                              cursor: 'pointer',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              gap: '5px',
-                              marginBottom: '6px',
-                              transition: 'all 0.15s ease'
-                            }}
-                          >
-                            <span>🔑 Activate / Node-Lock License</span>
-                          </button>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setIsUserMenuOpen(false);
+                                  setIsOfflineLicenseModalOpen(true);
+                                }}
+                                style={{
+                                  width: '100%',
+                                  padding: '6px 10px',
+                                  borderRadius: '6px',
+                                  backgroundColor: 'rgba(56, 189, 248, 0.12)',
+                                  border: '1px solid #0284C7',
+                                  color: '#38BDF8',
+                                  fontWeight: 700,
+                                  fontSize: '0.72rem',
+                                  cursor: 'pointer',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  gap: '5px',
+                                  marginBottom: '6px',
+                                  transition: 'all 0.15s ease'
+                                }}
+                              >
+                                <span>🔑 Activate / Node-Lock License</span>
+                              </button>
 
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setActiveModule('account-plan-features');
-                              setIsUserMenuOpen(false);
-                            }}
-                            style={{
-                              width: '100%',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'space-between',
-                              padding: '4px 6px',
-                              background: 'transparent',
-                              border: 'none',
-                              color: '#38BDF8',
-                              fontSize: '0.72rem',
-                              fontWeight: 600,
-                              cursor: 'pointer'
-                            }}
-                          >
-                            <span>Manage Plan & Add-ons</span>
-                            <span>➔</span>
-                          </button>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setActiveModule('account-plan-features');
+                                  setIsUserMenuOpen(false);
+                                }}
+                                style={{
+                                  width: '100%',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'space-between',
+                                  padding: '4px 6px',
+                                  background: 'transparent',
+                                  border: 'none',
+                                  color: '#38BDF8',
+                                  fontSize: '0.72rem',
+                                  fontWeight: 600,
+                                  cursor: 'pointer'
+                                }}
+                              >
+                                <span>Manage Plan & Add-ons</span>
+                                <span>➔</span>
+                              </button>
+                            </>
+                          ) : (
+                            <div
+                              style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'space-between',
+                                padding: '6px 8px',
+                                borderRadius: '6px',
+                                backgroundColor: 'rgba(56, 189, 248, 0.08)',
+                                border: '1px solid rgba(56, 189, 248, 0.2)',
+                                color: '#38BDF8',
+                                fontSize: '0.7rem',
+                                fontWeight: 600
+                              }}
+                            >
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                <span>🛡️</span>
+                                <span>Verified Facility License</span>
+                              </div>
+                              <span style={{ fontSize: '0.625rem', color: '#10B981', fontWeight: 700 }}>● Active</span>
+                            </div>
+                          )}
                         </div>
-                      )}
 
                       {/* CARD 3: Focus & Display Mode */}
                       <div
@@ -4540,6 +4737,75 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
                         <div style={{ padding: '4px 6px', fontSize: '0.6875rem', color: '#94A3B8', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                           Enterprise Tools & Intelligence
                         </div>
+
+                        {/* 0.05 Staff Administration & Team Directory */}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsUserMenuOpen(false);
+                            setActiveModule('staff-administration');
+                            setVisitedModules((prev) => new Set(prev).add('staff-administration'));
+                          }}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            padding: '6px 8px',
+                            borderRadius: '6px',
+                            background: activeModule === 'staff-administration' ? 'rgba(16, 185, 129, 0.18)' : 'rgba(16, 185, 129, 0.08)',
+                            border: '1px solid rgba(16, 185, 129, 0.3)',
+                            color: '#34D399',
+                            fontSize: '0.78rem',
+                            fontWeight: 700,
+                            cursor: 'pointer',
+                            textAlign: 'left',
+                            transition: 'all 0.12s ease'
+                          }}
+                          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'rgba(16, 185, 129, 0.22)')}
+                          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = activeModule === 'staff-administration' ? 'rgba(16, 185, 129, 0.18)' : 'rgba(16, 185, 129, 0.08)')}
+                        >
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <span>👥</span>
+                            <span>Staff Administration & Directory</span>
+                          </div>
+                          <span style={{ fontSize: '0.625rem', color: '#10B981', fontWeight: 800 }}>RBAC</span>
+                        </button>
+
+                        {/* 0.06 Hire / Add New Staff Member Fast Action */}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsUserMenuOpen(false);
+                            setActiveModule('staff-administration');
+                            setVisitedModules((prev) => new Set(prev).add('staff-administration'));
+                            setTimeout(() => {
+                              window.dispatchEvent(new CustomEvent('docsearch:open_create_staff'));
+                            }, 120);
+                          }}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            padding: '6px 8px',
+                            borderRadius: '6px',
+                            background: 'rgba(56, 189, 248, 0.08)',
+                            border: '1px solid rgba(56, 189, 248, 0.25)',
+                            color: '#38BDF8',
+                            fontSize: '0.78rem',
+                            fontWeight: 700,
+                            cursor: 'pointer',
+                            textAlign: 'left',
+                            transition: 'all 0.12s ease'
+                          }}
+                          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'rgba(56, 189, 248, 0.18)')}
+                          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'rgba(56, 189, 248, 0.08)')}
+                        >
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <span>➕</span>
+                            <span>Hire / Onboard Staff Member</span>
+                          </div>
+                          <span style={{ fontSize: '0.625rem', backgroundColor: '#0284C7', color: '#FFF', padding: '1px 5px', borderRadius: '4px', fontWeight: 700 }}>+ HIRE</span>
+                        </button>
 
                         {/* 0. EWAN 2.0 Master Brain */}
                         <button

@@ -549,6 +549,89 @@ export const PartnerVerificationConsole: React.FC = () => {
   const [slaTier, setSlaTier] = useState<string>('99.95% Mission-Critical SLA');
   const [supportTier, setSupportTier] = useState<string>('24/7 Dedicated Founder Concierge & Priority WhatsApp');
 
+  // ⚡ Auto-Onboarding Fast-Track Policy & AI Batch Auto-Approve State
+  const [isAutoOnboardEnabled, setIsAutoOnboardEnabled] = useState(true);
+  const [isBatchAutoApproving, setIsBatchAutoApproving] = useState(false);
+  const [autoApproveSummaryModal, setAutoApproveSummaryModal] = useState<{
+    isOpen: boolean;
+    totalApproved: number;
+    approvedPartners: Array<{ id: string; name: string; email: string; planTier: string; tenantId?: string }>;
+  } | null>(null);
+
+  const fetchAutoOnboardPolicy = async () => {
+    try {
+      const res = await fetch('/api/v1/auth/auto-onboard-policy');
+      if (res.ok) {
+        const json = await res.json();
+        if (typeof json.isAutoOnboardEnabled === 'boolean') {
+          setIsAutoOnboardEnabled(json.isAutoOnboardEnabled);
+        }
+      }
+    } catch {}
+  };
+
+  const handleToggleAutoOnboardPolicy = async () => {
+    const nextVal = !isAutoOnboardEnabled;
+    try {
+      const token = typeof window !== 'undefined' ? localStorage.getItem('docsearch_company_token') || localStorage.getItem('docsearch_auth_token') : null;
+      const res = await fetch('/api/v1/auth/auto-onboard-policy', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify({ enabled: nextVal })
+      });
+      if (res.ok) {
+        const json = await res.json();
+        setIsAutoOnboardEnabled(json.isAutoOnboardEnabled);
+        setToastMessage(json.isAutoOnboardEnabled 
+          ? '⚡ Zero-Friction Fast-Track Auto-Onboarding Policy: ACTIVE (Registrations instantly provisioned)' 
+          : '🛡️ Manual Regulatory Review Policy: ACTIVE (Registrations routed to queue)');
+        setTimeout(() => setToastMessage(null), 5000);
+      }
+    } catch (err: any) {
+      setToastMessage(`Failed to update auto-onboarding policy: ${err.message}`);
+      setTimeout(() => setToastMessage(null), 4000);
+    }
+  };
+
+  const handleBatchAutoApprove = async () => {
+    const pendingCount = queue.filter(q => q.status === 'PENDING_APPROVAL').length;
+    if (pendingCount === 0) {
+      setToastMessage('ℹ️ No pending partner applications in queue.');
+      setTimeout(() => setToastMessage(null), 3000);
+      return;
+    }
+    setIsBatchAutoApproving(true);
+    try {
+      const token = typeof window !== 'undefined' ? localStorage.getItem('docsearch_company_token') || localStorage.getItem('docsearch_auth_token') : null;
+      const res = await fetch('/api/v1/auth/verification-queue/auto-approve-all', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        }
+      });
+      if (res.ok) {
+        const json = await res.json();
+        setAutoApproveSummaryModal({
+          isOpen: true,
+          totalApproved: json.totalApproved || 0,
+          approvedPartners: json.approvedPartners || []
+        });
+        setToastMessage(`🎉 Automated Onboarding Engine: Successfully approved and provisioned ${json.totalApproved} partners!`);
+        setTimeout(() => setToastMessage(null), 6000);
+        fetchServerQueue();
+      }
+    } catch (err: any) {
+      setToastMessage(`❌ Batch auto-approval error: ${err.message}`);
+      setTimeout(() => setToastMessage(null), 4000);
+    } finally {
+      setIsBatchAutoApproving(false);
+    }
+  };
+
   // ⚙️ Universal Registration Form Policy Control State
   const [isPolicyModalOpen, setIsPolicyModalOpen] = useState(false);
   const [isSavingPolicy, setIsSavingPolicy] = useState(false);
@@ -581,6 +664,7 @@ export const PartnerVerificationConsole: React.FC = () => {
 
   useEffect(() => {
     fetchFormPolicy();
+    fetchAutoOnboardPolicy();
   }, []);
 
   const handleSavePolicy = async (customPolicy?: RegistrationFormPolicy) => {
@@ -1248,7 +1332,65 @@ export const PartnerVerificationConsole: React.FC = () => {
           </p>
         </div>
 
-        <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+        <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
+          {/* ⚡ Live Fast-Track Auto-Onboard Policy Toggle */}
+          <button
+            type="button"
+            onClick={handleToggleAutoOnboardPolicy}
+            title={isAutoOnboardEnabled 
+              ? 'Fast-Track Auto-Onboarding Policy is ACTIVE: All new registrations are instantly verified and live.'
+              : 'Manual Review Queue is ACTIVE: Registrations require admin sign-off before tenant provisioning.'}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              padding: '7px 14px',
+              borderRadius: '8px',
+              backgroundColor: isAutoOnboardEnabled ? 'rgba(16, 185, 129, 0.18)' : 'rgba(234, 179, 8, 0.18)',
+              border: `1.5px solid ${isAutoOnboardEnabled ? '#10B981' : '#EAB308'}`,
+              color: isAutoOnboardEnabled ? '#34D399' : '#FDE047',
+              fontSize: '0.8125rem',
+              fontWeight: 800,
+              cursor: 'pointer',
+              transition: 'all 0.2s',
+              boxShadow: isAutoOnboardEnabled ? '0 0 12px rgba(16, 185, 129, 0.25)' : 'none'
+            }}
+          >
+            <span>{isAutoOnboardEnabled ? '⚡' : '🛡️'}</span>
+            <span>Policy: {isAutoOnboardEnabled ? 'Fast-Track Auto-Onboard (ACTIVE)' : 'Manual Review (ACTIVE)'}</span>
+          </button>
+
+          {/* ⚡ 1-Click AI Batch Auto-Approve All Pending Partners */}
+          {queue.filter((q) => q.status === 'PENDING_APPROVAL').length > 0 && (
+            <button
+              type="button"
+              onClick={handleBatchAutoApprove}
+              disabled={isBatchAutoApproving}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                padding: '7px 14px',
+                borderRadius: '8px',
+                background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)',
+                color: '#FFFFFF',
+                fontSize: '0.8125rem',
+                fontWeight: 800,
+                border: 'none',
+                cursor: isBatchAutoApproving ? 'wait' : 'pointer',
+                boxShadow: '0 2px 10px rgba(16, 185, 129, 0.4)',
+                transition: 'all 0.2s'
+              }}
+            >
+              <span>{isBatchAutoApproving ? '⏳' : '⚡'}</span>
+              <span>
+                {isBatchAutoApproving
+                  ? 'AI Auto-Approving...'
+                  : `AI Auto-Approve All (${queue.filter((q) => q.status === 'PENDING_APPROVAL').length})`}
+              </span>
+            </button>
+          )}
+
           <button
             type="button"
             onClick={() => setIsPolicyModalOpen(true)}
@@ -5546,6 +5688,116 @@ export const PartnerVerificationConsole: React.FC = () => {
               >
                 <span>{isSavingPolicy ? '⏳' : '💾'}</span>
                 <span>{isSavingPolicy ? 'Publishing Policy...' : 'Save & Publish Registration Policy Globally'}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ⚡ Batch Auto-Approval Completion Summary Modal */}
+      {autoApproveSummaryModal && autoApproveSummaryModal.isOpen && (
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.85)',
+            backdropFilter: 'blur(8px)',
+            zIndex: 99999,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '20px'
+          }}
+        >
+          <div
+            style={{
+              backgroundColor: '#0F172A',
+              border: '1.5px solid #10B981',
+              borderRadius: '16px',
+              width: '640px',
+              maxWidth: '95vw',
+              maxHeight: '90vh',
+              overflowY: 'auto',
+              padding: '24px',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '16px',
+              boxShadow: '0 25px 60px rgba(0, 0, 0, 0.9), 0 0 30px rgba(16, 185, 129, 0.25)'
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <span style={{ fontSize: '1.8rem' }}>🎉</span>
+                <div>
+                  <h2 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 800, color: '#F8FAFC' }}>
+                    Autonomous AI Onboarding Engine: Batch Approval Complete
+                  </h2>
+                  <div style={{ fontSize: '0.75rem', color: '#34D399', fontWeight: 600 }}>
+                    {autoApproveSummaryModal.totalApproved} Partner{autoApproveSummaryModal.totalApproved === 1 ? '' : 's'} Provisioned with Multi-Tenant RLS & Live Credentials
+                  </div>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setAutoApproveSummaryModal(null)}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: '#94A3B8',
+                  fontSize: '1.3rem',
+                  cursor: 'pointer'
+                }}
+              >
+                ✕
+              </button>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              {autoApproveSummaryModal.approvedPartners.map((p, idx) => (
+                <div
+                  key={p.id || idx}
+                  style={{
+                    backgroundColor: 'rgba(255, 255, 255, 0.04)',
+                    border: '1px solid rgba(16, 185, 129, 0.25)',
+                    borderRadius: '10px',
+                    padding: '12px 14px',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center'
+                  }}
+                >
+                  <div>
+                    <div style={{ fontWeight: 800, fontSize: '0.875rem', color: '#F8FAFC' }}>
+                      {p.name}
+                    </div>
+                    <div style={{ fontSize: '0.75rem', color: '#94A3B8' }}>
+                      ✉️ {p.email} • Plan: <span style={{ color: '#38BDF8', fontWeight: 700 }}>{p.planTier}</span>
+                    </div>
+                  </div>
+                  <Badge variant="success">LIVE & ACTIVE</Badge>
+                </div>
+              ))}
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '10px' }}>
+              <button
+                type="button"
+                onClick={() => setAutoApproveSummaryModal(null)}
+                style={{
+                  padding: '10px 24px',
+                  borderRadius: '8px',
+                  backgroundColor: '#10B981',
+                  color: '#FFFFFF',
+                  fontWeight: 800,
+                  fontSize: '0.85rem',
+                  border: 'none',
+                  cursor: 'pointer'
+                }}
+              >
+                Done
               </button>
             </div>
           </div>
