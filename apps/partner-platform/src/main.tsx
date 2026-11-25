@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import ReactDOM from 'react-dom/client';
 import { ThemeProvider, DocSearch3DLogoLoader, type ThemeMode } from '@docsearch/ui-kit';
+import { PartnerI18nProvider } from './i18n/PartnerI18nContext.js';
 import { setupCrossBrowserThemeSync, persistCloudThemePreference } from './services/theme-sync-service.js';
 import { PartnerPlatformShell } from './components/PartnerPlatformShell.js';
 const HospitalQueueTvDisplayView = React.lazy(() =>
@@ -442,7 +443,9 @@ if (rootElement) {
   const root = ReactDOM.createRoot(rootElement);
   root.render(
     <ErrorBoundary>
-      <App />
+      <PartnerI18nProvider>
+        <App />
+      </PartnerI18nProvider>
     </ErrorBoundary>
   );
 }

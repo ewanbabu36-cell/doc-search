@@ -13,6 +13,7 @@ import {
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { encounterService } from '../services/encounter-service.js';
 import { getAuthToken } from '../services/api-client.js';
+import { usePartnerI18n } from '../i18n/PartnerI18nContext.js';
 
 // Lazy-loaded secondary modals & drawers for minimal initial partner platform shell bundle
 const UniversalAccountSettingsModal = React.lazy(() => import('./common/UniversalAccountSettingsModal.js').then(m => ({ default: m.UniversalAccountSettingsModal })));
@@ -363,6 +364,15 @@ const isClinicalModule = (modKey: PartnerModuleKey): boolean => {
 };
 
 export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ currentUser, onLogout }) => {
+  const {
+    language: uiLanguage,
+    setLanguage: setUiLanguage,
+    t: tUi,
+    translateModuleTitle,
+    translateWorkspace,
+    supportedLanguages: supportedUiLanguages
+  } = usePartnerI18n();
+
   const initialRoute = useMemo(() => {
     const normalizedProfile = normalizeFacilityProfile(currentUser?.organizationType);
     const defaultMod = (currentUser?.defaultModule as PartnerModuleKey) || (normalizedProfile.defaultModule as PartnerModuleKey);
@@ -2866,7 +2876,15 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
               }
               isCollapsed={isSidebarCollapsed}
               onItemClick={() => setIsMobileDrawerOpen(false)}
-              sections={getDynamicSections()}
+              sections={getDynamicSections().map((sec: any) => ({
+                ...sec,
+                items: Array.isArray(sec.items)
+                  ? sec.items.map((item: any) => ({
+                      ...item,
+                      label: translateModuleTitle(String(item.id || ''), item.label)
+                    }))
+                  : []
+              }))}
               footerSlot={
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', width: '100%' }}>
                   {/* Executive-Only Docked All 38 Modules Drawer Button */}
@@ -3237,7 +3255,7 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
                   }}
                 >
                   <span style={{ fontSize: '0.85rem' }}>{currentWsp.icon}</span>
-                  <span>{workspace.replace(/_/g, ' ')}</span>
+                  <span>{translateWorkspace(workspace)}</span>
                 </span>
                 <span className="ds-hide-on-compact" style={{ color: 'rgba(255, 255, 255, 0.3)', fontSize: '0.85rem', userSelect: 'none' }}>›</span>
                 <div className="ds-hide-on-compact" style={{ display: 'flex', alignItems: 'center', gap: '6px', minWidth: 0, overflow: 'hidden', maxWidth: '200px' }}>
@@ -3251,9 +3269,9 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
                       overflow: 'hidden',
                       textOverflow: 'ellipsis'
                     }}
-                    title={currentModuleMeta.title}
+                    title={translateModuleTitle(activeModule, currentModuleMeta.title)}
                   >
-                    {currentModuleMeta.title}
+                    {translateModuleTitle(activeModule, currentModuleMeta.title)}
                   </span>
                 </div>
               </div>
@@ -3295,7 +3313,7 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
                   <circle cx="11" cy="11" r="8" />
                   <line x1="21" y1="21" x2="16.65" y2="16.65" />
                 </svg>
-                <span className="ds-hide-on-compact" style={{ fontSize: '0.78rem', color: '#CBD5E1', whiteSpace: 'nowrap' }}>Search</span>
+                <span className="ds-hide-on-compact" style={{ fontSize: '0.78rem', color: '#CBD5E1', whiteSpace: 'nowrap' }}>{tUi('header.search', 'Search')}</span>
                 <kbd
                   className="ds-hide-on-compact"
                   style={{
@@ -3342,12 +3360,12 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
                   <span style={{ fontSize: '1rem', lineHeight: 1 }}>+</span>
                   <span className="ds-hide-on-compact">
                     {isLabOrPathology
-                      ? 'New Specimen'
+                      ? tUi('header.new_specimen', 'New Specimen')
                       : isPharmacyVertical
-                      ? 'New Rx Bill'
+                      ? tUi('header.new_rx_bill', 'New Rx Bill')
                       : isClinicVertical
-                      ? 'New Token'
-                      : 'Quick Add'}
+                      ? tUi('header.new_token', 'New Token')
+                      : tUi('header.quick_add', 'Quick Add')}
                   </span>
                 </button>
 
@@ -5241,6 +5259,31 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
                 </div>
               )}
 
+              {/* 6-Language Vernacular UI Switcher */}
+              <select
+                aria-label="Select Interface Language"
+                value={uiLanguage}
+                onChange={(e) => setUiLanguage(e.target.value as any)}
+                style={{
+                  backgroundColor: 'rgba(15, 23, 42, 0.75)',
+                  border: '1px solid rgba(56, 189, 248, 0.35)',
+                  borderRadius: '8px',
+                  color: '#38BDF8',
+                  padding: '5px 8px',
+                  fontSize: '0.75rem',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  flexShrink: 0
+                }}
+                title="Switch Workspace Language (EN / Hindi / Marathi / Bengali / Tamil / Telugu)"
+              >
+                {supportedUiLanguages.map((langOpt) => (
+                  <option key={langOpt.code} value={langOpt.code} style={{ backgroundColor: '#0F172A', color: '#F8FAFC' }}>
+                    {langOpt.flag} {langOpt.nativeLabel}
+                  </option>
+                ))}
+              </select>
+
               {/* Direct Single-Tap Header Logout Action */}
               {onLogout && (
                 <button
@@ -5274,7 +5317,7 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
                   title="Sign out of hospital terminal"
                 >
                   <span>🚪</span>
-                  <span>Logout</span>
+                  <span>{tUi('header.logout', 'Logout')}</span>
                 </button>
               )}
             </div>

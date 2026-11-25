@@ -66,12 +66,16 @@ export interface FirebaseVerifiedUser {
 }
 
 export class FirebaseIntegrationService {
-  private readonly projectId: string | undefined;
-  private readonly serverKey: string | undefined;
-  private readonly serviceAccountRaw: string | undefined;
+  private projectId: string | undefined;
+  private serverKey: string | undefined;
+  private serviceAccountRaw: string | undefined;
   private readonly deviceRegistry: Map<string, DeviceTokenRecord> = new Map();
 
   constructor() {
+    this.reloadConfig();
+  }
+
+  public reloadConfig(): void {
     this.projectId = process.env['FIREBASE_PROJECT_ID'];
     this.serverKey = process.env['FIREBASE_SERVER_KEY'];
     this.serviceAccountRaw = process.env['FIREBASE_SERVICE_ACCOUNT_KEY'];

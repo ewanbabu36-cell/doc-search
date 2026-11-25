@@ -29,3 +29,5 @@ export * from './claims/ai-claim-adjudication-engine.js';
 export * from './security/clinical-input-sanitizer.js';
 export * from './presets/industryPresets.js';
 export * from './hardware/escpos-printer-service.js';
+export * from './i18n/vernacularUiDictionary.js';
+export * from './crdt/HybridLogicalClock.js';

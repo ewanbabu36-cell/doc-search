@@ -77,7 +77,32 @@ const EnvSchema = z.object({
 
   // Physical Hardware Peripherals Configuration
   HARDWARE_BRIDGE_ENABLED: z.preprocess((val) => val === 'true' || val === true, z.boolean()).default(true),
-  ZEBRA_PRINTER_DEFAULT_DPI: z.coerce.number().default(203)
+  ZEBRA_PRINTER_DEFAULT_DPI: z.coerce.number().default(203),
+
+  // Omnichannel Communication (Gmail, Firebase, Telegram)
+  GMAIL_USER: z.string().optional(),
+  GMAIL_APP_PASSWORD: z.string().optional(),
+  GMAIL_FROM: z.string().optional(),
+  FIREBASE_PROJECT_ID: z.string().optional(),
+  FIREBASE_SERVER_KEY: z.string().optional(),
+  FIREBASE_SERVICE_ACCOUNT_KEY: z.string().optional(),
+  TELEGRAM_BOT_TOKEN: z.string().optional(),
+  TELEGRAM_ADMIN_CHAT_ID: z.string().optional(),
+
+  // Payment Gateways (Razorpay & Stripe)
+  RAZORPAY_KEY_ID: z.string().optional(),
+  RAZORPAY_KEY_SECRET: z.string().optional(),
+  RAZORPAY_WEBHOOK_SECRET: z.string().optional(),
+  STRIPE_SECRET_KEY: z.string().optional(),
+  STRIPE_WEBHOOK_SECRET: z.string().optional(),
+
+  // TRAI DLT Compliant SMS Providers
+  MSG91_AUTH_KEY: z.string().optional(),
+  MSG91_SENDER_ID: z.string().default('DOCSRH'),
+  GUPSHUP_API_KEY: z.string().optional(),
+  GUPSHUP_APP_ID: z.string().optional(),
+  TWILIO_ACCOUNT_SID: z.string().optional(),
+  TWILIO_AUTH_TOKEN: z.string().optional()
 });
 
 export type Env = z.infer<typeof EnvSchema>;
@@ -119,49 +144,140 @@ if (env.NODE_ENV === 'production') {
 
 /**
  * Deterministic External Integration Readiness Diagnostic Check
+ * Reads live from process.env so runtime updates reflect immediately.
  */
 export function getExternalReadinessReport() {
+  const e = process.env;
+  const isNonPlaceholder = (val: string | undefined, placeholders: string[] = []) => {
+    if (!val || val.trim() === '') return false;
+    const trimmed = val.trim();
+    return !placeholders.some((p) => trimmed.includes(p));
+  };
+
+  const gmailConfigured = isNonPlaceholder(e['GMAIL_USER'], ['your-email@gmail.com']) &&
+    isNonPlaceholder(e['GMAIL_APP_PASSWORD'], ['your-16-char-app-password']);
+  const firebaseConfigured = isNonPlaceholder(e['FIREBASE_SERVER_KEY'], ['your-firebase-server-key']) ||
+    (isNonPlaceholder(e['FIREBASE_PROJECT_ID']) && isNonPlaceholder(e['FIREBASE_SERVICE_ACCOUNT_KEY']));
+  const telegramConfigured = isNonPlaceholder(e['TELEGRAM_BOT_TOKEN'], ['1234567890:ABCdefGHIjklMNOpqrSTUvwxYZ']);
+  const razorpayConfigured = isNonPlaceholder(e['RAZORPAY_KEY_ID'], ['rzp_test_xxxxxxxxxxxx']) &&
+    isNonPlaceholder(e['RAZORPAY_KEY_SECRET'], ['your_razorpay_key_secret']);
+  const stripeConfigured = isNonPlaceholder(e['STRIPE_SECRET_KEY'], ['sk_test_xxxxxxxxxxxx']);
+  const abdmConfigured = isNonPlaceholder(e['ABDM_CLIENT_ID'] || env.ABDM_CLIENT_ID, ['SBX_xxxxxx']) &&
+    isNonPlaceholder(e['ABDM_CLIENT_SECRET'] || env.ABDM_CLIENT_SECRET, ['your_abdm_client_secret']);
+  const dltSmsConfigured =
+    isNonPlaceholder(e['MSG91_AUTH_KEY'], ['your_msg91_auth_key']) ||
+    isNonPlaceholder(e['GUPSHUP_API_KEY'], ['your_gupshup_api_key']) ||
+    (isNonPlaceholder(e['TWILIO_ACCOUNT_SID']) && isNonPlaceholder(e['TWILIO_AUTH_TOKEN']));
+  const whatsappConfigured =
+    isNonPlaceholder(e['META_WA_ACCESS_TOKEN'] || env.META_WA_ACCESS_TOKEN, ['your_meta_whatsapp_token']) &&
+    isNonPlaceholder(e['META_WA_PHONE_NUMBER_ID'] || env.META_WA_PHONE_NUMBER_ID, ['your_phone_number_id']);
+  const hcxConfigured = isNonPlaceholder(e['HCX_AUTH_TOKEN'] || env.HCX_AUTH_TOKEN);
+
+  const channels = [
+    gmailConfigured,
+    firebaseConfigured,
+    telegramConfigured,
+    razorpayConfigured,
+    stripeConfigured,
+    abdmConfigured,
+    dltSmsConfigured,
+    whatsappConfigured
+  ];
+  const configuredCount = channels.filter(Boolean).length;
+
   return {
+    summary: {
+      totalCoreChannels: channels.length,
+      configuredCount,
+      simulationCount: channels.length - configuredCount,
+      readinessPercent: Math.round((configuredCount / channels.length) * 100)
+    },
+    gmail: {
+      status: gmailConfigured ? 'CONFIGURED' : 'SIMULATION_FALLBACK_ACTIVE',
+      configured: gmailConfigured,
+      userHint: e['GMAIL_USER'] ? `${e['GMAIL_USER'].slice(0, 3)}***` : null,
+      requiredVars: ['GMAIL_USER', 'GMAIL_APP_PASSWORD', 'GMAIL_FROM']
+    },
+    firebase: {
+      status: firebaseConfigured ? 'CONFIGURED' : 'SIMULATION_FALLBACK_ACTIVE',
+      configured: firebaseConfigured,
+      projectId: e['FIREBASE_PROJECT_ID'] || null,
+      hasServerKey: Boolean(e['FIREBASE_SERVER_KEY']),
+      hasServiceAccount: Boolean(e['FIREBASE_SERVICE_ACCOUNT_KEY']),
+      requiredVars: ['FIREBASE_PROJECT_ID', 'FIREBASE_SERVER_KEY']
+    },
+    telegram: {
+      status: telegramConfigured ? 'CONFIGURED' : 'SIMULATION_FALLBACK_ACTIVE',
+      configured: telegramConfigured,
+      hasBotToken: telegramConfigured,
+      hasAdminChatId: Boolean(e['TELEGRAM_ADMIN_CHAT_ID']),
+      requiredVars: ['TELEGRAM_BOT_TOKEN', 'TELEGRAM_ADMIN_CHAT_ID']
+    },
+    razorpay: {
+      status: razorpayConfigured ? 'CONFIGURED' : 'SIMULATION_FALLBACK_ACTIVE',
+      configured: razorpayConfigured,
+      keyIdHint: e['RAZORPAY_KEY_ID'] ? `${e['RAZORPAY_KEY_ID'].slice(0, 8)}***` : null,
+      requiredVars: ['RAZORPAY_KEY_ID', 'RAZORPAY_KEY_SECRET', 'RAZORPAY_WEBHOOK_SECRET']
+    },
+    stripe: {
+      status: stripeConfigured ? 'CONFIGURED' : 'SIMULATION_FALLBACK_ACTIVE',
+      configured: stripeConfigured,
+      requiredVars: ['STRIPE_SECRET_KEY', 'STRIPE_WEBHOOK_SECRET']
+    },
     abdm: {
-      status: env.ABDM_CLIENT_ID && env.ABDM_CLIENT_SECRET ? 'CONFIGURED' : 'BLOCKED_MISSING_CREDENTIALS',
-      baseUrl: env.ABDM_BASE_URL || 'https://dev.abdm.gov.in/gateway (DEFAULT)',
-      hasClientId: Boolean(env.ABDM_CLIENT_ID),
-      hasClientSecret: Boolean(env.ABDM_CLIENT_SECRET),
-      hipId: env.ABDM_HIP_ID,
-      hiuId: env.ABDM_HIU_ID
+      status: abdmConfigured ? 'CONFIGURED' : 'BLOCKED_MISSING_CREDENTIALS',
+      configured: abdmConfigured,
+      baseUrl: e['ABDM_BASE_URL'] || env.ABDM_BASE_URL || 'https://dev.abdm.gov.in/gateway (DEFAULT)',
+      hasClientId: Boolean(e['ABDM_CLIENT_ID'] || env.ABDM_CLIENT_ID),
+      hasClientSecret: Boolean(e['ABDM_CLIENT_SECRET'] || env.ABDM_CLIENT_SECRET),
+      hipId: e['ABDM_HIP_ID'] || env.ABDM_HIP_ID,
+      hiuId: e['ABDM_HIU_ID'] || env.ABDM_HIU_ID,
+      requiredVars: ['ABDM_BASE_URL', 'ABDM_CLIENT_ID', 'ABDM_CLIENT_SECRET', 'ABDM_HIP_ID']
+    },
+    dltSms: {
+      status: dltSmsConfigured ? 'CONFIGURED' : 'SIMULATION_FALLBACK_ACTIVE',
+      configured: dltSmsConfigured,
+      providersConfigured: {
+        msg91: isNonPlaceholder(e['MSG91_AUTH_KEY'], ['your_msg91_auth_key']),
+        gupshup: isNonPlaceholder(e['GUPSHUP_API_KEY'], ['your_gupshup_api_key']),
+        twilio: isNonPlaceholder(e['TWILIO_ACCOUNT_SID']) && isNonPlaceholder(e['TWILIO_AUTH_TOKEN'])
+      },
+      requiredVars: ['MSG91_AUTH_KEY', 'MSG91_SENDER_ID', 'GUPSHUP_API_KEY']
     },
     stt: {
       status:
         env.STT_PROVIDER === 'SELF_HOSTED_WHISPER' || env.STT_PROVIDER === 'WHISPER_LOCAL'
           ? 'SELF_HOSTED_LOCAL_ACTIVE'
-          : env.STT_PROVIDER !== 'NONE' && env.STT_PROVIDER_API_KEY
+          : env.STT_PROVIDER !== 'NONE' && (e['STT_PROVIDER_API_KEY'] || env.STT_PROVIDER_API_KEY)
             ? 'CONFIGURED'
             : 'BLOCKED_MISSING_CREDENTIALS',
       provider: env.STT_PROVIDER,
       model: env.WHISPER_MODEL,
       device: env.WHISPER_DEVICE,
-      hasApiKey: Boolean(env.STT_PROVIDER_API_KEY)
+      hasApiKey: Boolean(e['STT_PROVIDER_API_KEY'] || env.STT_PROVIDER_API_KEY)
     },
     tts: {
-      status: env.TTS_PROVIDER !== 'NONE' && env.TTS_PROVIDER_API_KEY ? 'CONFIGURED' : 'BLOCKED_MISSING_CREDENTIALS',
+      status: env.TTS_PROVIDER !== 'NONE' && (e['TTS_PROVIDER_API_KEY'] || env.TTS_PROVIDER_API_KEY) ? 'CONFIGURED' : 'BLOCKED_MISSING_CREDENTIALS',
       provider: env.TTS_PROVIDER,
-      hasApiKey: Boolean(env.TTS_PROVIDER_API_KEY)
+      hasApiKey: Boolean(e['TTS_PROVIDER_API_KEY'] || env.TTS_PROVIDER_API_KEY)
     },
     hardware: {
       status: env.HARDWARE_BRIDGE_ENABLED ? 'BRIDGE_ACTIVE_AWAITING_PHYSICAL_USB' : 'DISABLED',
       zebraDefaultDpi: env.ZEBRA_PRINTER_DEFAULT_DPI
     },
     whatsapp: {
-      status: env.META_WA_ACCESS_TOKEN && env.META_WA_PHONE_NUMBER_ID ? 'CONFIGURED' : 'SANDBOX_SIMULATION_ACTIVE',
+      status: whatsappConfigured ? 'CONFIGURED' : 'SANDBOX_SIMULATION_ACTIVE',
+      configured: whatsappConfigured,
       apiUrl: env.META_WA_API_URL,
-      hasAccessToken: Boolean(env.META_WA_ACCESS_TOKEN),
-      phoneNumberId: env.META_WA_PHONE_NUMBER_ID || 'UNCONFIGURED (FALLBACK ACTIVE)'
+      hasAccessToken: Boolean(e['META_WA_ACCESS_TOKEN'] || env.META_WA_ACCESS_TOKEN),
+      phoneNumberId: e['META_WA_PHONE_NUMBER_ID'] || env.META_WA_PHONE_NUMBER_ID || 'UNCONFIGURED (FALLBACK ACTIVE)',
+      requiredVars: ['META_WA_ACCESS_TOKEN', 'META_WA_PHONE_NUMBER_ID']
     },
     hcx: {
-      status: env.HCX_AUTH_TOKEN ? 'CONFIGURED' : 'SANDBOX_SIMULATION_ACTIVE',
+      status: hcxConfigured ? 'CONFIGURED' : 'SANDBOX_SIMULATION_ACTIVE',
       baseUrl: env.HCX_BASE_URL,
       participantCode: env.HCX_PARTICIPANT_CODE,
-      hasAuthToken: Boolean(env.HCX_AUTH_TOKEN)
+      hasAuthToken: hcxConfigured
     },
     upi: {
       status: 'ACTIVE',

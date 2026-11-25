@@ -20,6 +20,8 @@ export const GranularDeltaItemSchema = z.object({
   encounterId: z.string().trim().optional(),
   deltaType: z.enum(['DEMOGRAPHICS', 'VITALS', 'CLINICAL_NOTES', 'PRESCRIPTIONS']),
   clientTimestamp: z.string().trim().min(1, 'clientTimestamp is required'),
+  hlcTimestamp: z.string().trim().optional(),
+  nodeId: z.string().trim().optional(),
   lamportClock: z.number().int().optional(),
   actorId: z.string().trim().optional(),
   actorRole: z.string().trim().optional(),
@@ -70,6 +72,59 @@ export const granularSyncRoutes: FastifyPluginAsync = async (fastify) => {
 
       reply.status(200);
       return result;
+    }
+  );
+
+  // GET /api/v1/partner/clinical/sync/snapshot-export
+  fastify.get(
+    '/api/v1/partner/clinical/sync/snapshot-export',
+    {
+      preHandler: [
+        authenticate,
+        requireRoles('SUPER_ADMIN', 'COMPANY_ADMIN', 'HOSPITAL_ADMIN', 'CLINIC_ADMIN', 'CHIEF_MEDICAL_OFFICER', 'DOCTOR', 'NURSE', 'RECEPTIONIST')
+      ]
+    },
+    async (request, reply) => {
+      const snapshot = await granularSyncService.exportBlackoutSnapshot(request.session);
+      return reply.status(200).send({ success: true, snapshot });
+    }
+  );
+
+  // POST /api/v1/partner/clinical/sync/blackout-bundle
+  fastify.post(
+    '/api/v1/partner/clinical/sync/blackout-bundle',
+    {
+      preHandler: [
+        authenticate,
+        requireRoles('SUPER_ADMIN', 'COMPANY_ADMIN', 'HOSPITAL_ADMIN', 'CLINIC_ADMIN', 'CHIEF_MEDICAL_OFFICER', 'DOCTOR', 'NURSE', 'RECEPTIONIST'),
+        enforceIdempotency
+      ]
+    },
+    async (request, reply) => {
+      const BlackoutBundleSchema = z.object({
+        bundleId: z.string().min(1),
+        nodeId: z.string().min(1),
+        checksumSha256: z.string().optional(),
+        deltas: z.array(GranularDeltaItemSchema).min(1)
+      });
+      const parsed = BlackoutBundleSchema.safeParse(request.body);
+      if (!parsed.success) {
+        return reply.status(400).send({
+          success: false,
+          error: { code: 'VALIDATION_ERROR', message: 'Invalid blackout bundle payload', details: parsed.error.issues }
+        });
+      }
+
+      const result = await granularSyncService.ingestBlackoutBundle(
+        {
+          bundleId: parsed.data.bundleId,
+          nodeId: parsed.data.nodeId,
+          ...(parsed.data.checksumSha256 ? { checksumSha256: parsed.data.checksumSha256 } : {}),
+          deltas: parsed.data.deltas as GranularDeltaInput[]
+        },
+        request.session
+      );
+      return reply.status(200).send(result);
     }
   );
 };

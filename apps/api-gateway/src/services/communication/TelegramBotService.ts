@@ -72,14 +72,47 @@ export interface TelegramBotReply {
 }
 
 export class TelegramBotService {
-  private readonly botToken: string | undefined;
-  private readonly defaultAdminChatId: string | undefined;
-  private readonly apiBase: string;
+  private botToken: string | undefined;
+  private defaultAdminChatId: string | undefined;
+  private apiBase: string = '';
 
   constructor() {
+    this.reloadConfig();
+  }
+
+  public reloadConfig(): void {
     this.botToken = process.env['TELEGRAM_BOT_TOKEN'];
     this.defaultAdminChatId = process.env['TELEGRAM_ADMIN_CHAT_ID'];
     this.apiBase = `https://api.telegram.org/bot${this.botToken || ''}`;
+  }
+
+  public async verifyBotGetMe(): Promise<{ success: boolean; botUsername?: string; message: string }> {
+    if (!this.isConfigured()) {
+      return {
+        success: false,
+        message: 'TELEGRAM_BOT_TOKEN not configured; running in SIMULATED mode.'
+      };
+    }
+    try {
+      const res = await fetch(`${this.apiBase}/getMe`, { signal: AbortSignal.timeout(5000) });
+      const data = (await res.json()) as any;
+      if (res.ok && data?.ok) {
+        return {
+          success: true,
+          botUsername: data.result?.username,
+          message: `Connected to Telegram Bot @${data.result?.username || 'unknown'}`
+        };
+      }
+      return {
+        success: false,
+        message: `Telegram API rejected token: ${data?.description || res.statusText}`
+      };
+    } catch (err: any) {
+      return {
+        success: false,
+        message: `Telegram connection error: ${err?.message || 'Network timeout'}`
+      };
+    }
   }
 
   public isConfigured(): boolean {

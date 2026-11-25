@@ -2,6 +2,7 @@ import { type FastifyPluginAsync } from 'fastify';
 import { z } from 'zod';
 import { escPosThermalPrinterService } from './EscPosThermalPrinterService.js';
 import { zebraZplBarcodeService } from './ZebraZplBarcodeService.js';
+import { serialAnalyzerDriverService } from './SerialAnalyzerDriverService.js';
 import { authenticate } from '../../plugins/auth-guard.js';
 
 export const hardwareBridgeRoutes: FastifyPluginAsync = async (fastify) => {
@@ -229,6 +230,84 @@ export const hardwareBridgeRoutes: FastifyPluginAsync = async (fastify) => {
       printer,
       zplCode,
       status: 'SPOOLED_SUCCESSFULLY'
+    };
+  });
+
+  // 6. Enumerate OS Serial / COM Ports (USB-to-RS232 Physical Lab Analyzers)
+  fastify.get('/api/v1/hardware/analyzer/ports', async (_request) => {
+    const ports = serialAnalyzerDriverService.enumerateSerialPorts();
+    return {
+      success: true,
+      ports,
+      bridgeStatus: serialAnalyzerDriverService.getStatus()
+    };
+  });
+
+  // 7. Start Physical COM Port OR TCP-to-RS232 Socket Listener
+  fastify.post('/api/v1/hardware/analyzer/serial/start', { preHandler: [authenticate] }, async (request, reply) => {
+    const body = (request.body as any) || {};
+    const mode = body.mode || 'TCP_SERIAL';
+
+    if (mode === 'COM_PORT') {
+      if (!body.comPort) {
+        return reply.status(400).send({ success: false, error: 'comPort (e.g. COM3) is required for COM_PORT mode' });
+      }
+      const res = serialAnalyzerDriverService.startPhysicalComPortListener(
+        String(body.comPort),
+        Number(body.baudRate) || 9600
+      );
+      return { success: res.started, data: res };
+    }
+
+    const tcpPort = Number(body.tcpPort) || 5001;
+    const res = await serialAnalyzerDriverService.startTcpSerialBridge(tcpPort);
+    return { success: true, data: res };
+  });
+
+  // 8. Stop Serial / TCP-Serial Analyzer Listener
+  fastify.post('/api/v1/hardware/analyzer/serial/stop', { preHandler: [authenticate] }, async () => {
+    serialAnalyzerDriverService.stopPhysicalComPortListener();
+    await serialAnalyzerDriverService.stopTcpSerialBridge();
+    return { success: true, data: serialAnalyzerDriverService.getStatus() };
+  });
+
+  // 9. Ingest Raw Binary ASTM E1381 (Base64/Text) or HL7 MLLP Analyzer Stream
+  fastify.post('/api/v1/hardware/analyzer/ingest-raw', { preHandler: [authenticate] }, async (request, reply) => {
+    const body = (request.body as any) || {};
+    const rawPayload = body.rawBase64
+      ? Buffer.from(body.rawBase64, 'base64')
+      : String(body.rawText || '');
+
+    if (!rawPayload || rawPayload.length === 0) {
+      return reply.status(400).send({
+        success: false,
+        error: { code: 'EMPTY_PAYLOAD', message: 'Provide rawBase64 or rawText ASTM/HL7 analyzer payload' }
+      });
+    }
+
+    const res = serialAnalyzerDriverService.ingestRawPayload(rawPayload, body.sourceTransport || 'API_INGEST');
+    if (!res.success) {
+      return reply.status(422).send({
+        success: false,
+        error: {
+          code: 'ASTM_CHECKSUM_OR_PARSE_ERROR',
+          message: `Failed ASTM/HL7 verification (checksum errors: ${res.checksumErrors})`
+        }
+      });
+    }
+
+    return {
+      success: true,
+      checksumErrors: res.checksumErrors,
+      ingestedPackets: res.packets
+    };
+  });
+
+  // 10. Recent Verified Analyzer Packets
+  fastify.get('/api/v1/hardware/analyzer/packets', { preHandler: [authenticate] }, async () => {
+    return {
+      success: true,
+      data: serialAnalyzerDriverService.getStatus()
     };
   });
 };

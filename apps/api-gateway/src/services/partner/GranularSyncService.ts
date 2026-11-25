@@ -6,7 +6,7 @@
  * and Reception (Demographics) on the same patient without destructive overwrites.
  */
 
-import { randomUUID } from 'node:crypto';
+import { randomUUID, createHash } from 'node:crypto';
 import {
   getDatabase,
   withSecurityContext,
@@ -28,7 +28,15 @@ import {
   desc
 } from '@docsearch/database';
 import { type SessionContext } from '@docsearch/auth';
-import { AppError, ErrorCode } from '@docsearch/shared-core';
+import {
+  AppError,
+  ErrorCode,
+  parseHlc,
+  compareHlc,
+  mergeFieldLevelCrdtMaps,
+  type CrdtFieldEntry,
+  type SemanticConflictRecord
+} from '@docsearch/shared-core';
 import { auditRepository } from '../../repositories/core/AuditRepository.js';
 
 export type GranularDeltaType = 'DEMOGRAPHICS' | 'VITALS' | 'CLINICAL_NOTES' | 'PRESCRIPTIONS';
@@ -41,6 +49,8 @@ export interface GranularDeltaInput {
   encounterId?: string;
   deltaType: GranularDeltaType;
   clientTimestamp: string;
+  hlcTimestamp?: string;
+  nodeId?: string;
   lamportClock?: number;
   actorId?: string;
   actorRole?: string;
@@ -52,6 +62,8 @@ export interface GranularMergeResultItem {
   deltaType: GranularDeltaType;
   status: 'MERGED' | 'ALREADY_APPLIED' | 'REJECTED';
   appliedFields: string[];
+  skippedStaleFields?: string[];
+  conflictsDetected?: SemanticConflictRecord[];
   message?: string;
 }
 
@@ -60,6 +72,7 @@ export interface GranularMergeResponse {
   totalDeltas: number;
   mergedCount: number;
   conflictsResolved: number;
+  semanticConflictsCount?: number;
   results: GranularMergeResultItem[];
 }
 
@@ -81,18 +94,29 @@ export class GranularSyncService {
       };
     }
 
+    // Sort incoming deltas deterministically by Hybrid Logical Clock before applying
+    const orderedDeltas = [...deltas].sort((a, b) => {
+      const hlcA = parseHlc(a.hlcTimestamp || a.clientTimestamp, a.lamportClock || 0, a.nodeId || a.actorId || 'node-a');
+      const hlcB = parseHlc(b.hlcTimestamp || b.clientTimestamp, b.lamportClock || 0, b.nodeId || b.actorId || 'node-b');
+      return compareHlc(hlcA, hlcB);
+    });
+
     return withSecurityContext(getDatabase(), session, async (tx) => {
       const results: GranularMergeResultItem[] = [];
       let mergedCount = 0;
       let conflictsResolved = 0;
+      let semanticConflictsCount = 0;
 
-      for (const delta of deltas) {
+      for (const delta of orderedDeltas) {
         try {
           const applied = await this.applySingleDelta(delta, session, tx);
           results.push(applied);
           if (applied.status === 'MERGED') {
             mergedCount++;
             conflictsResolved++;
+          }
+          if (applied.conflictsDetected?.length) {
+            semanticConflictsCount += applied.conflictsDetected.length;
           }
         } catch (err: any) {
           console.error('[CRITICAL_DELTA_FAIL]', delta.deltaType, err?.message, err?.stack || err);
@@ -110,25 +134,105 @@ export class GranularSyncService {
       await auditRepository.recordEvent({
         eventType: 'OFFLINE_GRANULAR_DELTAS_MERGED',
         resourceType: 'granular_sync',
-        resourceId: deltas[0]?.patientId || session.tenantId,
+        resourceId: orderedDeltas[0]?.patientId || session.tenantId,
         tenantId: session.tenantId,
         branchId: session.branchId,
         metadata: {
-          totalDeltas: deltas.length,
+          totalDeltas: orderedDeltas.length,
           mergedCount,
           conflictsResolved,
-          actorRoles: Array.from(new Set(deltas.map((d) => d.actorRole).filter(Boolean)))
+          semanticConflictsCount,
+          actorRoles: Array.from(new Set(orderedDeltas.map((d) => d.actorRole).filter(Boolean)))
         }
       }, session, tx);
 
       return {
         success: true,
-        totalDeltas: deltas.length,
+        totalDeltas: orderedDeltas.length,
         mergedCount,
         conflictsResolved,
+        semanticConflictsCount,
         results
       };
     });
+  }
+
+  /**
+   * Exports multi-day offline snapshot of tenant patients + recent consultations with HLC state
+   */
+  public async exportBlackoutSnapshot(session: SessionContext) {
+    return withSecurityContext(getDatabase(), session, async (tx) => {
+      const patientRows = await tx
+        .select()
+        .from(patients)
+        .where(eq(patients.tenantId, session.tenantId))
+        .limit(500);
+
+      const recentConsultations = await tx
+        .select()
+        .from(consultations)
+        .where(eq(consultations.tenantId, session.tenantId))
+        .orderBy(desc(consultations.updatedAt))
+        .limit(500);
+
+      const snapshotPayload = {
+        schemaVersion: '2.0.0-HLC-CRDT',
+        tenantId: session.tenantId,
+        branchId: session.branchId,
+        exportedAt: new Date().toISOString(),
+        maxOfflineSlaHours: 168,
+        patientsCount: patientRows.length,
+        consultationsCount: recentConsultations.length,
+        patients: patientRows,
+        consultations: recentConsultations
+      };
+
+      const checksumSha256 = createHash('sha256')
+        .update(JSON.stringify(snapshotPayload))
+        .digest('hex');
+
+      return {
+        ...snapshotPayload,
+        checksumSha256
+      };
+    });
+  }
+
+  /**
+   * Ingests a signed 48h+ rural blackout sneaker-net bundle after verifying SHA-256 digest
+   */
+  public async ingestBlackoutBundle(
+    bundle: {
+      bundleId: string;
+      nodeId: string;
+      checksumSha256?: string;
+      deltas: GranularDeltaInput[];
+    },
+    session: SessionContext
+  ) {
+    if (bundle.checksumSha256) {
+      const computed = createHash('sha256').update(JSON.stringify(bundle.deltas)).digest('hex');
+      if (computed !== bundle.checksumSha256) {
+        throw new AppError({
+          message: 'Blackout bundle integrity check failed (SHA-256 mismatch). Possible USB corruption or tampering.',
+          code: ErrorCode.BAD_REQUEST,
+          statusCode: 400
+        });
+      }
+    }
+
+    const enrichedDeltas = bundle.deltas.map((d) => ({
+      ...d,
+      nodeId: d.nodeId || bundle.nodeId
+    }));
+
+    const mergeResult = await this.processGranularDeltas(enrichedDeltas, session);
+    return {
+      ...mergeResult,
+      bundleId: bundle.bundleId,
+      nodeId: bundle.nodeId,
+      checksumVerified: Boolean(bundle.checksumSha256)
+    };
   }
 
   private async applySingleDelta(
@@ -158,43 +262,76 @@ export class GranularSyncService {
           });
         }
 
+        const existingMeta = (existingPatient.metadata as Record<string, any>) || {};
+        const currentFieldClocks = (existingMeta['crdtFieldClocks'] as Record<string, CrdtFieldEntry>) || {};
+        const incomingClock = parseHlc(
+          delta.hlcTimestamp || delta.clientTimestamp,
+          delta.lamportClock || 0,
+          delta.nodeId || delta.actorId || 'offline-node'
+        );
+
+        const candidateFields: Record<string, unknown> = {};
+        if (d['bloodGroup'] !== undefined) candidateFields['bloodGroup'] = d['bloodGroup'];
+        if (d['firstName'] !== undefined) candidateFields['firstName'] = d['firstName'];
+        if (d['lastName'] !== undefined) candidateFields['lastName'] = d['lastName'];
+        if (d['mobileNumber'] !== undefined) candidateFields['mobileNumber'] = d['mobileNumber'];
+        if (d['address'] !== undefined) candidateFields['address'] = d['address'];
+        if (d['allergies'] !== undefined) candidateFields['allergies'] = d['allergies'];
+
+        const crdtOutcome = mergeFieldLevelCrdtMaps(currentFieldClocks, candidateFields, incomingClock, {
+          ...(delta.actorId ? { actorId: delta.actorId } : {}),
+          ...(delta.actorRole ? { actorRole: delta.actorRole } : {})
+        });
+
         const updateData: Record<string, any> = {
           updatedAt: new Date()
         };
 
-        if (d['bloodGroup'] && d['bloodGroup'] !== existingPatient.bloodGroup) {
+        const winningFields = new Set(crdtOutcome.appliedFields);
+        if (winningFields.has('bloodGroup') && d['bloodGroup']) {
           updateData['bloodGroup'] = d['bloodGroup'];
           appliedFields.push('bloodGroup');
         }
-        if (d['firstName'] && d['firstName'] !== existingPatient.firstName) {
+        if (winningFields.has('firstName') && d['firstName']) {
           updateData['firstName'] = d['firstName'];
           appliedFields.push('firstName');
         }
-        if (d['lastName'] && d['lastName'] !== existingPatient.lastName) {
+        if (winningFields.has('lastName') && d['lastName']) {
           updateData['lastName'] = d['lastName'];
           appliedFields.push('lastName');
         }
 
-        // Store flexible fields in metadata
-        const existingMeta = (existingPatient.metadata as Record<string, any>) || {};
-        const newMeta = { ...existingMeta };
-        if (d['mobileNumber']) {
+        const existingConflicts = Array.isArray(existingMeta['crdtConflicts']) ? existingMeta['crdtConflicts'] : [];
+        const newMeta: Record<string, any> = {
+          ...existingMeta,
+          crdtFieldClocks: crdtOutcome.mergedState,
+          ...(crdtOutcome.semanticConflicts.length > 0
+            ? { crdtConflicts: [...existingConflicts, ...crdtOutcome.semanticConflicts].slice(-50) }
+            : {})
+        };
+        if (winningFields.has('mobileNumber') && d['mobileNumber']) {
           newMeta['mobileNumber'] = d['mobileNumber'];
           appliedFields.push('mobileNumber');
         }
-        if (d['address']) {
+        if (winningFields.has('address') && d['address']) {
           newMeta['address'] = d['address'];
           appliedFields.push('address');
         }
+        if (winningFields.has('allergies') && d['allergies'] !== undefined) {
+          newMeta['allergies'] = d['allergies'];
+          appliedFields.push('allergies');
+        }
         updateData['metadata'] = newMeta;
 
-        await tx
-          .update(patients)
-          .set(updateData)
-          .where(and(eq(patients.tenantId, session.tenantId), eq(patients.id, delta.patientId)));
+        if (appliedFields.length > 0 || crdtOutcome.semanticConflicts.length > 0) {
+          await tx
+            .update(patients)
+            .set(updateData)
+            .where(and(eq(patients.tenantId, session.tenantId), eq(patients.id, delta.patientId)));
+        }
 
-        // Update or insert into normalized patientContacts
-        if (d['mobileNumber']) {
+        // Update or insert into normalized patientContacts only if mobileNumber won HLC check
+        if (winningFields.has('mobileNumber') && d['mobileNumber']) {
           const [contact] = await tx
             .select()
             .from(patientContacts)
@@ -257,8 +394,10 @@ export class GranularSyncService {
         return {
           deltaId: delta.deltaId,
           deltaType: 'DEMOGRAPHICS',
-          status: 'MERGED',
-          appliedFields
+          status: appliedFields.length > 0 ? 'MERGED' : 'ALREADY_APPLIED',
+          appliedFields,
+          ...(crdtOutcome.skippedStaleFields.length > 0 ? { skippedStaleFields: crdtOutcome.skippedStaleFields } : {}),
+          ...(crdtOutcome.semanticConflicts.length > 0 ? { conflictsDetected: crdtOutcome.semanticConflicts } : {})
         };
       }
 

@@ -7,6 +7,7 @@ const config: CapacitorConfig = {
   bundledWebRuntime: false,
   server: {
     androidScheme: 'https',
+    iosScheme: 'capacitor',
     cleartext: true,
     hostname: 'patient.docsearch.in'
   },
@@ -15,6 +16,12 @@ const config: CapacitorConfig = {
     captureInput: true,
     webContentsDebuggingEnabled: false,
     backgroundColor: '#0B0F19'
+  },
+  ios: {
+    contentInset: 'automatic',
+    backgroundColor: '#0B0F19',
+    scrollEnabled: true,
+    preferredContentMode: 'mobile'
   },
   plugins: {
     SplashScreen: {

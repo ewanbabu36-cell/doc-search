@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="100" height="100" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="favVertGrad" x1="50" y1="12" x2="50" y2="88" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stopColor="#38BDF8"/>
+      <stop offset="100%" stopColor="#0284C7"/>
+    </linearGradient>
+    <linearGradient id="favHorizGrad" x1="12" y1="50" x2="88" y2="50" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stopColor="#0284C7"/>
+      <stop offset="100%" stopColor="#10B981"/>
+    </linearGradient>
+    <linearGradient id="favLensGrad" x1="30" y1="30" x2="70" y2="70" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stopColor="#38BDF8"/>
+      <stop offset="100%" stopColor="#10B981"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Medical Cross Pillars -->
+  <rect x="42" y="14" width="16" height="72" rx="8" fill="url(#favVertGrad)"/>
+  <rect x="14" y="42" width="72" height="16" rx="8" fill="url(#favHorizGrad)"/>
+
+  <!-- Diagnostic Aperture -->
+  <circle cx="50" cy="50" r="14" fill="#070D1A" stroke="url(#favLensGrad)" stroke-width="3"/>
+
+  <!-- Search Handle Accent -->
+  <path d="M 60 60 L 74 74" stroke="#38BDF8" stroke-width="4.5" stroke-linecap="round"/>
+  <path d="M 60 60 L 74 74" stroke="#FFFFFF" stroke-width="1.5" stroke-linecap="round"/>
+
+  <!-- ECG Heartbeat Beam -->
+  <path d="M 20 50 L 38 50 L 44 42 L 50 58 L 56 46 L 62 50 L 80 50"
+        stroke="#FFFFFF"
+        stroke-width="2.5"
+        stroke-linecap="round"
+        stroke-linejoin="round"/>
+</svg>

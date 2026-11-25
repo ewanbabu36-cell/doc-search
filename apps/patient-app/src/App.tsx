@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { type Language } from './i18n.js';
+import { type Language, PATIENT_LANGUAGE_OPTIONS } from './i18n.js';
 import { patientApiService, type PatientProfile } from './services/patient-api.js';
 import { PatientLoginScreen } from './components/PatientLoginScreen.js';
 import { PatientHomeScreen } from './components/PatientHomeScreen.js';
@@ -16,7 +16,15 @@ import { nativeBridge } from './services/native-bridge.js';
 export type PatientScreen = 'HOME' | 'QUEUE' | 'PARCHI' | 'DAWA' | 'VIDEO' | 'BOOK' | 'PROFILE' | 'MARKETPLACE' | 'PLUS' | 'REELS';
 
 export const App: React.FC = () => {
-  const [language, setLanguage] = useState<Language>('hi');
+  const [language, setLanguage] = useState<Language>(() => {
+    try {
+      const saved = localStorage.getItem('docsearch_patient_lang');
+      if (saved && ['hi', 'en', 'mr', 'bn', 'ta', 'te'].includes(saved)) {
+        return saved as Language;
+      }
+    } catch {}
+    return 'hi';
+  });
   const [currentPatient, setCurrentPatient] = useState<PatientProfile | null>(null);
   const [activeScreen, setActiveScreen] = useState<PatientScreen>('HOME');
   const [selectedReelId, setSelectedReelId] = useState<string | undefined>(undefined);
@@ -134,9 +142,21 @@ export const App: React.FC = () => {
     };
   }, []);
 
-  const handleLanguageToggle = () => {
+  const handleLanguageToggle = (explicitLang?: Language) => {
     triggerHaptic(8);
-    setLanguage((prev) => (prev === 'hi' ? 'en' : 'hi'));
+    setLanguage((prev) => {
+      let next: Language;
+      if (explicitLang) {
+        next = explicitLang;
+      } else {
+        const idx = PATIENT_LANGUAGE_OPTIONS.findIndex((o) => o.code === prev);
+        next = PATIENT_LANGUAGE_OPTIONS[(idx + 1) % PATIENT_LANGUAGE_OPTIONS.length]?.code || 'hi';
+      }
+      try {
+        localStorage.setItem('docsearch_patient_lang', next);
+      } catch {}
+      return next;
+    });
   };
 
   const handleLogout = () => {

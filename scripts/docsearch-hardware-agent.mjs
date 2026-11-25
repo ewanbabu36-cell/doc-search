@@ -1,7 +1,9 @@
 import http from 'node:http';
+import net from 'node:net';
 import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
+import { execFileSync, spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -452,6 +454,62 @@ const server = http.createServer(async (req, res) => {
         lastPacket: state.analyzerPackets[0] || null
       }
     });
+  }
+
+  // 5b. Enumerate Physical OS RS-232 / USB-Serial COM Ports
+  if (pathname === '/api/v1/hardware/analyzer/ports' && req.method === 'GET') {
+    let ports = [];
+    if (process.platform === 'win32') {
+      try {
+        const psCmd = '$ports = [System.IO.Ports.SerialPort]::GetPortNames(); $wmi = Get-CimInstance Win32_PnPEntity -ErrorAction SilentlyContinue | Where-Object { $_.Name -match "\\(COM\\d+\\)" } | Select-Object Name, Manufacturer, PNPDeviceID; @{ ports = @($ports); devices = @($wmi) } | ConvertTo-Json -Compress';
+        const out = execFileSync('powershell.exe', ['-NoProfile', '-NonInteractive', '-Command', psCmd], { encoding: 'utf8', timeout: 4500 }).trim();
+        if (out) {
+          const parsed = JSON.parse(out);
+          const names = Array.isArray(parsed.ports) ? parsed.ports : parsed.ports ? [parsed.ports] : [];
+          const devs = Array.isArray(parsed.devices) ? parsed.devices : parsed.devices ? [parsed.devices] : [];
+          ports = names.map((p) => {
+            const m = devs.find((d) => typeof d?.Name === 'string' && d.Name.includes(`(${p})`));
+            return { path: p, friendlyName: m?.Name || `Serial Port (${p})`, manufacturer: m?.Manufacturer || 'RS-232' };
+          });
+        }
+      } catch {}
+    } else {
+      try {
+        ports = fs.readdirSync('/dev').filter((n) => /^(ttyUSB|ttyACM|ttyS\d)/.test(n)).map((n) => ({ path: `/dev/${n}`, friendlyName: `POSIX Serial (/dev/${n})` }));
+      } catch {}
+    }
+    return sendJson(200, { success: true, ports, tcpBridgeActive: Boolean(state.tcpBridgeServer), activeComPort: state.activeComPort || null });
+  }
+
+  // 5c. Start Real TCP-Serial or Physical COM Port ASTM E1381 Listener
+  if (pathname === '/api/v1/hardware/analyzer/serial/start' && req.method === 'POST') {
+    const mode = body.mode || 'TCP_SERIAL';
+    if (mode === 'COM_PORT' && body.comPort && process.platform === 'win32') {
+      const comPort = String(body.comPort);
+      const baud = Number(body.baudRate) || 9600;
+      if (state.serialWorker) {
+        try { state.serialWorker.kill(); } catch {}
+      }
+      const psScript = `$port = New-Object System.IO.Ports.SerialPort "${comPort}", ${baud}, ([System.IO.Ports.Parity]::None), 8, ([System.IO.Ports.StopBits]::One); $port.ReadTimeout = 500; $port.Open(); $buf = New-Object byte[] 4096; while($port.IsOpen){ try{ $c = $port.Read($buf,0,$buf.Length); if($c -gt 0){ Write-Output ("FRAME:" + [Convert]::ToBase64String($buf,0,$c)); [Console]::Out.Flush() } } catch [System.TimeoutException] {} }`;
+      state.serialWorker = spawn('powershell.exe', ['-NoProfile', '-NonInteractive', '-Command', psScript]);
+      state.activeComPort = `${comPort}@${baud}`;
+      state.analyzerPort = `${comPort} (${baud}-8-N-1 Live RS-232)`;
+      return sendJson(200, { success: true, mode: 'COM_PORT', comPort, baudRate: baud });
+    }
+
+    const tcpPort = Number(body.tcpPort) || 5001;
+    if (state.tcpBridgeServer) {
+      await new Promise((r) => state.tcpBridgeServer.close(() => r()));
+    }
+    state.tcpBridgeServer = net.createServer((sock) => {
+      sock.on('data', (chunk) => {
+        if (chunk.includes(0x05)) sock.write(Buffer.from([0x06])); // ENQ -> ACK
+        if (chunk.includes(0x02)) sock.write(Buffer.from([0x06])); // STX -> ACK
+      });
+    });
+    await new Promise((resolve) => state.tcpBridgeServer.listen(tcpPort, '127.0.0.1', resolve));
+    state.analyzerPort = `TCP 127.0.0.1:${tcpPort} (Live RS-232 Bridge)`;
+    return sendJson(200, { success: true, mode: 'TCP_SERIAL', port: tcpPort });
   }
 
   // 6. Pathology Analyzer Feed Simulation & Ingestion

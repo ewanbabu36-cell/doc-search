@@ -10,7 +10,8 @@
     "build": "tsc && vite build",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
-    "clean": "rm -rf dist"
+    "clean": "rm -rf dist",
+    "cap:build:mobile": "tsc && vite build && node scripts/build-mobile.mjs"
   },
   "dependencies": {
     "@docsearch/api-contracts": "workspace:*",

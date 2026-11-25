@@ -9,6 +9,7 @@
 
 import { universalOfflineOutbox } from './universal-offline-outbox.js';
 import { multiTabSyncCoordinator } from './multi-tab-sync-coordinator.js';
+import { blackoutCrdtVault } from './blackout-crdt-vault.js';
 
 export type GranularDeltaType = 'DEMOGRAPHICS' | 'VITALS' | 'CLINICAL_NOTES' | 'PRESCRIPTIONS';
 
@@ -20,6 +21,8 @@ export interface GranularDeltaItem {
   encounterId?: string | undefined;
   deltaType: GranularDeltaType;
   clientTimestamp: string;
+  hlcTimestamp?: string | undefined;
+  nodeId?: string | undefined;
   lamportClock: number;
   actorId?: string | undefined;
   actorRole?: string | undefined;
@@ -187,23 +190,37 @@ class GranularCrdtSyncEngine {
    * Dispatch delta to universal offline outbox with target endpoint
    */
   private async dispatchDelta(delta: GranularDeltaItem): Promise<void> {
+    const hlc = blackoutCrdtVault.nextHlcTimestamp();
+    const enrichedDelta: GranularDeltaItem = {
+      ...delta,
+      hlcTimestamp: delta.hlcTimestamp || hlc.encoded,
+      nodeId: delta.nodeId || blackoutCrdtVault.getNodeId()
+    };
+
+    // Persist local offline chart snapshot in encrypted IndexedDB vault (safe for >48h blackouts)
+    await blackoutCrdtVault.saveLocalClinicalRecord(
+      enrichedDelta.patientId,
+      enrichedDelta.entityType === 'PATIENT' ? 'PATIENT' : 'CONSULTATION',
+      enrichedDelta.data
+    );
+
     // Enqueue in IndexedDB outbox
     await universalOfflineOutbox.enqueue(
       'CLINICAL_CONSULTATION', // Outbox category
       '/api/v1/partner/clinical/sync/granular-merge',
       'POST',
-      { deltas: [delta] }
+      { deltas: [enrichedDelta] }
     );
 
     // Notify sibling tabs via broadcast channel
     multiTabSyncCoordinator.broadcast({
       type: 'RECORD_MERGED',
       tabId: multiTabSyncCoordinator.getTabId(),
-      timestamp: delta.clientTimestamp,
+      timestamp: enrichedDelta.clientTimestamp,
       payload: {
-        deltaType: delta.deltaType,
-        patientId: delta.patientId,
-        encounterId: delta.encounterId
+        deltaType: enrichedDelta.deltaType,
+        patientId: enrichedDelta.patientId,
+        encounterId: enrichedDelta.encounterId
       }
     });
   }

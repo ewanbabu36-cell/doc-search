@@ -1,3 +1,9 @@
 // Auto-generated or custom capacitor dependencies
 dependencies {
+    implementation project(':capacitor-camera')
+    implementation project(':capacitor-haptics')
+    implementation project(':capacitor-local-notifications')
+    implementation project(':capacitor-network')
+    implementation project(':capacitor-splash-screen')
+    implementation project(':capacitor-status-bar')
 }

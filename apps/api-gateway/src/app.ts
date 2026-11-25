@@ -32,6 +32,7 @@ import { aiGovernanceRoutes } from './routes/company/ai-governance.routes.js';
 import { securityAdminRoutes } from './routes/company/security-admin.routes.js';
 import { complianceRoutes } from './routes/company/compliance.routes.js';
 import { integrationRoutes } from './routes/company/integration.routes.js';
+import { productionCredentialsRoutes } from './routes/company/production-credentials.routes.js';
 import { platformEngineeringRoutes } from './routes/company/platform-engineering.routes.js';
 import { infrastructureRoutes } from './routes/company/infrastructure.routes.js';
 import { companyAdminRoutes } from './routes/company/company-admin.routes.js';
@@ -457,6 +458,7 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
   await app.register(securityAdminRoutes);
   await app.register(complianceRoutes);
   await app.register(integrationRoutes);
+  await app.register(productionCredentialsRoutes);
   await app.register(platformEngineeringRoutes);
   await app.register(infrastructureRoutes);
   await app.register(companyAdminRoutes);

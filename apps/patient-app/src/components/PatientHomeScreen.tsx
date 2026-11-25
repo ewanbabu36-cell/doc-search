@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { DocSearchLogo } from '@docsearch/ui-kit';
-import { type Language, translations } from '../i18n.js';
+import { type Language, translations, PATIENT_LANGUAGE_OPTIONS } from '../i18n.js';
 import { type PatientProfile } from '../services/patient-api.js';
 import { speakAdvice } from '../utils/voice-assistant.js';
 import { BookOpdModal } from './BookOpdModal.js';
@@ -17,7 +17,7 @@ import { doctorReelsService } from '../services/doctor-reels-data.js';
 
 interface Props {
   language: Language;
-  onLanguageToggle: () => void;
+  onLanguageToggle: (explicitLang?: Language) => void;
   patient: PatientProfile;
   onNavigate: (
     screen: 'QUEUE' | 'PARCHI' | 'DAWA' | 'VIDEO' | 'BOOK' | 'PROFILE' | 'MARKETPLACE' | 'PLUS' | 'REELS',
@@ -161,22 +161,27 @@ export const PatientHomeScreen: React.FC<Props> = ({
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <button
-            type="button"
-            onClick={onLanguageToggle}
+          <select
+            aria-label="Select Language"
+            value={language}
+            onChange={(e) => onLanguageToggle(e.target.value as Language)}
             style={{
-              backgroundColor: 'rgba(255, 255, 255, 0.08)',
-              border: '1px solid rgba(255, 255, 255, 0.2)',
+              backgroundColor: '#1E293B',
+              border: '1px solid rgba(56, 189, 248, 0.35)',
               color: '#F8FAFC',
-              padding: '6px 12px',
+              padding: '6px 10px',
               borderRadius: '16px',
               fontSize: '0.75rem',
               fontWeight: 700,
               cursor: 'pointer'
             }}
           >
-            {language === 'hi' ? '🇮🇳 English' : '🇮🇳 हिंदी'}
-          </button>
+            {PATIENT_LANGUAGE_OPTIONS.map((opt) => (
+              <option key={opt.code} value={opt.code}>
+                {opt.flag} {opt.label}
+              </option>
+            ))}
+          </select>
 
           <button
             type="button"

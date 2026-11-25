@@ -32,6 +32,7 @@ import { ApiRateLimitView } from './ApiRateLimitView.js';
 import { IntegrationHealthView } from './IntegrationHealthView.js';
 import { IntegrationIncidentCenterView } from './IntegrationIncidentCenterView.js';
 import { IntegrationCredentialLifecycleView } from './IntegrationCredentialLifecycleView.js';
+import { ProductionCredentialsReadinessView } from './ProductionCredentialsReadinessView.js';
 import { IntegrationAuditTraceView } from './IntegrationAuditTraceView.js';
 import { LimsAnalyzerSimulatorView } from './LimsAnalyzerSimulatorView.js';
 import { DicomPacsGatewayView } from './DicomPacsGatewayView.js';
@@ -43,6 +44,7 @@ import { Tabs, Badge, Button, Spinner, ErrorState } from '@docsearch/ui-kit';
 
 type ActiveTab =
   | 'overview'
+  | 'production-readiness'
   | 'custom-webhooks'
   | 'lims-streamer'
   | 'dicom-pacs'
@@ -399,6 +401,11 @@ export const IntegrationDomainManager: React.FC = () => {
             badge: <Badge variant={credentials.filter((c) => c.status === 'PENDING_ROTATION').length > 0 ? 'warning' : 'neutral'}>{credentials.length}</Badge>
           },
           {
+            id: 'production-readiness',
+            label: '🚀 Go-Live Env Keys',
+            badge: <Badge variant="primary">8 Channels</Badge>
+          },
+          {
             id: 'audit',
             label: '🔒 Audit Traces',
             badge: <Badge variant="neutral">{auditTraces.length}</Badge>
@@ -415,6 +422,10 @@ export const IntegrationDomainManager: React.FC = () => {
           providers={providers}
           incidents={incidents}
         />
+      )}
+
+      {activeTab === 'production-readiness' && (
+        <ProductionCredentialsReadinessView />
       )}
 
       {activeTab === 'custom-webhooks' && (

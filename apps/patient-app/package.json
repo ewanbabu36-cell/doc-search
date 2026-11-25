@@ -12,7 +12,9 @@
     "clean": "rm -rf dist",
     "cap:sync": "cap sync android",
     "cap:copy": "cap copy android",
-    "cap:build:apk": "tsc && vite build && node scripts/build-apk.mjs"
+    "cap:build:apk": "tsc && vite build && node scripts/build-apk.mjs",
+    "cap:build:aab": "tsc && vite build && node scripts/build-apk.mjs --all",
+    "cap:build:ios": "tsc && vite build && node scripts/build-ipa.mjs"
   },
   "dependencies": {
     "@capacitor/android": "^6.2.0",

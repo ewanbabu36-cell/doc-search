@@ -56,19 +56,23 @@ export interface GmailDeliveryResult {
 
 export class GmailMailerService {
   private transporter: Transporter | null = null;
-  private readonly gmailUser: string | undefined;
-  private readonly gmailAppPassword: string | undefined;
-  private readonly smtpHost: string | undefined;
-  private readonly smtpPort: number;
+  private gmailUser: string | undefined;
+  private gmailAppPassword: string | undefined;
+  private smtpHost: string | undefined;
+  private smtpPort: number = 587;
 
   constructor() {
+    this.ensureMailboxDirectory();
+    this.reloadConfig();
+  }
+
+  public reloadConfig(): void {
     this.gmailUser = (process.env['GMAIL_USER'] || process.env['SMTP_USER'])?.trim();
     const rawPass = process.env['GMAIL_APP_PASSWORD'] || process.env['SMTP_PASSWORD'];
     this.gmailAppPassword = rawPass ? rawPass.replace(/\s+/g, '').trim() : undefined;
     this.smtpHost = process.env['SMTP_HOST'];
     this.smtpPort = parseInt(process.env['SMTP_PORT'] || '587', 10);
-
-    this.ensureMailboxDirectory();
+    this.transporter = null;
     this.initTransporter();
   }
 
