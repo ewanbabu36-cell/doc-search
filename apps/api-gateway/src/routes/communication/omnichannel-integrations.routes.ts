@@ -254,6 +254,11 @@ export const omnichannelIntegrationsRoutes: FastifyPluginAsync = async (fastify)
     });
   });
 
+  fastify.get('/api/v1/integrations/telegram/verify', async (_request, reply) => {
+    const verification = await telegramBotService.verifyBotGetMe();
+    return reply.status(verification.success ? 200 : 400).send(verification);
+  });
+
   fastify.post('/api/v1/integrations/telegram/webhook', async (request: any, reply) => {
     const update = request.body;
     logger.info('[TELEGRAM_WEBHOOK] Inbound update received', { updateId: update?.update_id });
@@ -327,7 +332,7 @@ export const omnichannelIntegrationsRoutes: FastifyPluginAsync = async (fastify)
       return reply.status(400).send({ success: false, error: 'legalName, vertical, tenantId are required' });
     }
 
-    const result = await telegramBotService.sendPartnerOnboardingAlert(chatId || 'admin_channel', {
+    const result = await telegramBotService.sendPartnerOnboardingAlert(chatId || '', {
       legalName,
       vertical,
       city: city || 'Unknown City',
