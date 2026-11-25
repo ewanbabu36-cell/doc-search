@@ -149,6 +149,11 @@ export const omnichannelIntegrationsRoutes: FastifyPluginAsync = async (fastify)
     });
   });
 
+  fastify.get('/api/v1/integrations/firebase/verify', async (_request, reply) => {
+    const verification = await firebaseIntegrationService.verifyConnection();
+    return reply.status(verification.success ? 200 : 400).send(verification);
+  });
+
   fastify.post('/api/v1/integrations/firebase/register-device', async (request: any, reply) => {
     const { userId, token, platform, tenantId, role } = request.body || {};
     if (!userId || !token || !platform) {

@@ -204,7 +204,7 @@ export function getExternalReadinessReport() {
       projectId: e['FIREBASE_PROJECT_ID'] || null,
       hasServerKey: Boolean(e['FIREBASE_SERVER_KEY']),
       hasServiceAccount: Boolean(e['FIREBASE_SERVICE_ACCOUNT_KEY']),
-      requiredVars: ['FIREBASE_PROJECT_ID', 'FIREBASE_SERVER_KEY']
+      requiredVars: ['FIREBASE_PROJECT_ID', 'FIREBASE_SERVICE_ACCOUNT_KEY']
     },
     telegram: {
       status: telegramConfigured ? 'CONFIGURED' : 'SIMULATION_FALLBACK_ACTIVE',

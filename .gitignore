@@ -111,4 +111,8 @@ apps/*/dist/apk/
 apps/*/dist/aab/
 *.keystore
 *.jks
+google-services.json
+GoogleService-Info.plist
+*firebase-adminsdk*.json
+
 

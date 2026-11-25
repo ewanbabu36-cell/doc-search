@@ -129,12 +129,12 @@ export const ProductionCredentialsReadinessView: React.FC = () => {
         },
         {
           id: 'firebase',
-          title: 'Firebase Cloud Messaging (FCM)',
+          title: 'Firebase Cloud Messaging (FCM v1)',
           icon: '🔥',
           category: 'COMMUNICATION',
           configured: Boolean(report.firebase?.configured),
           status: report.firebase?.status || 'SIMULATION',
-          requiredVars: report.firebase?.requiredVars || ['FIREBASE_PROJECT_ID', 'FIREBASE_SERVER_KEY'],
+          requiredVars: report.firebase?.requiredVars || ['FIREBASE_PROJECT_ID', 'FIREBASE_SERVICE_ACCOUNT_KEY'],
           hint: report.firebase?.projectId
         },
         {
@@ -344,21 +344,40 @@ export const ProductionCredentialsReadinessView: React.FC = () => {
                   <label style={{ fontSize: '0.75rem', fontWeight: 700, color: '#CBD5E1', fontFamily: 'monospace' }}>
                     {varName}
                   </label>
-                  <input
-                    type={varName.includes('SECRET') || varName.includes('PASSWORD') || varName.includes('KEY') || varName.includes('TOKEN') ? 'password' : 'text'}
-                    value={formValues[varName] || ''}
-                    onChange={(e) => setFormValues((prev) => ({ ...prev, [varName]: e.target.value }))}
-                    placeholder={`Enter production ${varName}...`}
-                    style={{
-                      padding: '8px 10px',
-                      borderRadius: '6px',
-                      border: '1px solid #475569',
-                      backgroundColor: '#020617',
-                      color: '#F8FAFC',
-                      fontFamily: 'monospace',
-                      fontSize: '0.8125rem'
-                    }}
-                  />
+                  {varName === 'FIREBASE_SERVICE_ACCOUNT_KEY' ? (
+                    <textarea
+                      rows={4}
+                      value={formValues[varName] || ''}
+                      onChange={(e) => setFormValues((prev) => ({ ...prev, [varName]: e.target.value }))}
+                      placeholder="Paste Firebase Service Account JSON ({...}) or local .json file path..."
+                      style={{
+                        padding: '8px 10px',
+                        borderRadius: '6px',
+                        border: '1px solid #475569',
+                        backgroundColor: '#020617',
+                        color: '#F8FAFC',
+                        fontFamily: 'monospace',
+                        fontSize: '0.75rem',
+                        resize: 'vertical'
+                      }}
+                    />
+                  ) : (
+                    <input
+                      type={varName.includes('SECRET') || varName.includes('PASSWORD') || varName.includes('KEY') || varName.includes('TOKEN') ? 'password' : 'text'}
+                      value={formValues[varName] || ''}
+                      onChange={(e) => setFormValues((prev) => ({ ...prev, [varName]: e.target.value }))}
+                      placeholder={`Enter production ${varName}...`}
+                      style={{
+                        padding: '8px 10px',
+                        borderRadius: '6px',
+                        border: '1px solid #475569',
+                        backgroundColor: '#020617',
+                        color: '#F8FAFC',
+                        fontFamily: 'monospace',
+                        fontSize: '0.8125rem'
+                      }}
+                    />
+                  )}
                 </div>
               ))}
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '8px' }}>

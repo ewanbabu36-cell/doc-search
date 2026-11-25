@@ -42,9 +42,9 @@ const CHANNEL_SPECS = [
   },
   {
     id: 'firebase',
-    label: 'Firebase FCM & Auth',
-    keys: ['FIREBASE_PROJECT_ID', 'FIREBASE_SERVER_KEY'],
-    placeholders: ['your-firebase-server-key']
+    label: 'Firebase FCM HTTP v1 & Auth',
+    keys: ['FIREBASE_PROJECT_ID', 'FIREBASE_SERVICE_ACCOUNT_KEY'],
+    placeholders: ['your-firebase-project-id', 'your-firebase-server-key']
   },
   {
     id: 'telegram',
@@ -99,7 +99,12 @@ function parseEnvFile() {
 
 function saveEnvKey(key, value) {
   let content = fs.existsSync(ENV_PATH) ? fs.readFileSync(ENV_PATH, 'utf8') : '';
-  const formatted = value.includes(' ') ? `"${value}"` : value;
+  const singleLine = value.replace(/[\r\n]+/g, ' ').trim();
+  const formatted = singleLine.startsWith('{') && singleLine.endsWith('}')
+    ? `'${singleLine.replace(/'/g, '')}'`
+    : singleLine.includes(' ')
+      ? `"${singleLine}"`
+      : singleLine;
   const regex = new RegExp(`^${key}=.*$`, 'm');
   if (regex.test(content)) {
     content = content.replace(regex, `${key}=${formatted}`);
@@ -124,7 +129,9 @@ function printAudit(envMap) {
 
     const isChannelLive = spec.id === 'dltSms'
       ? statuses.some((s) => s.valid)
-      : statuses.every((s) => s.valid);
+      : spec.id === 'firebase'
+        ? (statuses.every((s) => s.valid) || Boolean(envMap.get('FIREBASE_SERVER_KEY') && !spec.placeholders.some((p) => envMap.get('FIREBASE_SERVER_KEY').includes(p))))
+        : statuses.every((s) => s.valid);
 
     if (isChannelLive) configured++;
 

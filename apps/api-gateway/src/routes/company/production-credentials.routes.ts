@@ -69,13 +69,22 @@ const TestChannelSchema = z.object({
   channel: z.enum(['gmail', 'firebase', 'telegram', 'razorpay', 'stripe', 'abdm', 'dltSms', 'whatsapp'])
 });
 
+function formatEnvLineValue(rawVal: string): string {
+  const singleLine = rawVal.replace(/[\r\n]+/g, ' ').trim();
+  if (singleLine.startsWith('{') && singleLine.endsWith('}')) {
+    return `'${singleLine.replace(/'/g, '')}'`;
+  }
+  if (singleLine.includes(' ') && !singleLine.startsWith('"') && !singleLine.startsWith("'")) {
+    return `"${singleLine}"`;
+  }
+  return singleLine;
+}
+
 function upsertEnvKeys(envPath: string, updates: Record<string, string>): boolean {
   try {
     let content = fs.existsSync(envPath) ? fs.readFileSync(envPath, 'utf8') : '';
     for (const [key, rawVal] of Object.entries(updates)) {
-      const cleanVal = rawVal.includes(' ') && !rawVal.startsWith('"') && !rawVal.startsWith("'")
-        ? `"${rawVal}"`
-        : rawVal;
+      const cleanVal = formatEnvLineValue(rawVal);
       const lineRegex = new RegExp(`^${key}=.*$`, 'm');
       if (lineRegex.test(content)) {
         content = content.replace(lineRegex, `${key}=${cleanVal}`);
@@ -144,16 +153,16 @@ export const productionCredentialsRoutes: FastifyPluginAsync = async (fastify) =
         }
         case 'firebase': {
           firebaseIntegrationService.reloadConfig();
-          const status = firebaseIntegrationService.getStatus();
+          const ver = await firebaseIntegrationService.verifyConnection();
           return reply.status(200).send({
             success: true,
             data: {
               channel: 'firebase',
-              liveReachable: status.configured,
-              mode: status.mode,
-              message: status.configured
-                ? `Firebase FCM configured for project ${status.projectId || 'default'}`
-                : 'Firebase server key not configured; running in high-fidelity SIMULATED push mode.',
+              liveReachable: ver.success,
+              mode: firebaseIntegrationService.getStatus().mode,
+              protocol: ver.protocol,
+              message: ver.message,
+              error: ver.error,
               latencyMs: Math.round(performance.now() - start)
             }
           });
@@ -277,12 +286,36 @@ export const productionCredentialsRoutes: FastifyPluginAsync = async (fastify) =
           });
         }
 
-        const trimmed = value.trim();
-        if (trimmed.length === 0) continue;
+        let normalized = value.trim();
+        if (normalized.length === 0) continue;
 
-        process.env[key] = trimmed;
-        sanitizedUpdates[key] = trimmed;
-        appliedKeys.push(key);
+        if (key === 'FIREBASE_SERVICE_ACCOUNT_KEY' && normalized.startsWith('{')) {
+          try {
+            const sa = JSON.parse(normalized);
+            normalized = JSON.stringify(sa);
+            if (sa?.project_id && !parsed.data.credentials['FIREBASE_PROJECT_ID'] && !process.env['FIREBASE_PROJECT_ID']) {
+              process.env['FIREBASE_PROJECT_ID'] = String(sa.project_id);
+              sanitizedUpdates['FIREBASE_PROJECT_ID'] = String(sa.project_id);
+              if (!appliedKeys.includes('FIREBASE_PROJECT_ID')) {
+                appliedKeys.push('FIREBASE_PROJECT_ID');
+              }
+            }
+          } catch {
+            return reply.status(400).send({
+              success: false,
+              error: {
+                code: 'INVALID_FIREBASE_JSON',
+                message: 'FIREBASE_SERVICE_ACCOUNT_KEY starts with "{" but is not valid JSON.'
+              }
+            });
+          }
+        }
+
+        process.env[key] = normalized;
+        sanitizedUpdates[key] = normalized;
+        if (!appliedKeys.includes(key)) {
+          appliedKeys.push(key);
+        }
       }
 
       // Reload runtime service singletons immediately

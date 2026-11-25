@@ -17,9 +17,17 @@
  *      mode for local development, CI pipelines, and unit tests.
  */
 
+import crypto from 'node:crypto';
+import fs from 'node:fs';
 import { createLogger } from '@docsearch/shared-core';
 
 const logger = createLogger('firebase-integration-service');
+
+interface FirebaseServiceAccount {
+  project_id: string;
+  client_email: string;
+  private_key: string;
+}
 
 export interface FcmPushNotificationPayload {
   title: string;
@@ -69,6 +77,8 @@ export class FirebaseIntegrationService {
   private projectId: string | undefined;
   private serverKey: string | undefined;
   private serviceAccountRaw: string | undefined;
+  private serviceAccount: FirebaseServiceAccount | null = null;
+  private cachedAccessToken: { token: string; expiresAtMs: number } | null = null;
   private readonly deviceRegistry: Map<string, DeviceTokenRecord> = new Map();
 
   constructor() {
@@ -76,26 +86,147 @@ export class FirebaseIntegrationService {
   }
 
   public reloadConfig(): void {
-    this.projectId = process.env['FIREBASE_PROJECT_ID'];
-    this.serverKey = process.env['FIREBASE_SERVER_KEY'];
-    this.serviceAccountRaw = process.env['FIREBASE_SERVICE_ACCOUNT_KEY'];
+    this.projectId = process.env['FIREBASE_PROJECT_ID']?.trim();
+    this.serverKey = process.env['FIREBASE_SERVER_KEY']?.trim();
+    this.serviceAccountRaw = process.env['FIREBASE_SERVICE_ACCOUNT_KEY']?.trim();
+    this.serviceAccount = null;
+    this.cachedAccessToken = null;
+
+    if (this.serviceAccountRaw) {
+      try {
+        let jsonText = this.serviceAccountRaw;
+        if (!jsonText.startsWith('{') && fs.existsSync(jsonText)) {
+          jsonText = fs.readFileSync(jsonText, 'utf8');
+        }
+        const parsed = JSON.parse(jsonText) as Partial<FirebaseServiceAccount>;
+        if (parsed.project_id && parsed.client_email && parsed.private_key) {
+          this.serviceAccount = {
+            project_id: parsed.project_id,
+            client_email: parsed.client_email,
+            private_key: parsed.private_key.replace(/\\n/g, '\n')
+          };
+          if (!this.projectId) {
+            this.projectId = parsed.project_id;
+          }
+          logger.info(`[FCM_V1] Service Account loaded for Firebase project '${this.projectId}' (${parsed.client_email})`);
+        }
+      } catch (err: any) {
+        logger.warn('[FCM_V1] Could not parse FIREBASE_SERVICE_ACCOUNT_KEY: ' + err?.message);
+      }
+    }
   }
 
   public isConfigured(): boolean {
-    return Boolean(this.serverKey || (this.projectId && this.serviceAccountRaw));
+    return Boolean(this.serviceAccount || this.serverKey);
   }
 
   public getStatus(): {
     configured: boolean;
     mode: 'FIREBASE_LIVE' | 'SIMULATED';
+    protocol?: 'FCM_HTTP_V1' | 'LEGACY_SERVER_KEY' | 'SIMULATED';
     projectId?: string | undefined;
+    clientEmailHint?: string | undefined;
     registeredDevicesCount: number;
   } {
+    const protocol = this.serviceAccount ? 'FCM_HTTP_V1' : this.serverKey ? 'LEGACY_SERVER_KEY' : 'SIMULATED';
     return {
       configured: this.isConfigured(),
       mode: this.isConfigured() ? 'FIREBASE_LIVE' : 'SIMULATED',
+      protocol,
       projectId: this.projectId,
+      clientEmailHint: this.serviceAccount?.client_email ? `${this.serviceAccount.client_email.slice(0, 6)}***` : undefined,
       registeredDevicesCount: this.deviceRegistry.size
+    };
+  }
+
+  /**
+   * Mints an OAuth2 Access Token from Service Account JSON using pure Node RS256 JWT assertion
+   */
+  private async getOAuth2AccessToken(): Promise<string> {
+    if (!this.serviceAccount) {
+      throw new Error('Firebase Service Account JSON not configured');
+    }
+
+    if (this.cachedAccessToken && Date.now() < this.cachedAccessToken.expiresAtMs - 60_000) {
+      return this.cachedAccessToken.token;
+    }
+
+    const nowSec = Math.floor(Date.now() / 1000);
+    const header = Buffer.from(JSON.stringify({ alg: 'RS256', typ: 'JWT' })).toString('base64url');
+    const claimSet = Buffer.from(
+      JSON.stringify({
+        iss: this.serviceAccount.client_email,
+        scope: 'https://www.googleapis.com/auth/firebase.messaging',
+        aud: 'https://oauth2.googleapis.com/token',
+        iat: nowSec,
+        exp: nowSec + 3600
+      })
+    ).toString('base64url');
+
+    const unsignedJwt = `${header}.${claimSet}`;
+    const signer = crypto.createSign('RSA-SHA256');
+    signer.update(unsignedJwt);
+    const signature = signer.sign(this.serviceAccount.private_key, 'base64url');
+    const assertion = `${unsignedJwt}.${signature}`;
+
+    const body = new URLSearchParams({
+      grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer',
+      assertion
+    });
+
+    const res = await fetch('https://oauth2.googleapis.com/token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: body.toString(),
+      signal: AbortSignal.timeout(8000)
+    });
+
+    const data = (await res.json()) as any;
+    if (!res.ok || !data?.access_token) {
+      throw new Error(`Google OAuth2 token exchange failed: ${data?.error_description || data?.error || res.statusText}`);
+    }
+
+    this.cachedAccessToken = {
+      token: data.access_token,
+      expiresAtMs: Date.now() + Number(data.expires_in || 3600) * 1000
+    };
+    return data.access_token;
+  }
+
+  /**
+   * Verifies live authentication with Google Firebase Cloud Messaging (HTTP v1 OAuth2)
+   */
+  public async verifyConnection(): Promise<{ success: boolean; protocol: string; message: string; error?: string }> {
+    if (this.serviceAccount) {
+      try {
+        await this.getOAuth2AccessToken();
+        return {
+          success: true,
+          protocol: 'FCM_HTTP_V1',
+          message: `Authenticated cleanly with Google Firebase OAuth2 v1 for project '${this.projectId}'`
+        };
+      } catch (err: any) {
+        return {
+          success: false,
+          protocol: 'FCM_HTTP_V1',
+          message: 'Firebase Service Account OAuth2 handshake failed.',
+          error: err?.message
+        };
+      }
+    }
+
+    if (this.serverKey) {
+      return {
+        success: true,
+        protocol: 'LEGACY_SERVER_KEY',
+        message: 'Legacy FIREBASE_SERVER_KEY configured (Note: Google recommends upgrading to Service Account JSON for FCM HTTP v1).'
+      };
+    }
+
+    return {
+      success: false,
+      protocol: 'SIMULATED',
+      message: 'Firebase credentials (FIREBASE_SERVICE_ACCOUNT_KEY) not configured. Running in SIMULATED push mode.'
     };
   }
 
@@ -125,8 +256,56 @@ export class FirebaseIntegrationService {
   public async sendPushNotification(req: FcmSendRequest): Promise<FcmDeliveryResult> {
     const target = req.targetToken || (req.topic ? `/topics/${req.topic}` : 'unknown');
 
-    // 1. Live Firebase Dispatch (if configured)
-    if (this.isConfigured() && req.targetToken && this.serverKey) {
+    // 1A. Live Firebase HTTP v1 Dispatch (Service Account OAuth2 — Modern Production Standard)
+    if (this.serviceAccount && (req.targetToken || req.topic)) {
+      try {
+        const accessToken = await this.getOAuth2AccessToken();
+        const url = `https://fcm.googleapis.com/v1/projects/${this.serviceAccount.project_id}/messages:send`;
+        const messageBody: Record<string, any> = {
+          notification: {
+            title: req.notification.title,
+            body: req.notification.body,
+            ...(req.notification.imageUrl ? { image: req.notification.imageUrl } : {})
+          },
+          data: req.notification.data || {},
+          android: {
+            priority: req.notification.priority === 'normal' ? 'NORMAL' : 'HIGH'
+          }
+        };
+        if (req.targetToken) messageBody['token'] = req.targetToken;
+        else if (req.topic) messageBody['topic'] = req.topic;
+
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${accessToken}`
+          },
+          body: JSON.stringify({ message: messageBody }),
+          signal: AbortSignal.timeout(8000)
+        });
+
+        const data = (await response.json()) as any;
+        if (response.ok && data?.name) {
+          logger.info(`[FCM_V1_LIVE] Dispatched push to ${target}: ${data.name}`);
+          return {
+            success: true,
+            messageId: data.name,
+            dispatchMode: 'FIREBASE_LIVE',
+            target,
+            notification: req.notification,
+            timestamp: new Date().toISOString()
+          };
+        } else {
+          logger.warn(`[FCM_V1_LIVE] Delivery rejected: ${JSON.stringify(data)}, falling back safely.`);
+        }
+      } catch (err: any) {
+        logger.warn(`[FCM_V1_LIVE] Network/Auth error (${err?.message}), falling back to simulation.`);
+      }
+    }
+
+    // 1B. Legacy Server Key Fallback (if configured without Service Account)
+    if (this.serverKey && req.targetToken) {
       try {
         const response = await fetch('https://fcm.googleapis.com/fcm/send', {
           method: 'POST',
