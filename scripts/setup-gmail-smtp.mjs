@@ -171,28 +171,30 @@ async function run() {
 
 function saveToEnv(email, pass) {
   let content = envContent;
-  
-  // Replace or Append GMAIL_USER
-  if (content.match(/^GMAIL_USER=.*$/m)) {
-    content = content.replace(/^GMAIL_USER=.*$/m, `GMAIL_USER=${email}`);
-  } else {
-    content += `\nGMAIL_USER=${email}`;
-  }
+  const fromFormatted = `"DocSearch Healthcare <${email}>"`;
+  const kvPairs = {
+    GMAIL_USER: email,
+    GMAIL_APP_PASSWORD: pass,
+    GMAIL_FROM: fromFormatted,
+    SMTP_HOST: 'smtp.gmail.com',
+    SMTP_PORT: '465',
+    SMTP_SECURE: 'true',
+    SMTP_USER: email,
+    SMTP_PASSWORD: pass,
+    SMTP_FROM: fromFormatted
+  };
 
-  // Replace or Append GMAIL_APP_PASSWORD
-  if (content.match(/^GMAIL_APP_PASSWORD=.*$/m)) {
-    content = content.replace(/^GMAIL_APP_PASSWORD=.*$/m, `GMAIL_APP_PASSWORD=${pass}`);
-  } else {
-    content += `\nGMAIL_APP_PASSWORD=${pass}`;
-  }
-
-  // Replace or Append GMAIL_FROM
-  if (!content.match(/^GMAIL_FROM=.*$/m)) {
-    content += `\nGMAIL_FROM="DocSearch Healthcare <${email}>"`;
+  for (const [key, val] of Object.entries(kvPairs)) {
+    const regex = new RegExp(`^${key}=.*$`, 'm');
+    if (content.match(regex)) {
+      content = content.replace(regex, `${key}=${val}`);
+    } else {
+      content += `\n${key}=${val}`;
+    }
   }
 
   fs.writeFileSync(ENV_PATH, content.trim() + '\n', 'utf8');
-  console.log(`\n${GREEN}💾 SAVED: Successfully updated .env with your Gmail SMTP credentials!${RESET}\n`);
+  console.log(`\n${GREEN}💾 SAVED: Successfully updated .env with GMAIL_* and SMTP_* Gmail credentials!${RESET}\n`);
 }
 
 run();
