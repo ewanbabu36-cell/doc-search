@@ -123,7 +123,7 @@ export const DynamicUpiInvoiceView: React.FC = () => {
 
   const handleSimulatePayment = () => {
     if (import.meta.env.PROD) {
-      alert('Sandbox payment simulation is disabled in production environment.');
+      setPaymentError('Sandbox payment simulation is disabled in production environment.');
       return;
     }
     const simUtr = `UTR-SANDBOX-${Math.floor(10000000 + Math.random() * 90000000)}`;

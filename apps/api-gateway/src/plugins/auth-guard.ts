@@ -579,7 +579,7 @@ export async function authenticate(request: FastifyRequest, reply: FastifyReply)
  * with narrowly-scoped Break-Glass emergency clinical override for specific patient charts.
  */
 export function requirePermission(resource: string, action: PermissionAction) {
-  return async (request: FastifyRequest, _reply: FastifyReply): Promise<void> => {
+  const handler = async (request: FastifyRequest, _reply: FastifyReply): Promise<void> => {
     if (!request.session) {
       throw AppError.unauthorized('Authentication required before checking permissions');
     }
@@ -620,6 +620,7 @@ export function requirePermission(resource: string, action: PermissionAction) {
       throw err;
     }
   };
+  return Object.assign(handler, { _docsearchAuthGuarded: true });
 }
 
 /**
@@ -643,12 +644,13 @@ export function requireAnyPermission(...permissions: { resource: string; action:
  * PreHandler Factory: Enforces role membership requirement.
  */
 export function requireRoles(...roles: RoleType[]) {
-  return async (request: FastifyRequest, _reply: FastifyReply): Promise<void> => {
+  const handler = async (request: FastifyRequest, _reply: FastifyReply): Promise<void> => {
     if (!request.session) {
       throw AppError.unauthorized('Authentication required before checking roles');
     }
     RBACEvaluator.enforceRole(request.session, roles);
   };
+  return Object.assign(handler, { _docsearchAuthGuarded: true });
 }
 
 /**

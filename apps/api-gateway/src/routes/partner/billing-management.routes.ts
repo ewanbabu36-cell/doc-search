@@ -2,11 +2,14 @@ import { type FastifyPluginAsync } from 'fastify';
 import {
   getDatabase,
   billingPriceLists,
+  billingCharges,
+  inpatientAdmissions,
   consultationFeeMatrices,
   doctorProfiles,
   eq,
   and,
   desc,
+  inArray,
   sql
 } from '@docsearch/database';
 import crypto from 'node:crypto';
@@ -1385,69 +1388,99 @@ export const billingManagementRoutes: FastifyPluginAsync = async (fastify) => {
     '/api/v1/partner/billing/ipd/discharge-clearance-audit',
     { preHandler: [authenticate] },
     async (request, reply) => {
+      const tenantId = request.session.tenantId;
       const body = (request.body || {}) as {
         admissionId?: string;
+        patientId?: string;
         patientUhid?: string;
         patientName?: string;
-        simulatedUnbilledCount?: number;
       };
 
-      const admissionId = body.admissionId || 'ADM-8821';
-      const patientUhid = body.patientUhid || 'UHID-8821';
-      const patientName = body.patientName || 'Rameshwar Dayal';
+      const db = getDatabase();
+      const isUuid = (val?: string) =>
+        Boolean(val && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val));
 
-      // Scan Medication Administration Records (MAR) and OT procedure notes
-      const unbilledItems = [
-        {
-          itemId: 'CONS-OT-901',
-          description: 'Ethicon Laparoscopic 5mm Trocar (Sterile Single-Use)',
-          department: 'OPERATION_THEATRE',
-          clinicalProcedure: 'Laparoscopic Cholecystectomy',
-          recordedBy: 'Sister Sunita (OT Nurse)',
-          recordedAt: new Date(Date.now() - 3600000 * 4).toISOString(),
-          rate: 3200,
-          quantity: 1,
-          totalAmount: 3200,
-          billingStatus: 'UNBILLED_LEAKAGE_RISK'
-        },
-        {
-          itemId: 'CONS-OT-902',
-          description: 'Prolene Hernia Polypropylene Mesh 15x15cm',
-          department: 'OPERATION_THEATRE',
-          clinicalProcedure: 'Hernia Repair',
-          recordedBy: 'Sister Sunita (OT Nurse)',
-          recordedAt: new Date(Date.now() - 3600000 * 3).toISOString(),
-          rate: 8500,
-          quantity: 1,
-          totalAmount: 8500,
-          billingStatus: 'UNBILLED_LEAKAGE_RISK'
-        },
-        {
-          itemId: 'CONS-ICU-402',
-          description: 'Hydrocolloid Sterile Bedside Dressing Kit & ABG Syringe',
-          department: 'SURGICAL_ICU',
-          clinicalProcedure: 'Post-Op Wound Management',
-          recordedBy: 'Staff Nurse Neha',
-          recordedAt: new Date(Date.now() - 3600000 * 2).toISOString(),
-          rate: 1450,
-          quantity: 2,
-          totalAmount: 2900,
-          billingStatus: 'UNBILLED_LEAKAGE_RISK'
+      let resolvedAdmissionId = body.admissionId || null;
+      let resolvedPatientId = isUuid(body.patientId) ? body.patientId : null;
+      let resolvedPatientUhid = body.patientUhid || null;
+      let resolvedPatientName = body.patientName || null;
+
+      if (resolvedAdmissionId) {
+        const admRows = await db
+          .select({
+            id: inpatientAdmissions.id,
+            admissionNumber: inpatientAdmissions.admissionNumber,
+            patientId: inpatientAdmissions.patientId,
+            patientMrn: inpatientAdmissions.patientMrn,
+            patientName: inpatientAdmissions.patientName
+          })
+          .from(inpatientAdmissions)
+          .where(
+            and(
+              eq(inpatientAdmissions.tenantId, tenantId),
+              isUuid(resolvedAdmissionId)
+                ? eq(inpatientAdmissions.id, resolvedAdmissionId)
+                : eq(inpatientAdmissions.admissionNumber, resolvedAdmissionId)
+            )
+          )
+          .limit(1);
+        if (admRows[0]) {
+          resolvedAdmissionId = admRows[0].id;
+          resolvedPatientId = admRows[0].patientId;
+          resolvedPatientUhid = resolvedPatientUhid || admRows[0].patientMrn;
+          resolvedPatientName = resolvedPatientName || admRows[0].patientName;
         }
+      }
+
+      const chargeConds: any[] = [
+        eq(billingCharges.tenantId, tenantId),
+        inArray(billingCharges.status, ['PENDING', 'CAPTURED'])
       ];
+      if (resolvedPatientId) {
+        chargeConds.push(eq(billingCharges.patientId, resolvedPatientId));
+      }
 
-      const count = body.simulatedUnbilledCount !== undefined ? body.simulatedUnbilledCount : unbilledItems.length;
-      const activeUnbilled = count === 0 ? [] : unbilledItems.slice(0, count);
+      const pendingCharges = await db
+        .select({
+          id: billingCharges.id,
+          chargeNumber: billingCharges.chargeNumber,
+          sourceDomain: billingCharges.sourceDomain,
+          grandTotal: billingCharges.grandTotal,
+          capturedBy: billingCharges.capturedBy,
+          capturedAt: billingCharges.capturedAt,
+          metadata: billingCharges.metadata
+        })
+        .from(billingCharges)
+        .where(and(...chargeConds))
+        .orderBy(desc(billingCharges.capturedAt))
+        .limit(50);
+
+      const activeUnbilled = pendingCharges.map((chg) => {
+        const amt = Number(chg.grandTotal || 0);
+        const meta = (chg.metadata || {}) as Record<string, any>;
+        return {
+          itemId: chg.chargeNumber,
+          description: meta['description'] || `${chg.sourceDomain} Unbilled Charge`,
+          department: chg.sourceDomain,
+          clinicalProcedure: meta['procedureName'] || chg.sourceDomain,
+          recordedBy: chg.capturedBy,
+          recordedAt: chg.capturedAt ? new Date(chg.capturedAt).toISOString() : new Date().toISOString(),
+          rate: amt,
+          quantity: 1,
+          totalAmount: amt,
+          billingStatus: 'UNBILLED_PENDING_INVOICE'
+        };
+      });
+
       const unbilledTotal = activeUnbilled.reduce((acc, item) => acc + item.totalAmount, 0);
-
       const isClear = activeUnbilled.length === 0;
 
       return reply.send({
         success: true,
         data: {
-          admissionId,
-          patientUhid,
-          patientName,
+          admissionId: resolvedAdmissionId,
+          patientUhid: resolvedPatientUhid,
+          patientName: resolvedPatientName,
           clearanceStatus: isClear ? 'CLEAR_TO_DISCHARGE' : 'DISCHARGE_FROZEN_LEAKAGE_DETECTED',
           unbilledCount: activeUnbilled.length,
           unbilledTotalAmount: unbilledTotal,

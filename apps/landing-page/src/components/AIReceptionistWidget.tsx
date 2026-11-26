@@ -133,7 +133,7 @@ export const AIReceptionistWidget: React.FC<AIReceptionistWidgetProps> = ({
       options = ['📝 Verify My Insurance Policy', '📅 Book Free Pre-Surgery Counseling'];
     } else if (q.includes('clinic') || q.includes('demo') || q.includes('doctor sign-up')) {
       replyText = '👨‍⚕️ Doctor / Clinic Partner Onboarding:\n\nDocSearch Clinic Platform ke sath aapko milta hai:\n• 1-Click Hinglish Voice Scribe\n• Instant WhatsApp Rx & Dynamic UPI QR\n• Zero-driver ABHA Kiosk\n\nHamara executive aapke clinic chamber me 15-minute ka live demo dega.';
-      options = ['🚀 Schedule Free Chamber Demo', '📞 Talk to Sales Lead Motu Sharma'];
+      options = ['🚀 Schedule Free Chamber Demo', '📞 Request Onboarding Specialist Callback'];
     } else {
       replyText = 'Dhanyawad! Main aapki request par hospital team ko alert kar rahi hoon. Aap niche diye gaye options se 1-click me aage badh sakte hain:';
       options = ['📅 Book Doctor Appointment', '🛏️ Check Live Bed Availability', '🧪 Book Home Lab Test'];

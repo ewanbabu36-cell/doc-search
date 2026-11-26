@@ -269,7 +269,17 @@ export const EwanSystemTrainer: React.FC<EwanSystemTrainerProps> = ({
   const toggleVoiceInput = () => {
     const SpeechRec = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (!SpeechRec) {
-      alert('Voice dictation is supported in Google Chrome, Microsoft Edge, and modern Chromium browsers.');
+      setIsOpen(true);
+      setIsMinimized(false);
+      setMessages((prev: ChatMessage[]) => [
+        ...prev,
+        {
+          id: `ewan-voice-info-${Date.now()}`,
+          sender: 'EWAN',
+          text: 'ℹ️ Voice dictation requires Google Chrome, Microsoft Edge, or another modern Chromium browser.',
+          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        }
+      ]);
       return;
     }
 
@@ -1011,8 +1021,17 @@ Main aapko role-verified steps aur direct action button doonga!`;
       return;
     }
     if (actionKey === 'open-emergency-sos') {
-      alert('🚨 24x7 Emergency SOS: Please call National Ambulance 108 or 112 directly. Nearest Trauma Center alerted.');
-      setIsOpen(false);
+      setIsOpen(true);
+      setIsMinimized(false);
+      setMessages((prev: ChatMessage[]) => [
+        ...prev,
+        {
+          id: `ewan-sos-${Date.now()}`,
+          sender: 'EWAN',
+          text: '🚨 24x7 Emergency SOS: Call National Ambulance 108 or 112 immediately for trauma dispatch.',
+          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        }
+      ]);
       return;
     }
 

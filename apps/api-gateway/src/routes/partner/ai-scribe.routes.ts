@@ -54,92 +54,81 @@ export const aiScribeRoutes: FastifyPluginAsync = async (fastify) => {
     });
   });
 
-  // 2. Synthesize Structured SOAP Notes from Natural Dialogue
+  // 2. Synthesize Structured SOAP Draft from Clinical Transcript (Never fabricates unrelated diseases/Rx)
   fastify.post('/api/v1/partner/ai-scribe/synthesize-soap', async (request, reply) => {
     const body = (request.body || {}) as SoapSynthesisRequest;
-    const transcript = body.fullTranscript || '';
+    const transcript = (body.fullTranscript || '').trim();
+    if (!transcript) {
+      return reply.status(400).send({
+        success: false,
+        error: 'TRANSCRIPT_REQUIRED',
+        message: 'A non-empty clinical consultation transcript is required before SOAP synthesis.'
+      });
+    }
 
     // Smart parsing for Subjective, Objective, Assessment, Plan
-    const isThroatInfection = /gale|throat|khansi|cough|bukhar|fever/i.test(transcript);
-    const isHypertension = /bp|pressure|headache|sir dard/i.test(transcript);
-    const isDiabetes = /sugar|diabetes|peshab/i.test(transcript);
+    const isThroatInfection = /\b(gale|throat|khansi|cough|bukhar|fever|sore throat|tonsill)\b/i.test(transcript);
+    const isHypertension = /\b(bp|blood pressure|hypertension)\b/i.test(transcript);
+    const isDiabetes = /\b(sugar|diabetes|glucose|hba1c)\b/i.test(transcript);
 
     const subjective = {
       chiefComplaints: isThroatInfection
-        ? 'High-grade fever with chills since 2 days, associated with odynophagia and dry cough'
-        : 'Generalized fatigue, persistent headache and episodic dizziness',
-      historyOfPresentIllness: transcript || 'Patient reports acute onset of symptoms following travel.',
+        ? 'Reported throat irritation, cough, or febrile symptoms in consultation transcript'
+        : isHypertension
+        ? 'Reported blood pressure evaluation / headache in consultation transcript'
+        : transcript.slice(0, 180),
+      historyOfPresentIllness: transcript,
       patientReportedLanguage: body.languagePreference || 'Hinglish / Hindi'
     };
 
     const objective = {
       vitals: {
-        bloodPressure: isHypertension ? '146/92 mmHg' : '122/80 mmHg',
-        pulseRate: '88 bpm',
-        spo2: '98% on room air',
-        temperature: isThroatInfection ? '101.4 °F' : '98.6 °F',
-        respiratoryRate: '18 / min'
+        bloodPressure: isHypertension ? 'Measure & confirm sitting BP at desk' : 'Not recorded in transcript',
+        pulseRate: 'Not recorded in transcript',
+        spo2: 'Not recorded in transcript',
+        temperature: isThroatInfection ? 'Measure & confirm temperature at desk' : 'Not recorded in transcript',
+        respiratoryRate: 'Not recorded in transcript'
       },
       systemicExamination: isThroatInfection
-        ? 'Posterior pharyngeal erythema present, bilateral tonsillar enlargement Grade II without exudates. Chest clear on auscultation.'
-        : 'S1 S2 heard normal, no murmurs. Per abdomen soft, non-tender.'
+        ? 'Perform oral/oropharyngeal inspection and chest auscultation before finalizing.'
+        : 'Document bedside systemic examination findings prior to clinical sign-off.'
     };
+
+    const secondaryConditions: string[] = [];
+    if (isDiabetes) secondaryConditions.push('Candidate: Glycemic evaluation / Type 2 Diabetes Mellitus (clinician confirmation required)');
 
     const assessment = {
       primaryDiagnosis: isThroatInfection
-        ? 'Acute Pharyngotonsillitis (ICD-10: J06.9)'
-        : 'Essential Hypertension, Stage 1 (ICD-10: I10)',
-      secondaryConditions: isDiabetes ? ['Type 2 Diabetes Mellitus (ICD-10: E11.9)'] : [],
-      severityScore: 'MILD_TO_MODERATE',
-      clinicalGuidelineReferenced: 'ICMR Treatment Guidelines 2026'
+        ? 'Suspected Upper Respiratory / Pharyngeal Symptoms (ICD-10 candidate: J06.9 — Clinician Review Required)'
+        : isHypertension
+        ? 'Blood Pressure Evaluation / Suspected Hypertension (ICD-10 candidate: I10 — Clinician Review Required)'
+        : 'Clinical Assessment Pending Physician Review',
+      secondaryConditions,
+      severityScore: 'REQUIRES_CLINICIAN_TRIAGE',
+      clinicalGuidelineReferenced: 'ICMR Treatment Guidelines 2026',
+      requiresClinicianVerification: true
     };
 
     const plan = {
       prescriptions: isThroatInfection
         ? [
             {
-              drugName: 'Amoxicillin + Clavulanic Acid 625mg (PMBJP Generic bio-equivalent)',
-              brandReference: 'Augmentin 625 Duo',
+              drugName: 'Paracetamol 650mg (Draft Suggestion — Confirm fever & allergies)',
+              brandReference: 'Paracetamol 650',
               dosage: '1 Tablet',
-              frequency: 'Twice daily (BD)',
-              duration: '5 Days',
-              mealInstructionsHindi: 'Khane ke baad (After Food)',
-              savingsVsBrandedPct: 70.9
-            },
-            {
-              drugName: 'Paracetamol 650mg',
-              brandReference: 'Dolo 650',
-              dosage: '1 Tablet',
-              frequency: 'Thrice daily if fever > 100°F (TDS SOS)',
+              frequency: 'SOS if fever > 100°F (max 3/day)',
               duration: '3 Days',
               mealInstructionsHindi: 'Bukhar aane par khane ke baad',
-              savingsVsBrandedPct: 66.2
-            },
-            {
-              drugName: 'Levocetirizine + Montelukast (5mg + 10mg)',
-              brandReference: 'Montair LC',
-              dosage: '1 Tablet',
-              frequency: 'Once daily at night (OD HS)',
-              duration: '5 Days',
-              mealInstructionsHindi: 'Raat ko sote samay',
-              savingsVsBrandedPct: 79.1
+              requiresDoctorSignOff: true
             }
           ]
-        : [
-            {
-              drugName: 'Telmisartan 40mg (PMBJP Generic)',
-              brandReference: 'Telma 40',
-              dosage: '1 Tablet',
-              frequency: 'Once daily morning (OD Mane)',
-              duration: '30 Days',
-              mealInstructionsHindi: 'Subah nashte ke baad',
-              savingsVsBrandedPct: 81.25
-            }
-          ],
+        : [],
       investigationsOrdered: isThroatInfection
-        ? ['Complete Blood Count (CBC) with ESR', 'Rapid Streptococcal Antigen Swab']
-        : ['Lipid Profile', 'Serum Creatinine', 'HbA1c'],
-      adviceAndRedFlags: 'Gargle with warm saline thrice daily. Maintain adequate hydration. Report immediately to ER if stridor or difficulty breathing develops.'
+        ? ['Consider CBC if febrile > 48h']
+        : isHypertension || isDiabetes
+        ? ['Consider Fasting Lipid Profile / HbA1c / Serum Creatinine as clinically indicated']
+        : [],
+      adviceAndRedFlags: 'AI-generated draft only. Verify patient allergies, vitals, and diagnosis before signing or dispensing.'
     };
 
     const sessionId = `SOAP-AI-${Date.now().toString().slice(-8)}`;
@@ -148,9 +137,10 @@ export const aiScribeRoutes: FastifyPluginAsync = async (fastify) => {
       success: true,
       data: {
         sessionId,
-        uhid: body.patientUhId || 'UHID-2026-8801',
-        patientName: body.patientName || 'Rajesh Sharma',
-        attendingDoctor: body.doctorName || 'Dr. Vivek Sharma (MD Gen Med)',
+        clinicalVerificationStatus: 'DRAFT_AI_ASSISTED_REQUIRES_DOCTOR_SIGN_OFF',
+        uhid: body.patientUhId || null,
+        patientName: body.patientName || 'Patient Record',
+        attendingDoctor: body.doctorName || 'Attending Physician',
         soap: {
           subjective,
           objective,
@@ -210,7 +200,7 @@ export const aiScribeRoutes: FastifyPluginAsync = async (fastify) => {
             status: 'active',
             intent: 'order',
             medicationCodeableConcept: {
-              text: plan?.['prescriptions']?.[0]?.drugName || 'Amoxicillin + Clavulanic Acid 625mg'
+              text: plan?.['prescriptions']?.[0]?.drugName || 'Clinical Assessment Plan (Clinician Review Pending)'
             }
           }
         }

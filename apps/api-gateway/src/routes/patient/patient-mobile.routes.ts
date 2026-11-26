@@ -10,6 +10,10 @@ import {
   consultations,
   consultationMedications,
   investigationReports,
+  investigationOrders,
+  investigationResults,
+  investigationSpecimens,
+  investigationCatalog,
   doctorProfiles,
   operationalStaff,
   operationalDepartments,
@@ -25,6 +29,7 @@ import {
   medicationCatalog,
   ilike
 } from '@docsearch/database';
+import { generatePathologyPdf } from '../../services/partner/PathologyPdfGenerator.js';
 import { clinicalWorkflowRepository } from '../../repositories/partner/ClinicalWorkflowRepository.js';
 import { AppError, ErrorCode, createLogger } from '@docsearch/shared-core';
 import { signJwt, verifyJwt, type BaseJwtClaims } from '@docsearch/auth';
@@ -408,22 +413,22 @@ export const patientMobileRoutes: FastifyPluginAsync = async (app) => {
         .from(operationalPartners)
         .limit(1);
 
+      const tenantId = partner?.tenantId;
+      if (!tenantId) {
+        throw new AppError({ message: 'No registered healthcare provider found for pre-arrival intake', statusCode: 404 });
+      }
+
       const [org] = await db
         .select({ id: operationalOrganizations.id })
         .from(operationalOrganizations)
-        .where(eq(operationalOrganizations.tenantId, partner?.tenantId || ''))
+        .where(eq(operationalOrganizations.tenantId, tenantId))
         .limit(1);
 
       const [facility] = await db
         .select({ id: operationalFacilities.id })
         .from(operationalFacilities)
-        .where(eq(operationalFacilities.tenantId, partner?.tenantId || ''))
+        .where(eq(operationalFacilities.tenantId, tenantId))
         .limit(1);
-
-      const tenantId = partner?.tenantId;
-    if (!tenantId) {
-      throw new AppError({ message: 'No registered healthcare provider found for pre-arrival intake', statusCode: 404 });
-    }
       const partnerId = partner?.id;
       const organizationId = org?.id;
       const branchId = facility?.id;
@@ -1278,35 +1283,184 @@ export const patientMobileRoutes: FastifyPluginAsync = async (app) => {
       };
     });
 
-    if (reports.length === 0) {
-      reports.push(
-        {
-          id: 'REP-CBC-901',
-          testName: 'Complete Blood Count (CBC) with Platelets',
-          date: new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }),
-          status: 'NORMAL',
-          value: '13.8',
-          unit: 'g/dL',
-          referenceRange: '13.0 - 17.0',
-          signedBy: 'Dr. K. L. Pathak (MD Pathologist, NABL Verifier)'
-        },
-        {
-          id: 'REP-GLU-902',
-          testName: 'Fasting Blood Sugar (FBS)',
-          date: new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }),
-          status: 'HIGH_ALERT',
-          value: '215',
-          unit: 'mg/dL',
-          referenceRange: '70 - 100',
-          signedBy: 'Dr. K. L. Pathak (MD Pathologist, NABL Verifier)'
-        }
-      );
-    }
-
     return reply.send({
       success: true,
       reports
     });
+  });
+
+  // 5b. Authorized Patient Lab Report PDF Download (JWT + Ownership enforced)
+  app.get('/api/v1/patient/lab-reports/:id/pdf', async (request, reply) => {
+    const { id } = request.params as { id: string };
+    const { phone } = request.query as { phone?: string };
+    const authHeader = request.headers.authorization || (request.query as { token?: string })?.token;
+    const bearerHeader = authHeader?.startsWith('Bearer ') ? authHeader : authHeader ? `Bearer ${authHeader}` : undefined;
+
+    const authCheck = verifyPatientSessionToken(bearerHeader, phone);
+    if (!authCheck.valid || !authCheck.phone) {
+      const status = authCheck.statusCode || 401;
+      return reply.status(status).send({
+        success: false,
+        statusCode: status,
+        error: status === 401 ? 'UNAUTHORIZED' : 'FORBIDDEN',
+        message: authCheck.reason || 'Authentication required to download lab report PDF'
+      });
+    }
+
+    const { last10, withCountry } = normalizePhone(authCheck.phone);
+    const db = getDatabase();
+
+    const [contact] = await db
+      .select({ patientId: patientContacts.patientId, tenantId: patientContacts.tenantId })
+      .from(patientContacts)
+      .where(
+        or(
+          eq(patientContacts.primaryMobile, last10),
+          eq(patientContacts.primaryMobile, withCountry),
+          sql`${patientContacts.primaryMobile} LIKE ${`%${last10}`}`
+        )
+      )
+      .limit(1);
+
+    if (!contact?.patientId) {
+      return reply.status(404).send({
+        success: false,
+        error: 'PATIENT_NOT_FOUND',
+        message: 'Patient record not found for verified phone number.'
+      });
+    }
+
+    const [reportRow] = await db
+      .select()
+      .from(investigationReports)
+      .where(and(eq(investigationReports.id, id), eq(investigationReports.patientId, contact.patientId)))
+      .limit(1);
+
+    if (!reportRow) {
+      return reply.status(404).send({
+        success: false,
+        error: 'LAB_REPORT_NOT_FOUND',
+        message: 'No authorized laboratory report found for this patient.'
+      });
+    }
+
+    const [patientRow] = await db
+      .select({
+        firstName: patients.firstName,
+        lastName: patients.lastName,
+        mrn: patients.mrn,
+        gender: patients.gender,
+        dateOfBirth: patients.dateOfBirth
+      })
+      .from(patients)
+      .where(eq(patients.id, contact.patientId))
+      .limit(1);
+
+    const [orderRow] = await db
+      .select({
+        orderNumber: investigationOrders.orderNumber,
+        specimenType: investigationOrders.specimenType,
+        orderedAt: investigationOrders.orderedAt,
+        status: investigationOrders.status,
+        orderingDoctorId: investigationOrders.orderingDoctorId,
+        investigationId: investigationOrders.investigationId
+      })
+      .from(investigationOrders)
+      .where(eq(investigationOrders.id, reportRow.orderId))
+      .limit(1);
+
+    const resultRows = await db
+      .select({
+        parameterName: investigationResults.parameterName,
+        resultValue: investigationResults.resultValue,
+        unit: investigationResults.unit,
+        referenceRangeText: investigationResults.referenceRange,
+        abnormalFlag: investigationResults.abnormalFlag
+      })
+      .from(investigationResults)
+      .where(eq(investigationResults.orderId, reportRow.orderId));
+
+    const [specimenRow] = await db
+      .select({ accessionNumber: investigationSpecimens.accessionNumber, specimenType: investigationSpecimens.specimenType })
+      .from(investigationSpecimens)
+      .where(eq(investigationSpecimens.orderId, reportRow.orderId))
+      .limit(1);
+
+    let orderingDoctorName = reportRow.reportingClinician || 'Attending Physician';
+    if (orderRow?.orderingDoctorId) {
+      const [doc] = await db
+        .select({ staffId: doctorProfiles.staffId })
+        .from(doctorProfiles)
+        .where(eq(doctorProfiles.id, orderRow.orderingDoctorId))
+        .limit(1);
+      if (doc?.staffId) {
+        const [st] = await db
+          .select({ fullName: operationalStaff.fullName })
+          .from(operationalStaff)
+          .where(eq(operationalStaff.id, doc.staffId))
+          .limit(1);
+        if (st?.fullName) orderingDoctorName = st.fullName.startsWith('Dr.') ? st.fullName : `Dr. ${st.fullName}`;
+      }
+    }
+
+    let testName = reportRow.reportTitle || 'Laboratory Investigation';
+    if (orderRow?.investigationId) {
+      const [cat] = await db
+        .select({ testName: investigationCatalog.testName })
+        .from(investigationCatalog)
+        .where(eq(investigationCatalog.id, orderRow.investigationId))
+        .limit(1);
+      if (cat?.testName) testName = cat.testName;
+    }
+
+    let ageYears: number | null = null;
+    if (patientRow?.dateOfBirth) {
+      const dob = new Date(patientRow.dateOfBirth);
+      if (!Number.isNaN(dob.getTime())) {
+        const diff = Math.floor((Date.now() - dob.getTime()) / (365.25 * 24 * 60 * 60 * 1000));
+        if (diff >= 0 && diff <= 130) ageYears = diff;
+      }
+    }
+
+    const isVerified = Boolean(
+      reportRow.reportStatus === 'FINAL' ||
+      reportRow.reportStatus === 'AMENDED' ||
+      reportRow.verifyingPathologist
+    );
+
+    const pdfBuffer = generatePathologyPdf({
+      orderNumber: orderRow?.orderNumber || reportRow.reportNumber,
+      reportNumber: reportRow.reportNumber,
+      patientName: patientRow ? `${patientRow.firstName || ''} ${patientRow.lastName || ''}`.trim() || 'Patient' : 'Patient',
+      patientMrn: patientRow?.mrn || 'N/A',
+      patientAge: ageYears,
+      patientGender: patientRow?.gender || 'Not Specified',
+      orderingDoctor: orderingDoctorName,
+      accessionNumber: specimenRow?.accessionNumber || 'PENDING-ACCESSION',
+      specimenType: specimenRow?.specimenType || orderRow?.specimenType || 'SPECIMEN',
+      facilityName: 'DocSearch Diagnostic Laboratory',
+      organizationName: 'DOC SEARCH HEALTHCARE OS',
+      orderedAt: orderRow?.orderedAt ? new Date(orderRow.orderedAt).toISOString() : new Date(reportRow.createdAt).toISOString(),
+      finalizedAt: reportRow.finalizedAt ? new Date(reportRow.finalizedAt).toISOString() : null,
+      reportStatus: reportRow.reportStatus,
+      investigationName: testName,
+      category: 'DIAGNOSTICS',
+      impression: reportRow.impression || reportRow.clinicalFindings || (isVerified ? 'Verified laboratory report.' : 'Preliminary draft awaiting pathologist sign-off.'),
+      verifyingPathologist: reportRow.verifyingPathologist || 'PENDING PATHOLOGIST VERIFICATION',
+      isVerified,
+      results: resultRows.map((r) => ({
+        parameterName: r.parameterName,
+        resultValue: r.resultValue || '',
+        unit: r.unit || '',
+        referenceRange: r.referenceRangeText || 'Ref Interval N/A',
+        abnormalFlag: r.abnormalFlag || 'NORMAL'
+      }))
+    });
+
+    reply.header('Content-Type', 'application/pdf');
+    reply.header('Content-Disposition', `attachment; filename="Report-${reportRow.reportNumber}.pdf"`);
+    reply.header('Content-Length', pdfBuffer.length);
+    return reply.status(200).send(pdfBuffer);
   });
 
   // 6. Patient Late Alert Notification to Doctor Chamber

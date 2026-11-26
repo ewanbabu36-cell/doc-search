@@ -186,8 +186,18 @@ class HospitalEventBus {
         }
       }
 
-      // 2. Initialize Server-Sent Events (SSE) bridge to API Gateway
-      this.initSseBridge();
+      // 2. Initialize Server-Sent Events (SSE) bridge only if authenticated JWT exists
+      try {
+        const hasAuth = Boolean(
+          localStorage.getItem('docsearch_auth_token') ||
+          localStorage.getItem('docsearch_partner_token') ||
+          localStorage.getItem('auth_token') ||
+          localStorage.getItem('token')
+        );
+        if (hasAuth) {
+          this.initSseBridge();
+        }
+      } catch {}
     }
   }
 
@@ -210,23 +220,36 @@ class HospitalEventBus {
         '';
       this.apiBaseUrl = baseUrl;
 
-      const params = new URLSearchParams();
-      params.set('clientId', this.tabId);
-      if (tenantId) params.set('tenantId', tenantId);
-
-      // Bearer token authentication for EventSource
+      let authToken = '';
       try {
-        const token =
+        authToken =
           localStorage.getItem('docsearch_auth_token') ||
           localStorage.getItem('docsearch_partner_token') ||
           localStorage.getItem('auth_token') ||
           localStorage.getItem('token') ||
           '';
-        if (token) {
-          params.set('token', token);
-          params.set('bearer', token);
+      } catch {}
+
+      if (!authToken || localStorage.getItem('docsearch_logged_out') === 'true') {
+        return;
+      }
+
+      // Parse JWT expiry to prevent 401 reconnect loops on expired tokens
+      try {
+        const parts = authToken.split('.');
+        if (parts.length === 3 && parts[1]) {
+          const payload = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')));
+          if (payload?.exp && Date.now() >= payload.exp * 1000) {
+            return;
+          }
         }
       } catch {}
+
+      const params = new URLSearchParams();
+      params.set('clientId', this.tabId);
+      if (tenantId) params.set('tenantId', tenantId);
+      params.set('token', authToken);
+      params.set('bearer', authToken);
 
       const sseUrl = `${baseUrl}/api/v1/partner/events/stream?${params.toString()}`;
 

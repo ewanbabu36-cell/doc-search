@@ -3,7 +3,7 @@ export interface PdfReportData {
   reportNumber: string;
   patientName: string;
   patientMrn: string;
-  patientAge: string | number;
+  patientAge?: string | number | null;
   patientGender: string;
   orderingDoctor: string;
   accessionNumber: string;
@@ -11,11 +11,14 @@ export interface PdfReportData {
   facilityName: string;
   organizationName: string;
   orderedAt: string;
-  finalizedAt: string;
+  finalizedAt?: string | null;
+  reportStatus?: string;
   investigationName: string;
   category: string;
   impression: string;
+  technologistName?: string;
   verifyingPathologist: string;
+  isVerified?: boolean;
   results: Array<{
     parameterName: string;
     resultValue: string;
@@ -87,7 +90,11 @@ export function generatePathologyPdf(data: PdfReportData): Buffer {
   contentLines.push('1 0 0 1 ' + (margin + 12) + ' ' + (boxTop - 32) + ' Tm');
   contentLines.push('(MRN / UHID: ' + escapePdfText(data.patientMrn) + ') Tj');
   contentLines.push('1 0 0 1 ' + (margin + 12) + ' ' + (boxTop - 46) + ' Tm');
-  contentLines.push('(Age / Sex: ' + escapePdfText(String(data.patientAge)) + ' Yrs / ' + escapePdfText(data.patientGender) + ') Tj');
+  const ageSexDisplay =
+    data.patientAge !== undefined && data.patientAge !== null && String(data.patientAge).trim() !== ''
+      ? `${escapePdfText(String(data.patientAge))} Yrs / ${escapePdfText(data.patientGender)}`
+      : `Age N/A / ${escapePdfText(data.patientGender)}`;
+  contentLines.push('(Age / Sex: ' + ageSexDisplay + ') Tj');
   contentLines.push('1 0 0 1 ' + (margin + 12) + ' ' + (boxTop - 60) + ' Tm');
   contentLines.push('(Referred By: ' + escapePdfText(data.orderingDoctor) + ') Tj');
   contentLines.push('ET');
@@ -103,8 +110,12 @@ export function generatePathologyPdf(data: PdfReportData): Buffer {
   contentLines.push('(Accession #: ' + escapePdfText(data.accessionNumber) + ') Tj');
   contentLines.push('1 0 0 1 ' + col2X + ' ' + (boxTop - 46) + ' Tm');
   contentLines.push('(Specimen: ' + escapePdfText(data.specimenType) + ') Tj');
+  const isVerified = data.isVerified ?? true;
+  const statusLabel = isVerified
+    ? 'FINAL NABL APPROVED'
+    : (data.reportStatus || 'PRELIMINARY - PENDING PATHOLOGIST VERIFICATION');
   contentLines.push('1 0 0 1 ' + col2X + ' ' + (boxTop - 60) + ' Tm');
-  contentLines.push('(Report Status: FINAL NABL APPROVED) Tj');
+  contentLines.push('(Report Status: ' + escapePdfText(statusLabel) + ') Tj');
   contentLines.push('ET');
 
   // Test Banner
@@ -232,20 +243,20 @@ export function generatePathologyPdf(data: PdfReportData): Buffer {
   contentLines.push('/F2 8 Tf');
   contentLines.push('0.1 0.15 0.25 rg');
   contentLines.push('1 0 0 1 ' + (margin + 10) + ' ' + (footerTop - 20) + ' Tm');
-  contentLines.push('(Pooja Sharma, BMLT) Tj');
+  contentLines.push('(' + escapePdfText(data.technologistName || 'Medical Lab Technologist') + ') Tj');
   contentLines.push('/F1 7 Tf');
   contentLines.push('0.4 0.45 0.5 rg');
   contentLines.push('1 0 0 1 ' + (margin + 10) + ' ' + (footerTop - 32) + ' Tm');
-  contentLines.push('(Senior Medical Lab Technologist) Tj');
+  contentLines.push('(Laboratory Technical Officer) Tj');
 
   contentLines.push('/F2 8.5 Tf');
-  contentLines.push('0.08 0.55 0.25 rg');
+  contentLines.push(isVerified ? '0.08 0.55 0.25 rg' : '0.85 0.5 0.0 rg');
   contentLines.push('1 0 0 1 ' + (pageWidth - margin - 220) + ' ' + (footerTop - 20) + ' Tm');
-  contentLines.push('(' + escapePdfText(data.verifyingPathologist || 'Dr. Shalini Deshmukh, MD (Pathology)') + ') Tj');
+  contentLines.push('(' + escapePdfText(isVerified ? data.verifyingPathologist : 'PENDING PATHOLOGIST VERIFICATION') + ') Tj');
   contentLines.push('/F1 7 Tf');
   contentLines.push('0.4 0.45 0.5 rg');
   contentLines.push('1 0 0 1 ' + (pageWidth - margin - 220) + ' ' + (footerTop - 32) + ' Tm');
-  contentLines.push('(Consultant Pathologist & Lab Director - DMC Reg: 48920-A) Tj');
+  contentLines.push('(' + escapePdfText(isVerified ? 'Authorised Pathologist & Signatory' : 'Preliminary Draft - Not Final Signed Report') + ') Tj');
   contentLines.push('ET');
 
   const contentStream = contentLines.join('\n');

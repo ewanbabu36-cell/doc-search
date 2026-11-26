@@ -29,7 +29,8 @@ export const MeriParchiScreen: React.FC<Props> = ({ language, onBack }) => {
   };
 
   const handleShareWhatsApp = (rx: any) => {
-    const text = `Prescription #${rx.id || 'RX-OPD'} from ${rx.doctorName || 'Doctor'}: https://docsearch.in/p/rx/${rx.id || ''}`;
+    const portalOrigin = typeof window !== 'undefined' ? window.location.origin : '';
+    const text = `Prescription #${rx.id || 'RX-OPD'} from ${rx.doctorName || 'Doctor'}${portalOrigin ? `: ${portalOrigin}` : ''}`;
     if (typeof navigator !== 'undefined' && navigator.clipboard) {
       navigator.clipboard.writeText(text).catch(() => {});
     }
@@ -40,11 +41,31 @@ export const MeriParchiScreen: React.FC<Props> = ({ language, onBack }) => {
     showNotification(language === 'hi' ? 'व्हाट्सएप पर प्रिस्क्रिप्शन लिंक शेयर किया गया!' : 'Prescription link shared to WhatsApp!');
   };
 
-  const handleDownloadLabPdf = (lab: any) => {
-    showNotification(language === 'hi' ? `${lab.testName} के लिए NABL सत्यापित रिपोर्ट डाउनलोड हो रही है...` : `Downloading NABL Verified PDF for ${lab.testName}...`);
-    if (typeof window !== 'undefined') {
-      const downloadUrl = `/api/v1/partner/lab/reports/${lab.id || 'NABL-REP'}/download`;
-      window.open(downloadUrl, '_blank');
+  const handleDownloadLabPdf = async (lab: any) => {
+    if (!lab?.id) {
+      showNotification(language === 'hi' ? 'रिपोर्ट ID उपलब्ध नहीं है।' : 'Report ID not available.');
+      return;
+    }
+    showNotification(language === 'hi' ? `${lab.testName} के लिए सत्यापित रिपोर्ट डाउनलोड हो रही है...` : `Downloading verified PDF for ${lab.testName}...`);
+    try {
+      const headers = patientApiService.getAuthHeaders();
+      const res = await fetch(`/api/v1/patient/lab-reports/${encodeURIComponent(lab.id)}/pdf`, { headers });
+      if (!res.ok) {
+        const err = await res.json().catch(() => null);
+        showNotification(err?.message || (language === 'hi' ? 'PDF अभी उपलब्ध नहीं है।' : 'Lab PDF could not be generated yet.'));
+        return;
+      }
+      const blob = await res.blob();
+      const blobUrl = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = blobUrl;
+      link.download = `Report-${lab.id}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 30000);
+    } catch {
+      showNotification(language === 'hi' ? 'नेटवर्क त्रुटि: रिपोर्ट डाउनलोड नहीं हो सकी।' : 'Network error while downloading lab PDF.');
     }
   };
 

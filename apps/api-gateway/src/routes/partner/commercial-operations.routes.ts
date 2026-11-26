@@ -183,63 +183,75 @@ export const commercialOperationsRoutes: FastifyPluginAsync = async (fastify) =>
     }
   });
 
-  // Instant Paperless Surgery 0% EMI Eligibility Check
-  fastify.post('/api/v1/partner/commercial/surgery-financing/instant-eligibility-check', async (request, reply) => {
-    const body = (request.body || {}) as {
-      patientName?: string;
-      patientPhone?: string;
-      panNumber?: string;
-      monthlyIncome?: number;
-      packageCode?: string;
-      requestedPackageAmount?: number;
-    };
+  // Instant Paperless Surgery 0% EMI Pre-Qualification Estimate
+  fastify.post(
+    '/api/v1/partner/commercial/surgery-financing/instant-eligibility-check',
+    { preHandler: [requireRoles(...FINANCE_BILLING_ROLES)] },
+    async (request, reply) => {
+      const tenantId = requireTenantId(request);
+      const body = (request.body || {}) as {
+        patientName?: string;
+        patientPhone?: string;
+        panNumber?: string;
+        monthlyIncome?: number;
+        packageCode?: string;
+        requestedPackageAmount?: number;
+      };
 
-    const packageAmount = Number(body.requestedPackageAmount) || 65000;
-    const monthlyIncome = Number(body.monthlyIncome) || 45000;
-    const pan = (body.panNumber || 'ABCDE1234F').toUpperCase();
-
-    // Instant CIBIL bureau pull simulation
-    const simulatedCibil = 765;
-    const isApproved = simulatedCibil >= 650 && monthlyIncome >= 25000;
-    const maxCreditLimit = Math.min(300000, monthlyIncome * 4);
-
-    const tenureOptions = [
-      {
-        months: 3,
-        interestRatePct: 0,
-        monthlyEmi: Math.round(packageAmount / 3),
-        processingFee: 0,
-        subventionRatePct: 2.0
-      },
-      {
-        months: 6,
-        interestRatePct: 0,
-        monthlyEmi: Math.round(packageAmount / 6),
-        processingFee: 0,
-        subventionRatePct: 3.5
-      },
-      {
-        months: 12,
-        interestRatePct: 0,
-        monthlyEmi: Math.round(packageAmount / 12),
-        processingFee: 0,
-        subventionRatePct: 4.5
+      const packageAmount = Number(body.requestedPackageAmount);
+      const monthlyIncome = Number(body.monthlyIncome);
+      if (!body.patientName?.trim() || !body.patientPhone?.trim() || !Number.isFinite(packageAmount) || packageAmount <= 0 || !Number.isFinite(monthlyIncome) || monthlyIncome <= 0) {
+        return reply.status(400).send({
+          success: false,
+          error: 'VALIDATION_ERROR',
+          message: 'patientName, patientPhone, positive requestedPackageAmount, and positive monthlyIncome are required for EMI pre-qualification.'
+        });
       }
-    ];
 
-    return reply.status(200).send({
-      success: true,
-      data: {
-        patientName: body.patientName || 'Kamlesh Verma',
-        patientPhone: body.patientPhone || '+91 98110 00000',
-        panNumber: pan,
-        cibilScore: simulatedCibil,
-        eligibilityStatus: isApproved ? 'ELIGIBLE_INSTANT' : 'MANUAL_DOCS_NEEDED',
-        maximumCreditLimit: maxCreditLimit,
-        packageAmount,
-        tenureOptions,
-        lendingPartners: ['BAJAJ_FINSERV_HEALTH', 'FIBE_HEALTHCARE', 'CRED_HEALTH'],
-        zeroForeclosureCharges: true,
+      const pan = body.panNumber?.trim() ? body.panNumber.trim().toUpperCase() : null;
+      const isIncomeQualified = monthlyIncome >= 25000;
+      const maxCreditLimit = Math.min(300000, monthlyIncome * 4);
+
+      const tenureOptions = [
+        {
+          months: 3,
+          interestRatePct: 0,
+          monthlyEmi: Math.round(packageAmount / 3),
+          processingFee: 0,
+          subventionRatePct: 2.0
+        },
+        {
+          months: 6,
+          interestRatePct: 0,
+          monthlyEmi: Math.round(packageAmount / 6),
+          processingFee: 0,
+          subventionRatePct: 3.5
+        },
+        {
+          months: 12,
+          interestRatePct: 0,
+          monthlyEmi: Math.round(packageAmount / 12),
+          processingFee: 0,
+          subventionRatePct: 4.5
+        }
+      ];
+
+      return reply.status(200).send({
+        success: true,
+        data: {
+          tenantId,
+          patientName: body.patientName.trim(),
+          patientPhone: body.patientPhone.trim(),
+          panNumber: pan,
+          cibilScore: null,
+          creditCheckMode: 'INCOME_PREQUALIFICATION_ESTIMATE',
+          bureauVerificationStatus: 'PENDING_EXTERNAL_BUREAU_CONSENT',
+          eligibilityStatus: isIncomeQualified ? 'PREQUALIFIED_PENDING_KYC' : 'MANUAL_DOCS_NEEDED',
+          maximumCreditLimit: maxCreditLimit,
+          packageAmount,
+          tenureOptions,
+          lendingPartners: ['BAJAJ_FINSERV_HEALTH', 'FIBE_HEALTHCARE', 'CRED_HEALTH'],
+          zeroForeclosureCharges: true,
         verificationTimestamp: new Date().toISOString()
       }
     });

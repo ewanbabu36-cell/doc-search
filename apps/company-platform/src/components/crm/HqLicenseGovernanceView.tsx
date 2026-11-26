@@ -63,6 +63,8 @@ export const HqLicenseGovernanceView: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [statusFilter, setStatusFilter] = useState<string>('ALL');
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
+  const [revokePromptTargetId, setRevokePromptTargetId] = useState<string | null>(null);
+  const [revokeReasonInput, setRevokeReasonInput] = useState<string>('License suspended by DOC SEARCH HQ Command');
   const [actionMessage, setActionMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [isGeneratorModalOpen, setIsGeneratorModalOpen] = useState<boolean>(false);
   const [selectedLicenseForSeats, setSelectedLicenseForSeats] = useState<LicenseItem | null>(null);
@@ -139,12 +141,16 @@ export const HqLicenseGovernanceView: React.FC = () => {
     }
   };
 
-  const handleRevoke = async (id: string) => {
-    const reason = window.prompt(
-      'Are you sure you want to engage the REMOTE KILL-SWITCH for this partner?\nEnter revocation reason:',
-      'License suspended by DOC SEARCH HQ Command'
-    );
-    if (reason === null) return;
+  const handleRevoke = (id: string) => {
+    setRevokePromptTargetId(id);
+    setRevokeReasonInput('License suspended by DOC SEARCH HQ Command');
+  };
+
+  const handleConfirmRevoke = async () => {
+    const id = revokePromptTargetId;
+    if (!id) return;
+    const reason = revokeReasonInput.trim() || 'License suspended by DOC SEARCH HQ Command';
+    setRevokePromptTargetId(null);
 
     setActionLoadingId(id);
     setActionMessage(null);
@@ -493,6 +499,43 @@ export const HqLicenseGovernanceView: React.FC = () => {
           }}
         >
           {actionMessage.text}
+        </div>
+      )}
+
+      {revokePromptTargetId && (
+        <div
+          role="dialog"
+          aria-label="Confirm Remote License Kill-Switch"
+          style={{
+            padding: '14px 16px',
+            borderRadius: '10px',
+            backgroundColor: 'rgba(127, 29, 29, 0.35)',
+            border: '1.5px solid #EF4444',
+            display: 'flex',
+            flexWrap: 'wrap',
+            gap: '10px',
+            alignItems: 'center',
+            justifyContent: 'space-between'
+          }}
+        >
+          <div style={{ flex: '1 1 280px' }}>
+            <div style={{ fontSize: '0.8125rem', fontWeight: 800, color: '#FCA5A5', marginBottom: '4px' }}>
+              🚨 Confirm Remote Kill-Switch Suspension
+            </div>
+            <Input
+              value={revokeReasonInput}
+              onChange={(e) => setRevokeReasonInput(e.target.value)}
+              placeholder="Enter revocation reason..."
+            />
+          </div>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <Button variant="danger" size="sm" onClick={handleConfirmRevoke}>
+              Confirm Revoke
+            </Button>
+            <Button variant="secondary" size="sm" onClick={() => setRevokePromptTargetId(null)}>
+              Cancel
+            </Button>
+          </div>
         </div>
       )}
 

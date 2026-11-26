@@ -16,7 +16,7 @@ const BASE_EN = {
   mobilePlaceholder: '98765 43210',
   getOtp: 'Get OTP',
   verifyOtp: 'Verify OTP',
-  enterOtpFor: 'Enter 4-digit OTP sent to',
+  enterOtpFor: 'Enter 6-digit OTP sent to',
   resendOtp: 'Resend OTP',
   quickDemoLogin: '1-Click Quick Demo Login (Patient)',
   home: 'Home',
@@ -69,7 +69,8 @@ const BASE_EN = {
   emergencyContact: 'Emergency SOS Contact',
   selectPatientTitle: 'Select Patient for Consultation',
   selectPatientSubtitle: 'Multiple patients are linked to this phone number. Who is consulting today?',
-  addNewFamilyMember: '+ Add New Patient / Family Member'
+  addNewFamilyMember: '+ Add New Patient / Family Member',
+  changeMobile: 'Change Mobile Number'
 };
 
 export const translations: Record<Language, typeof BASE_EN> = {
@@ -80,7 +81,7 @@ export const translations: Record<Language, typeof BASE_EN> = {
     mobilePlaceholder: '98765 43210',
     getOtp: 'OTP भेजें',
     verifyOtp: 'OTP सत्यापित करें',
-    enterOtpFor: 'पर भेजा गया 4-अंकों का OTP दर्ज करें',
+    enterOtpFor: 'पर भेजा गया 6-अंकों का OTP दर्ज करें',
     resendOtp: 'OTP पुनः भेजें',
     quickDemoLogin: '1-क्लिक डेमो लॉगिन (मरीज़)',
     home: 'होम',
@@ -133,7 +134,8 @@ export const translations: Record<Language, typeof BASE_EN> = {
     emergencyContact: 'आपातकालीन संपर्क (Emergency Contact)',
     selectPatientTitle: 'परामर्श हेतु मरीज़ चुनें',
     selectPatientSubtitle: 'इस मोबाइल नंबर पर कई मरीज़ पंजीकृत हैं। आज किसके लिए परामर्श लेना है?',
-    addNewFamilyMember: '+ नया मरीज़ / परिजन जोड़ें'
+    addNewFamilyMember: '+ नया मरीज़ / परिजन जोड़ें',
+    changeMobile: 'मोबाइल नंबर बदलें'
   },
   en: BASE_EN,
   mr: {
@@ -143,7 +145,9 @@ export const translations: Record<Language, typeof BASE_EN> = {
     enterMobile: 'तुमचा १०-अंकी मोबाईल नंबर टाका',
     getOtp: 'OTP पाठवा',
     verifyOtp: 'OTP पडताळून पहा',
+    enterOtpFor: 'वर पाठवलेला ६-अंकी OTP टाका',
     resendOtp: 'OTP पुन्हा पाठवा',
+    changeMobile: 'मोबाईल नंबर बदला',
     quickDemoLogin: '१-क्लिक डेमो लॉगिन (रुग्ण)',
     home: 'मुख्य पान',
     myToken: 'लाइव्ह टोकन',
@@ -183,7 +187,9 @@ export const translations: Record<Language, typeof BASE_EN> = {
     enterMobile: 'আপনার ১০-সংখ্যার মোবাইল নম্বর দিন',
     getOtp: 'OTP পাঠান',
     verifyOtp: 'OTP যাচাই করুন',
+    enterOtpFor: 'নম্বরে পাঠানো ৬-সংখ্যার OTP লিখুন',
     resendOtp: 'OTP আবার পাঠান',
+    changeMobile: 'মোবাইল নম্বর পরিবর্তন করুন',
     quickDemoLogin: '১-ক্লিক ডেমো লগইন (রোগী)',
     home: 'হোম',
     myToken: 'লাইভ টোকেন',
@@ -223,7 +229,9 @@ export const translations: Record<Language, typeof BASE_EN> = {
     enterMobile: 'உங்கள் 10 இலக்க மொபைல் எண்ணை உள்ளிடவும்',
     getOtp: 'OTP பெறுக',
     verifyOtp: 'OTP சரிபார்',
+    enterOtpFor: 'எண்ணிற்கு அனுப்பப்பட்ட 6-இலக்க OTP ஐ உள்ளிடவும்',
     resendOtp: 'மீண்டும் OTP அனுப்பு',
+    changeMobile: 'மொபைல் எண்ணை மாற்றவும்',
     quickDemoLogin: '1-கிளிக் டெமோ உள்நுழைவு',
     home: 'முகப்பு',
     myToken: 'நேரலை டோக்கன்',
@@ -263,7 +271,9 @@ export const translations: Record<Language, typeof BASE_EN> = {
     enterMobile: 'మీ 10-అంకెల మొబైల్ నంబర్ నమోదు చేయండి',
     getOtp: 'OTP పంపండి',
     verifyOtp: 'OTP ధృవీకరించండి',
+    enterOtpFor: 'కు పంపిన 6-అంకెల OTP నమోదు చేయండి',
     resendOtp: 'మళ్లీ OTP పంపండి',
+    changeMobile: 'మొబైల్ నంబర్ మార్చండి',
     quickDemoLogin: '1-క్లిక్ డెమో లాగిన్ (రోగి)',
     home: 'హోమ్',
     myToken: 'లైవ్ టోకెన్',

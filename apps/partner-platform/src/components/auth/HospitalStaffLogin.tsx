@@ -3,9 +3,7 @@ import { DocSearchLogo, DocSearch3DLogoLoader } from '@docsearch/ui-kit';
 import { getUrlForModule } from '../../utils/urlRouter.js';
 import { getAuthToken } from '../../services/api-client.js';
 import {
-  normalizeFacilityProfile,
-  HOSPITAL_PRO_TIER_NAME,
-  PRO_HOSPITAL_FEATURES
+  normalizeFacilityProfile
 } from '@docsearch/shared-core';
 import {
   type StaffPermissions
@@ -629,201 +627,23 @@ export const HospitalStaffLogin: React.FC<Props> = ({ onLoginSuccess, initialMod
   }, []);
 
 
-  // 1-Click Role-Isolated Persona Login (Strict Access Separation & Authoritative JWT Minting)
-  const handleRolePersonaLogin = async (persona: 'DOCTOR' | 'PATIENT' | 'PHARMACIST' | 'LAB_TECH' | 'NURSE' | 'FRONT_DESK' | 'DIRECTOR') => {
-    let personaUser: HospitalStaffUser;
-
-    const personaCredentials: Record<string, { email: string; defaultTenantId: string }> = {
-      DOCTOR: { email: 'doctor@docsearch.health', defaultTenantId: '11111111-1111-4111-8111-111111111111' },
-      PHARMACIST: { email: 'pharmacist@docsearch.health', defaultTenantId: '33333333-3333-4333-8333-333333333333' },
-      LAB_TECH: { email: 'labtech@docsearch.health', defaultTenantId: '22222222-2222-4222-8222-222222222222' },
-      DIRECTOR: { email: 'director@docsearch.health', defaultTenantId: '11111111-1111-4111-8111-111111111111' },
-      NURSE: { email: 'nurse@docsearch.health', defaultTenantId: '11111111-1111-4111-8111-111111111111' },
-      FRONT_DESK: { email: 'frontdesk@docsearch.health', defaultTenantId: '11111111-1111-4111-8111-111111111111' },
-      PATIENT: { email: 'patient@docsearch.health', defaultTenantId: '11111111-1111-4111-8111-111111111111' },
+  // Dev Sandbox Email Prefiller (Strict Security: never bypasses backend JWT authentication)
+  const handleRolePersonaLogin = (persona: 'DOCTOR' | 'PHARMACIST' | 'LAB_TECH' | 'NURSE' | 'FRONT_DESK' | 'DIRECTOR') => {
+    const personaEmails: Record<string, string> = {
+      DOCTOR: 'doctor@docsearch.health',
+      PHARMACIST: 'pharmacist@docsearch.health',
+      LAB_TECH: 'labtech@docsearch.health',
+      DIRECTOR: 'director@docsearch.health',
+      NURSE: 'nurse@docsearch.health',
+      FRONT_DESK: 'frontdesk@docsearch.health'
     };
 
-    const creds = personaCredentials[persona];
-    let liveAuthUser: any = null;
-    if (creds) {
-      setEmailInput(creds.email);
+    const email = personaEmails[persona];
+    if (email) {
+      setEmailInput(email);
+      setPasswordInput('');
+      setAuthError('Dev Sandbox: Email pre-filled. Enter staff password and sign in to mint an authenticated JWT session.');
     }
-
-    const resolvedTenantId = liveAuthUser?.tenantId || creds?.defaultTenantId || '11111111-1111-4111-8111-111111111111';
-
-    switch (persona) {
-      case 'PATIENT':
-        personaUser = {
-          id: liveAuthUser?.id || 'usr_persona_patient',
-          category: 'HEALTHCARE',
-          name: liveAuthUser ? `${liveAuthUser.firstName} ${liveAuthUser.lastName}` : 'Priya Sharma (Patient / Health Locker)',
-          email: 'patient@docsearch.health',
-          role: 'PATIENT',
-          roleTitle: 'Verified Citizen & Patient',
-          department: 'Patient Self-Service & ABHA',
-          tenantName: 'DocSearch National Health Network',
-          tenantId: resolvedTenantId,
-          organizationType: 'CLINIC',
-          allowedWorkspaces: ['CLINIC'],
-          defaultModule: 'patient-portal',
-          planTier: HOSPITAL_PRO_TIER_NAME,
-          planExpiryDate: 'Enterprise Active',
-          accessibleFeatures: ['Health Locker', 'Digital Prescriptions', 'Lab QR Reports', 'ABHA Card'],
-          restrictedFeatures: ['Doctor Clinical Workspace', 'Pharmacy Stock Management', 'Cashier Till'],
-          kycStatus: 'KYC_VERIFIED',
-          isProfileCompleted: true
-        };
-        break;
-
-      case 'DOCTOR':
-        personaUser = {
-          id: liveAuthUser?.id || 'usr_persona_doctor',
-          category: 'HEALTHCARE',
-          name: liveAuthUser ? `${liveAuthUser.firstName} ${liveAuthUser.lastName}` : 'Dr. Ewan Babu (Consultant Physician)',
-          email: 'doctor@docsearch.health',
-          role: 'DOCTOR',
-          roleTitle: 'Consultant Physician & OPD Specialist',
-          department: 'Clinical Consultation & OPD',
-          tenantName: 'Ewan Multi-Specialty Hospital',
-          tenantId: resolvedTenantId,
-          organizationType: 'HOSPITAL',
-          allowedWorkspaces: ['HOSPITAL', 'CLINIC'],
-          defaultModule: 'clinical-consultation',
-          planTier: HOSPITAL_PRO_TIER_NAME,
-          planExpiryDate: 'Enterprise Active',
-          accessibleFeatures: ['Doctor OPD Desk', 'OPD Token Queue', 'AI Scribe & CDSS', 'Lab Review', 'Telemedicine'],
-          restrictedFeatures: ['Pharmacy POS Counter', 'Cashier Till & Credit Notes', 'Staff Directory Administration', 'Hospital Bed Matrix'],
-          kycStatus: 'KYC_VERIFIED',
-          isProfileCompleted: true
-        };
-        break;
-
-      case 'PHARMACIST':
-        personaUser = {
-          id: liveAuthUser?.id || 'cccc3333-8492-4ccc-8ccc-849208492003',
-          category: 'HEALTHCARE',
-          name: liveAuthUser ? `${liveAuthUser.firstName} ${liveAuthUser.lastName}` : 'Rajesh Sharma (Chief Chemist)',
-          email: 'pharmacist@docsearch.health',
-          role: 'PHARMACIST',
-          roleTitle: 'Chief Pharmacist & Chemist In-Charge',
-          department: 'Hospital Pharmacy & Dispensing',
-          tenantName: liveAuthUser?.tenantName || 'CarePlus Pharmacy & Surgical Store',
-          tenantId: resolvedTenantId,
-          organizationType: 'PHARMACY',
-          allowedWorkspaces: ['PHARMACY'],
-          defaultModule: 'pharmacy-medication',
-          planTier: 'Retail Pharmacy POS Suite',
-          planExpiryDate: 'Enterprise Active',
-          accessibleFeatures: ['Pharmacy POS Counter', 'Batch Inventory & Marg CSV Inward', 'CDSCO Schedule H1 Register', 'Khata Credit Ledger'],
-          restrictedFeatures: ['Doctor EMR & Prescribing', 'Nurse Triage Vitals', 'Inpatient Bed Matrix', 'OT Surgery Logs'],
-          kycStatus: 'KYC_VERIFIED',
-          isProfileCompleted: true
-        };
-        break;
-
-      case 'LAB_TECH':
-        personaUser = {
-          id: liveAuthUser?.id || 'usr_persona_lab_tech',
-          category: 'HEALTHCARE',
-          name: liveAuthUser ? `${liveAuthUser.firstName} ${liveAuthUser.lastName}` : 'Sunita Deshmukh (Senior Lab Tech)',
-          email: 'labtech@docsearch.health',
-          role: 'LAB_TECHNICIAN',
-          roleTitle: 'Senior Medical Laboratory Technologist',
-          department: 'Pathology & Diagnostic Laboratory',
-          tenantName: 'Ewan Diagnostics & Pathology Hub',
-          tenantId: resolvedTenantId,
-          organizationType: 'PATHOLOGY',
-          allowedWorkspaces: ['PATHOLOGY'],
-          defaultModule: 'clinical-investigation',
-          planTier: 'Pathology Pro & Barcode LIMS',
-          planExpiryDate: 'Enterprise Active',
-          accessibleFeatures: ['Phlebotomy Queue & Barcodes', 'Analyzer Workbench', 'NABL Panic Intimation', 'Report Dispatch'],
-          restrictedFeatures: ['Doctor Clinical Notes', 'Pharmacy Inventory', 'Cashier Financial Ledgers'],
-          kycStatus: 'KYC_VERIFIED',
-          isProfileCompleted: true
-        };
-        break;
-
-      case 'NURSE':
-        personaUser = {
-          id: liveAuthUser?.id || 'usr_persona_nurse',
-          category: 'HEALTHCARE',
-          name: liveAuthUser ? `${liveAuthUser.firstName} ${liveAuthUser.lastName}` : 'Sister Mary Thomas (Triage & Ward Nurse)',
-          email: 'nurse@docsearch.health',
-          role: 'STAFF_NURSE',
-          roleTitle: 'Inpatient Charge Nurse & Triage Officer',
-          department: 'Nursing Station & Inpatient Ward',
-          tenantName: 'Ewan Multi-Specialty Hospital',
-          tenantId: resolvedTenantId,
-          organizationType: 'HOSPITAL',
-          allowedWorkspaces: ['HOSPITAL'],
-          defaultModule: 'nurse-triage-station',
-          planTier: HOSPITAL_PRO_TIER_NAME,
-          planExpiryDate: 'Enterprise Active',
-          accessibleFeatures: ['Nurse Vitals Station', 'NEWS2 Acuity Calculation', 'Ward Bed Board', 'Medication Administration (MAR)'],
-          restrictedFeatures: ['Doctor Prescription Writing', 'Cancelling Invoices', 'Administering Staff Roles'],
-          kycStatus: 'KYC_VERIFIED',
-          isProfileCompleted: true
-        };
-        break;
-
-      case 'FRONT_DESK':
-        personaUser = {
-          id: liveAuthUser?.id || 'usr_persona_front_desk',
-          category: 'HEALTHCARE',
-          name: liveAuthUser ? `${liveAuthUser.firstName} ${liveAuthUser.lastName}` : 'Amit Verma (Front Desk Lead)',
-          email: 'frontdesk@docsearch.health',
-          role: 'FRONT_DESK_RECEPTIONIST',
-          roleTitle: 'Front Desk Receptionist & OPD Cashier',
-          department: 'Front Desk & Cashier Counter',
-          tenantName: 'Ewan Multi-Specialty Hospital',
-          tenantId: resolvedTenantId,
-          organizationType: 'HOSPITAL',
-          allowedWorkspaces: ['HOSPITAL'],
-          defaultModule: 'patient-registration',
-          planTier: HOSPITAL_PRO_TIER_NAME,
-          planExpiryDate: 'Enterprise Active',
-          accessibleFeatures: ['Express Patient Registration', 'ABHA Scan & Share', 'OPD Token Queue', 'Billing Cashier & UPI Receipts'],
-          restrictedFeatures: ['Clinical EMR & Diagnoses', 'Lab Analyzer Control', 'Pharmacy Drug Dispensing'],
-          kycStatus: 'KYC_VERIFIED',
-          isProfileCompleted: true
-        };
-        break;
-
-      case 'DIRECTOR':
-      default:
-        personaUser = {
-          id: liveAuthUser?.id || 'usr_persona_director',
-          category: 'HEALTHCARE',
-          name: liveAuthUser ? `${liveAuthUser.firstName} ${liveAuthUser.lastName}` : 'Dr. Vivek Sharma (Medical Director)',
-          email: 'director@docsearch.health',
-          role: 'HOSPITAL_DIRECTOR',
-          roleTitle: 'Medical Superintendent & Director',
-          department: 'Hospital Administration & Governance',
-          tenantName: 'Ewan Multi-Specialty Hospital',
-          tenantId: resolvedTenantId,
-          organizationType: 'HOSPITAL',
-          allowedWorkspaces: ['HOSPITAL', 'CLINIC', 'PHARMACY', 'PATHOLOGY', 'DIAGNOSTIC_CENTRE', 'ENTERPRISE_COMMAND'],
-          defaultModule: 'executive-command-center',
-          planTier: HOSPITAL_PRO_TIER_NAME,
-          planExpiryDate: 'Enterprise Active',
-          accessibleFeatures: PRO_HOSPITAL_FEATURES as string[],
-          restrictedFeatures: ['None (Full Hospital Scope)'],
-          kycStatus: 'KYC_VERIFIED',
-          isProfileCompleted: true
-        };
-        break;
-    }
-
-    localStorage.setItem('docsearch_partner_staff_auth', JSON.stringify(personaUser));
-    localStorage.removeItem('docsearch_logged_out');
-    if (typeof window !== 'undefined') {
-      try {
-        const targetPath = getUrlForModule(personaUser.organizationType, personaUser.defaultModule as any);
-        window.history.replaceState({ path: targetPath }, '', targetPath);
-      } catch {}
-    }
-    onLoginSuccess(personaUser);
   };
 
   // Handle standard Login submission
@@ -865,7 +685,7 @@ export const HospitalStaffLogin: React.FC<Props> = ({ onLoginSuccess, initialMod
 
         const resolvedUser: HospitalStaffUser = {
           id: returnedUser?.id || `user_${Date.now()}`,
-          tenantId: returnedUser?.tenantId || returnedUser?.partnerId || '11111111-1111-4111-8111-111111111111',
+          tenantId: returnedUser?.tenantId || returnedUser?.partnerId || '',
           category: 'HEALTHCARE',
           name: `${returnedUser?.firstName || ''} ${returnedUser?.lastName || ''}`.trim() || 'Hospital Staff',
           email,
@@ -1291,10 +1111,10 @@ export const HospitalStaffLogin: React.FC<Props> = ({ onLoginSuccess, initialMod
             <span style={{ fontSize: '1.25rem' }}>🎁</span>
             <div>
               <div style={{ fontSize: '0.8125rem', fontWeight: 800, color: '#34D399', letterSpacing: '0.02em' }}>
-                100% Full Enterprise Free for Lifetime
+                Pioneer Launch Free Tier Included (₹0 Core OS)
               </div>
               <div style={{ fontSize: '0.6875rem', color: '#94A3B8', marginTop: '1px' }}>
-                Zero Software Fees Forever • All 13+ Hospital Departments Unlocked
+                Start Free on OPD/LIMS/POS • Optional High-Throughput Cloud Tiers Available
               </div>
             </div>
           </div>
@@ -1477,231 +1297,209 @@ export const HospitalStaffLogin: React.FC<Props> = ({ onLoginSuccess, initialMod
               </button>
             )}
 
-            {/* Clinic Staff Quick-Login Guidance */}
-            <div
-              style={{
-                marginTop: '4px',
-                padding: '10px 12px',
-                borderRadius: '8px',
-                backgroundColor: 'rgba(13, 148, 136, 0.12)',
-                border: '1px solid rgba(13, 148, 136, 0.3)',
-                display: 'flex',
-                alignItems: 'flex-start',
-                gap: '8px'
-              }}
-            >
-              <span style={{ fontSize: '1rem', marginTop: '1px' }}>💡</span>
-              <div style={{ fontSize: '0.75rem', color: '#99F6E4', lineHeight: '1.4' }}>
-                <strong style={{ color: '#2DD4BF' }}>Clinic Staff Login:</strong> Front Desk staff and Nurses can sign in using their <strong>Staff Code</strong> (e.g. <code>STF-785</code>) or Work Email with default PIN <code>123456</code>.
-              </div>
-            </div>
-
-            {/* 🛡️ 4 Core 100% Free Lifetime Healthcare Profiles (Strict Domain Isolation) */}
-            <div
-              style={{
-                marginTop: '10px',
-                padding: '12px',
-                borderRadius: '12px',
-                backgroundColor: 'rgba(15, 23, 42, 0.95)',
-                border: '1.5px solid rgba(14, 165, 233, 0.4)',
-                boxShadow: '0 4px 20px rgba(0, 0, 0, 0.4)',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '10px'
-              }}
-            >
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontSize: '0.74rem', fontWeight: 800, color: '#38BDF8', letterSpacing: '0.04em', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <span>🛡️</span> 4 Core Profiles (Role Isolation)
-                </span>
-                <span style={{ fontSize: '0.625rem', color: '#10B981', fontWeight: 700, backgroundColor: 'rgba(16, 185, 129, 0.15)', padding: '2px 8px', borderRadius: '4px' }}>
-                  100% Free Lifetime
-                </span>
-              </div>
-              <p style={{ margin: 0, fontSize: '0.6875rem', color: '#94A3B8', lineHeight: 1.3 }}>
-                Select an operational profile to test strict domain boundaries with zero cross-contamination:
-              </p>
-
-              {/* 4 Core Profiles Grid (2x2) */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px' }}>
-                {/* 1. SINGLE DOCTOR CLINIC (EKA CARE BENCHMARK) */}
-                <button
-                  type="button"
-                  onClick={() => handleRolePersonaLogin('DOCTOR')}
+            {/* Dev-Only Role Sandbox Helper (Never exposed in production builds) */}
+            {Boolean((import.meta as any).env?.DEV) && (
+              <>
+                <div
                   style={{
-                    padding: '10px 8px',
-                    borderRadius: '10px',
-                    backgroundColor: 'rgba(16, 185, 129, 0.12)',
-                    border: '1.5px solid #10B981',
-                    color: '#34D399',
-                    cursor: 'pointer',
+                    marginTop: '4px',
+                    padding: '10px 12px',
+                    borderRadius: '8px',
+                    backgroundColor: 'rgba(13, 148, 136, 0.12)',
+                    border: '1px solid rgba(13, 148, 136, 0.3)',
+                    display: 'flex',
+                    alignItems: 'flex-start',
+                    gap: '8px'
+                  }}
+                >
+                  <span style={{ fontSize: '1rem', marginTop: '1px' }}>💡</span>
+                  <div style={{ fontSize: '0.75rem', color: '#99F6E4', lineHeight: '1.4' }}>
+                    <strong style={{ color: '#2DD4BF' }}>Clinic Staff Login:</strong> Front Desk staff and Nurses can sign in using their <strong>Staff Code</strong> or Work Email.
+                  </div>
+                </div>
+
+                {/* Dev Sandbox Profile Prefiller */}
+                <div
+                  style={{
+                    marginTop: '10px',
+                    padding: '12px',
+                    borderRadius: '12px',
+                    backgroundColor: 'rgba(15, 23, 42, 0.95)',
+                    border: '1.5px solid rgba(14, 165, 233, 0.4)',
+                    boxShadow: '0 4px 20px rgba(0, 0, 0, 0.4)',
                     display: 'flex',
                     flexDirection: 'column',
-                    alignItems: 'center',
-                    gap: '3px',
-                    transition: 'all 0.15s ease'
+                    gap: '10px'
                   }}
-                  title="Single Doctor Clinic: Eka Care Benchmark (9.2/10) - 1-Tap Dosing, Alt+R Repeat Rx Pad, OPD Token Queue & ABDM ABHA."
                 >
-                  <span style={{ fontSize: '1.25rem' }}>🩺</span>
-                  <strong style={{ fontSize: '0.78rem' }}>Doctor OPD Chamber</strong>
-                  <span style={{ fontSize: '0.625rem', backgroundColor: '#10B981', color: '#070C16', padding: '1px 5px', borderRadius: '4px', fontWeight: 900 }}>
-                    Eka Care 9.2★
-                  </span>
-                  <span style={{ fontSize: '0.625rem', color: '#A7F3D0' }}>1-Tap Dosing • Alt+R Repeat</span>
-                </button>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontSize: '0.74rem', fontWeight: 800, color: '#38BDF8', letterSpacing: '0.04em', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <span>🛡️</span> Dev Sandbox Profiles
+                    </span>
+                    <span style={{ fontSize: '0.625rem', color: '#10B981', fontWeight: 700, backgroundColor: 'rgba(16, 185, 129, 0.15)', padding: '2px 8px', borderRadius: '4px' }}>
+                      DEV MODE
+                    </span>
+                  </div>
+                  <p style={{ margin: 0, fontSize: '0.6875rem', color: '#94A3B8', lineHeight: 1.3 }}>
+                    Click a role to pre-fill its work email, then enter password to authenticate with JWT:
+                  </p>
 
-                {/* 2. RETAIL & HOSPITAL PHARMACY (MARG ERP + VYAPAR BENCHMARK) */}
-                <button
-                  type="button"
-                  onClick={() => handleRolePersonaLogin('PHARMACIST')}
-                  style={{
-                    padding: '10px 8px',
-                    borderRadius: '10px',
-                    backgroundColor: 'rgba(168, 85, 247, 0.12)',
-                    border: '1.5px solid #A855F7',
-                    color: '#C084FC',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    gap: '3px',
-                    transition: 'all 0.15s ease'
-                  }}
-                  title="Retail & Hospital Pharmacy: Marg ERP + Vyapar Benchmark (9.2/10) - F1-F10 Keyboard Shortcuts & Jan Aushadhi Generic Swap."
-                >
-                  <span style={{ fontSize: '1.25rem' }}>💊</span>
-                  <strong style={{ fontSize: '0.78rem' }}>Pharmacy Counter</strong>
-                  <span style={{ fontSize: '0.625rem', backgroundColor: '#A855F7', color: '#070C16', padding: '1px 5px', borderRadius: '4px', fontWeight: 900 }}>
-                    Marg + Vyapar 9.2★
-                  </span>
-                  <span style={{ fontSize: '0.625rem', color: '#E9D5FF' }}>F1-F10 Keys • Generic Swap</span>
-                </button>
+                  {/* 4 Core Profiles Grid (2x2) */}
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px' }}>
+                    <button
+                      type="button"
+                      onClick={() => handleRolePersonaLogin('DOCTOR')}
+                      style={{
+                        padding: '10px 8px',
+                        borderRadius: '10px',
+                        backgroundColor: 'rgba(16, 185, 129, 0.12)',
+                        border: '1.5px solid #10B981',
+                        color: '#34D399',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        gap: '3px',
+                        transition: 'all 0.15s ease'
+                      }}
+                      title="Single Doctor Clinic: 1-Tap Dosing, Repeat Rx Pad, OPD Token Queue & ABDM ABHA."
+                    >
+                      <span style={{ fontSize: '1.25rem' }}>🩺</span>
+                      <strong style={{ fontSize: '0.78rem' }}>Doctor OPD Chamber</strong>
+                      <span style={{ fontSize: '0.625rem', backgroundColor: '#10B981', color: '#070C16', padding: '1px 5px', borderRadius: '4px', fontWeight: 900 }}>
+                        Clinical OPD
+                      </span>
+                      <span style={{ fontSize: '0.625rem', color: '#A7F3D0' }}>1-Tap Dosing • Repeat Rx</span>
+                    </button>
 
-                {/* 3. DIAGNOSTIC PATHOLOGY & LAB LIMS (CRELIOHEALTH BENCHMARK) */}
-                <button
-                  type="button"
-                  onClick={() => handleRolePersonaLogin('LAB_TECH')}
-                  style={{
-                    padding: '10px 8px',
-                    borderRadius: '10px',
-                    backgroundColor: 'rgba(245, 158, 11, 0.12)',
-                    border: '1.5px solid #F59E0B',
-                    color: '#FBBF24',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    gap: '3px',
-                    transition: 'all 0.15s ease'
-                  }}
-                  title="Diagnostic Pathology: CrelioHealth Benchmark (9.1/10) - 6 ISO Vacutainer Color Caps, Tri-Color Biological Gauge & 1-Click Panic Alert."
-                >
-                  <span style={{ fontSize: '1.25rem' }}>🔬</span>
-                  <strong style={{ fontSize: '0.78rem' }}>Pathology & Lab LIMS</strong>
-                  <span style={{ fontSize: '0.625rem', backgroundColor: '#F59E0B', color: '#070C16', padding: '1px 5px', borderRadius: '4px', fontWeight: 900 }}>
-                    CrelioHealth 9.1★
-                  </span>
-                  <span style={{ fontSize: '0.625rem', color: '#FDE68A' }}>Vacutainers • Panic Alert</span>
-                </button>
+                    <button
+                      type="button"
+                      onClick={() => handleRolePersonaLogin('PHARMACIST')}
+                      style={{
+                        padding: '10px 8px',
+                        borderRadius: '10px',
+                        backgroundColor: 'rgba(168, 85, 247, 0.12)',
+                        border: '1.5px solid #A855F7',
+                        color: '#C084FC',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        gap: '3px',
+                        transition: 'all 0.15s ease'
+                      }}
+                      title="Retail & Hospital Pharmacy: F1-F10 Keyboard Shortcuts & Jan Aushadhi Generic Swap."
+                    >
+                      <span style={{ fontSize: '1.25rem' }}>💊</span>
+                      <strong style={{ fontSize: '0.78rem' }}>Pharmacy Counter</strong>
+                      <span style={{ fontSize: '0.625rem', backgroundColor: '#A855F7', color: '#070C16', padding: '1px 5px', borderRadius: '4px', fontWeight: 900 }}>
+                        Pharmacy POS
+                      </span>
+                      <span style={{ fontSize: '0.625rem', color: '#E9D5FF' }}>F1-F10 Keys • Generic Swap</span>
+                    </button>
 
-                {/* 4. MULTI-SPECIALTY HOSPITAL (KAREXPERT BENCHMARK) */}
-                <button
-                  type="button"
-                  onClick={() => handleRolePersonaLogin('DIRECTOR')}
-                  style={{
-                    padding: '10px 8px',
-                    borderRadius: '10px',
-                    backgroundColor: 'rgba(2, 132, 199, 0.12)',
-                    border: '1.5px solid #0284C7',
-                    color: '#38BDF8',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    gap: '3px',
-                    transition: 'all 0.15s ease'
-                  }}
-                  title="Multi-Specialty Hospital: KareXpert Benchmark (8.9/10) - Full Inpatient HIS, Ward Bed Census HUD, ICU & Stat Admission."
-                >
-                  <span style={{ fontSize: '1.25rem' }}>🏥</span>
-                  <strong style={{ fontSize: '0.78rem' }}>Multi-Hospital HIS</strong>
-                  <span style={{ fontSize: '0.625rem', backgroundColor: '#0284C7', color: '#FFFFFF', padding: '1px 5px', borderRadius: '4px', fontWeight: 900 }}>
-                    KareXpert 8.9★
-                  </span>
-                  <span style={{ fontSize: '0.625rem', color: '#7DD3FC' }}>Bed Board • ICU • Stat Admit</span>
-                </button>
-              </div>
+                    <button
+                      type="button"
+                      onClick={() => handleRolePersonaLogin('LAB_TECH')}
+                      style={{
+                        padding: '10px 8px',
+                        borderRadius: '10px',
+                        backgroundColor: 'rgba(245, 158, 11, 0.12)',
+                        border: '1.5px solid #F59E0B',
+                        color: '#FBBF24',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        gap: '3px',
+                        transition: 'all 0.15s ease'
+                      }}
+                      title="Diagnostic Pathology: ISO Vacutainer Color Caps, Biological Gauge & Panic Alert."
+                    >
+                      <span style={{ fontSize: '1.25rem' }}>🔬</span>
+                      <strong style={{ fontSize: '0.78rem' }}>Pathology & Lab LIMS</strong>
+                      <span style={{ fontSize: '0.625rem', backgroundColor: '#F59E0B', color: '#070C16', padding: '1px 5px', borderRadius: '4px', fontWeight: 900 }}>
+                        NABL LIMS
+                      </span>
+                      <span style={{ fontSize: '0.625rem', color: '#FDE68A' }}>Vacutainers • Panic Alert</span>
+                    </button>
 
-              {/* Sub-Roles & Citizen Health Locker (Tata 1mg & Apollo 24/7 Benchmark) */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '6px', paddingTop: '6px', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
-                <button
-                  type="button"
-                  onClick={() => handleRolePersonaLogin('NURSE')}
-                  style={{
-                    padding: '6px 4px',
-                    borderRadius: '7px',
-                    backgroundColor: 'rgba(236, 72, 153, 0.12)',
-                    border: '1px solid rgba(236, 72, 153, 0.5)',
-                    color: '#F472B6',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '4px',
-                    fontSize: '0.6875rem',
-                    fontWeight: 700
-                  }}
-                  title="Staff Nurse: Inpatient Ward Bed Board & Vitals Station"
-                >
-                  <span>👩‍⚕️</span> Nurse
-                </button>
+                    <button
+                      type="button"
+                      onClick={() => handleRolePersonaLogin('DIRECTOR')}
+                      style={{
+                        padding: '10px 8px',
+                        borderRadius: '10px',
+                        backgroundColor: 'rgba(2, 132, 199, 0.12)',
+                        border: '1.5px solid #0284C7',
+                        color: '#38BDF8',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        gap: '3px',
+                        transition: 'all 0.15s ease'
+                      }}
+                      title="Multi-Specialty Hospital: Full Inpatient HIS, Ward Bed Census, ICU & Stat Admission."
+                    >
+                      <span style={{ fontSize: '1.25rem' }}>🏥</span>
+                      <strong style={{ fontSize: '0.78rem' }}>Multi-Hospital HIS</strong>
+                      <span style={{ fontSize: '0.625rem', backgroundColor: '#0284C7', color: '#FFFFFF', padding: '1px 5px', borderRadius: '4px', fontWeight: 900 }}>
+                        IPD & Command
+                      </span>
+                      <span style={{ fontSize: '0.625rem', color: '#7DD3FC' }}>Bed Board • ICU • Stat Admit</span>
+                    </button>
+                  </div>
 
-                <button
-                  type="button"
-                  onClick={() => handleRolePersonaLogin('FRONT_DESK')}
-                  style={{
-                    padding: '6px 4px',
-                    borderRadius: '7px',
-                    backgroundColor: 'rgba(56, 189, 248, 0.12)',
-                    border: '1px solid rgba(56, 189, 248, 0.5)',
-                    color: '#38BDF8',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '4px',
-                    fontSize: '0.6875rem',
-                    fontWeight: 700
-                  }}
-                  title="Front Desk Cashier: Practo Ray Benchmark - 20-Sec Registration, ABHA Tokens & Thermal Slip"
-                >
-                  <span>💳</span> Cashier
-                </button>
+                  {/* Additional Staff Sub-Roles */}
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '6px', paddingTop: '6px', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
+                    <button
+                      type="button"
+                      onClick={() => handleRolePersonaLogin('NURSE')}
+                      style={{
+                        padding: '6px 4px',
+                        borderRadius: '7px',
+                        backgroundColor: 'rgba(236, 72, 153, 0.12)',
+                        border: '1px solid rgba(236, 72, 153, 0.5)',
+                        color: '#F472B6',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '4px',
+                        fontSize: '0.6875rem',
+                        fontWeight: 700
+                      }}
+                      title="Staff Nurse: Inpatient Ward Bed Board & Vitals Station"
+                    >
+                      <span>👩‍⚕️</span> Nurse
+                    </button>
 
-                <button
-                  type="button"
-                  onClick={() => handleRolePersonaLogin('PATIENT')}
-                  style={{
-                    padding: '6px 4px',
-                    borderRadius: '7px',
-                    backgroundColor: 'rgba(14, 165, 233, 0.12)',
-                    border: '1px solid rgba(14, 165, 233, 0.5)',
-                    color: '#38BDF8',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '4px',
-                    fontSize: '0.6875rem',
-                    fontWeight: 700
-                  }}
-                  title="Patient Health Locker: Tata 1mg + Apollo 24/7 Benchmark (9.3/10) - 1-Tap Rx Order, Home Lab Pickup & ABHA"
-                >
-                  <span>👤</span> Patient (1mg★)
-                </button>
-              </div>
-            </div>
+                    <button
+                      type="button"
+                      onClick={() => handleRolePersonaLogin('FRONT_DESK')}
+                      style={{
+                        padding: '6px 4px',
+                        borderRadius: '7px',
+                        backgroundColor: 'rgba(56, 189, 248, 0.12)',
+                        border: '1px solid rgba(56, 189, 248, 0.5)',
+                        color: '#38BDF8',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '4px',
+                        fontSize: '0.6875rem',
+                        fontWeight: 700
+                      }}
+                      title="Front Desk Cashier: Express Registration, ABHA Tokens & Thermal Receipt"
+                    >
+                      <span>💳</span> Cashier
+                    </button>
+                  </div>
+                </div>
+              </>
+            )}
 
 
 

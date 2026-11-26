@@ -150,11 +150,8 @@ const CompanyShellInner: React.FC<CompanyShellProps> = ({ currentUser, onLogout 
   const { t } = useGlobalLocale();
   const { whiteLabelConfig } = useGlobalWhiteLabel();
   const effectiveUser = currentUser;
-  const userRole = effectiveUser?.role || 'SUPER_ADMIN';
+  const userRole = effectiveUser?.role || '';
   const isFounderUser =
-    effectiveUser?.name?.toUpperCase().includes('MERAJ') ||
-    effectiveUser?.email?.toLowerCase().includes('founder') ||
-    effectiveUser?.email?.toLowerCase().includes('meraj') ||
     userRole === 'SUPER_ADMIN' ||
     userRole === 'SUPER_ADMIN_FOUNDER' ||
     userRole === 'FOUNDER';

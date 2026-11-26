@@ -194,15 +194,16 @@ export const PatientLoginScreen: React.FC<Props> = ({ language, onLanguageToggle
                     gap: '4px'
                   }}
                 >
-                  <span>⚡ तुरंत टोकन लें</span>
+                  <span>⚡ {t.quickDemoLogin}</span>
                 </button>
               )}
 
               <button
                 type="button"
                 onClick={() => {
-                  const url = `https://wa.me/?text=${encodeURIComponent('DOC SEARCH टोकन पास: आपका टोकन #14 (Chamber 102 - Dr. Vivek Sharma) बुक हो चुका है। लाइव कतार: http://localhost:5174')}`;
-                  window.open(url, '_blank');
+                  const origin = typeof window !== 'undefined' ? window.location.origin : '';
+                  const url = `https://wa.me/?text=${encodeURIComponent(`DOC SEARCH Digital Health Portal: ${origin}`)}`;
+                  window.open(url, '_blank', 'noopener,noreferrer');
                 }}
                 style={{
                   backgroundColor: '#25D366',
@@ -219,7 +220,7 @@ export const PatientLoginScreen: React.FC<Props> = ({ language, onLanguageToggle
                   gap: '4px'
                 }}
               >
-                <span>💬 WhatsApp टोकन</span>
+                <span>💬 {language === 'hi' ? 'व्हाट्सएप सहायता' : 'WhatsApp Support'}</span>
               </button>
             </div>
           </div>
@@ -318,14 +319,14 @@ export const PatientLoginScreen: React.FC<Props> = ({ language, onLanguageToggle
 
             <div>
               <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 700, color: '#E2E8F0', marginBottom: '8px' }}>
-                {t.enterOtpFor} +91 {phone}
+                {language === 'en' ? `${t.enterOtpFor} +91 ${phone}` : `+91 ${phone} ${t.enterOtpFor}`}
               </label>
               <input
                 type="text"
-                maxLength={4}
+                maxLength={6}
                 value={otp}
                 onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
-                placeholder="• • • •"
+                placeholder="• • • • • •"
                 autoFocus
                 style={{
                   width: '100%',
@@ -344,7 +345,7 @@ export const PatientLoginScreen: React.FC<Props> = ({ language, onLanguageToggle
               />
               {!import.meta.env.PROD && (
                 <div style={{ fontSize: '0.75rem', color: '#38BDF8', textAlign: 'center', marginTop: '6px' }}>
-                  ⚡ Test OTP: <strong>1234</strong>
+                  ⚡ Dev OTP: use SMS/devOtp (or <strong>1234</strong> in dev)
                 </div>
               )}
             </div>
@@ -354,14 +355,14 @@ export const PatientLoginScreen: React.FC<Props> = ({ language, onLanguageToggle
               disabled={otp.length < 4 || isLoading}
               style={{
                 width: '100%',
-                backgroundColor: otp.length === 4 ? '#10B981' : '#334155',
+                backgroundColor: otp.length >= 4 ? '#10B981' : '#334155',
                 color: '#F8FAFC',
                 border: 'none',
                 borderRadius: '14px',
                 padding: '16px',
                 fontSize: '1.0625rem',
                 fontWeight: 800,
-                cursor: otp.length === 4 ? 'pointer' : 'not-allowed',
+                cursor: otp.length >= 4 ? 'pointer' : 'not-allowed',
                 transition: 'all 0.2s ease'
               }}
             >
@@ -373,7 +374,7 @@ export const PatientLoginScreen: React.FC<Props> = ({ language, onLanguageToggle
               onClick={() => setStep('PHONE')}
               style={{ background: 'transparent', border: 'none', color: '#94A3B8', fontSize: '0.875rem', cursor: 'pointer', padding: '8px' }}
             >
-              ← Change Mobile Number
+              ← {t.changeMobile}
             </button>
           </form>
         )}

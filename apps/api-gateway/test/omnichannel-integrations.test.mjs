@@ -1,15 +1,40 @@
 import { describe, it, before, after } from 'node:test';
 import assert from 'node:assert/strict';
+import { signJwt } from '@docsearch/auth';
 import { gmailMailerService } from '../dist/services/communication/GmailMailerService.js';
 import { firebaseIntegrationService } from '../dist/services/communication/FirebaseIntegrationService.js';
 import { telegramBotService } from '../dist/services/communication/TelegramBotService.js';
 import { buildApp } from '../dist/app.js';
 import fs from 'node:fs';
 
-describe('Omnichannel Communication Integrations: Gmail, Firebase & Telegram (20-Test Suite)', () => {
+const TEST_JWT_SECRET = process.env['JWT_SECRET'] || 'docsearch_master_jwt_secret_dev_32char_key_only';
+
+function mintAdminHeaders() {
+  const token = signJwt(
+    {
+      sub: 'usr_omnichannel_test_001',
+      email: 'admin@docsearch.health',
+      tenantId: '11111111-1111-4111-8111-111111111111',
+      roles: ['SUPER_ADMIN', 'HOSPITAL_ADMIN', 'DOCTOR'],
+      isSuperAdmin: true
+    },
+    {
+      secret: TEST_JWT_SECRET,
+      issuer: process.env['JWT_ISSUER'] || 'docsearch-api',
+      audience: process.env['JWT_AUDIENCE'] || 'docsearch-platform',
+      expiresInSeconds: 3600
+    }
+  );
+  return { Authorization: `Bearer ${token}` };
+}
+
+describe('Omnichannel Communication Integrations: Gmail, Firebase & Telegram (23-Test Suite)', () => {
   let app;
+  let authHeaders;
 
   before(async () => {
+    process.env['JWT_SECRET'] = TEST_JWT_SECRET;
+    authHeaders = mintAdminHeaders();
     app = await buildApp();
   });
 
@@ -55,10 +80,18 @@ describe('Omnichannel Communication Integrations: Gmail, Firebase & Telegram (20
       assert.ok(typeof json.data.configured === 'boolean');
     });
 
-    it('3. POST /api/v1/integrations/gmail/send-otp dispatches OTP email with simulation fallback', async () => {
+    it('3. POST /api/v1/integrations/gmail/send-otp rejects unauthenticated callers (401) and dispatches OTP email when authenticated', async () => {
+      const unauthRes = await app.inject({
+        method: 'POST',
+        url: '/api/v1/integrations/gmail/send-otp',
+        payload: { toEmail: 'patient.test@example.com', otp: '782914' }
+      });
+      assert.equal(unauthRes.statusCode, 401);
+
       const res = await app.inject({
         method: 'POST',
         url: '/api/v1/integrations/gmail/send-otp',
+        headers: authHeaders,
         payload: {
           toEmail: 'patient.test@example.com',
           otp: '782914',
@@ -79,6 +112,7 @@ describe('Omnichannel Communication Integrations: Gmail, Firebase & Telegram (20
       const res = await app.inject({
         method: 'POST',
         url: '/api/v1/integrations/gmail/send-appointment',
+        headers: authHeaders,
         payload: {
           toEmail: 'patient.john@example.com',
           patientName: 'John Doe',
@@ -101,6 +135,7 @@ describe('Omnichannel Communication Integrations: Gmail, Firebase & Telegram (20
       const res = await app.inject({
         method: 'POST',
         url: '/api/v1/integrations/gmail/send-lab-report',
+        headers: authHeaders,
         payload: {
           toEmail: 'patient.lab@example.com',
           patientName: 'Anita Sharma',
@@ -121,6 +156,7 @@ describe('Omnichannel Communication Integrations: Gmail, Firebase & Telegram (20
       const res = await app.inject({
         method: 'POST',
         url: '/api/v1/integrations/gmail/send-critical-alert',
+        headers: authHeaders,
         payload: {
           doctorEmail: 'dr.ewan@docsearch.internal',
           patientName: 'Ramesh Verma',
@@ -164,10 +200,18 @@ describe('Omnichannel Communication Integrations: Gmail, Firebase & Telegram (20
       assert.ok(['FIREBASE_LIVE', 'SIMULATED'].includes(json.data.mode));
     });
 
-    it('9. POST /api/v1/integrations/firebase/register-device registers device token', async () => {
+    it('9. POST /api/v1/integrations/firebase/register-device rejects unauthenticated callers (401) and registers device token when authenticated', async () => {
+      const unauthRes = await app.inject({
+        method: 'POST',
+        url: '/api/v1/integrations/firebase/register-device',
+        payload: { userId: 'usr_patient_001', token: 'fcm_token_sample_abc123xyz789', platform: 'ANDROID' }
+      });
+      assert.equal(unauthRes.statusCode, 401);
+
       const res = await app.inject({
         method: 'POST',
         url: '/api/v1/integrations/firebase/register-device',
+        headers: authHeaders,
         payload: {
           userId: 'usr_patient_001',
           token: 'fcm_token_sample_abc123xyz789',
@@ -187,6 +231,7 @@ describe('Omnichannel Communication Integrations: Gmail, Firebase & Telegram (20
       const res = await app.inject({
         method: 'POST',
         url: '/api/v1/integrations/firebase/send-queue-turn',
+        headers: authHeaders,
         payload: {
           deviceToken: 'fcm_token_sample_abc123xyz789',
           tokenNumber: 22,
@@ -208,6 +253,7 @@ describe('Omnichannel Communication Integrations: Gmail, Firebase & Telegram (20
       const res = await app.inject({
         method: 'POST',
         url: '/api/v1/integrations/firebase/send-critical-lab-alert',
+        headers: authHeaders,
         payload: {
           doctorDeviceToken: 'fcm_doc_token_111',
           patientName: 'Sunil Mehta',
@@ -228,6 +274,7 @@ describe('Omnichannel Communication Integrations: Gmail, Firebase & Telegram (20
       const res = await app.inject({
         method: 'POST',
         url: '/api/v1/integrations/firebase/broadcast-code-blue',
+        headers: authHeaders,
         payload: {
           roomNumber: 'ICU-Bed-4',
           wing: 'Cardiac ICU',
@@ -257,6 +304,7 @@ describe('Omnichannel Communication Integrations: Gmail, Firebase & Telegram (20
       const res = await app.inject({
         method: 'POST',
         url: '/api/v1/integrations/firebase/verify-token',
+        headers: authHeaders,
         payload: { idToken: fakeToken }
       });
 
@@ -284,10 +332,11 @@ describe('Omnichannel Communication Integrations: Gmail, Firebase & Telegram (20
       assert.ok(['TELEGRAM_API', 'SIMULATED'].includes(json.data.mode));
     });
 
-    it('15. POST /api/v1/integrations/telegram/send-message sends telegram message with simulation fallback', async () => {
+    it('15. POST /api/v1/integrations/telegram/send-message sends telegram message when authenticated', async () => {
       const res = await app.inject({
         method: 'POST',
         url: '/api/v1/integrations/telegram/send-message',
+        headers: authHeaders,
         payload: {
           chatId: 987654321,
           text: '🏥 <b>DocSearch System Health:</b> All services operational.'
@@ -301,10 +350,18 @@ describe('Omnichannel Communication Integrations: Gmail, Firebase & Telegram (20
       assert.equal(json.result.chatId, 987654321);
     });
 
-    it('16. POST /api/v1/integrations/telegram/send-panic-alert formats clinical panic message for doctor', async () => {
+    it('16. POST /api/v1/integrations/telegram/send-panic-alert rejects unauthenticated callers (401) and formats clinical panic message when authenticated', async () => {
+      const unauthRes = await app.inject({
+        method: 'POST',
+        url: '/api/v1/integrations/telegram/send-panic-alert',
+        payload: { chatId: 987654321, patientName: 'Gopal', parameterName: 'Platelet Count', observedValue: '18,000' }
+      });
+      assert.equal(unauthRes.statusCode, 401);
+
       const res = await app.inject({
         method: 'POST',
         url: '/api/v1/integrations/telegram/send-panic-alert',
+        headers: authHeaders,
         payload: {
           chatId: 987654321,
           patientName: 'Gopal Krishnan',
@@ -327,6 +384,7 @@ describe('Omnichannel Communication Integrations: Gmail, Firebase & Telegram (20
       const res = await app.inject({
         method: 'POST',
         url: '/api/v1/integrations/telegram/send-queue-alert',
+        headers: authHeaders,
         payload: {
           chatId: 987654321,
           tokenNumber: 31,
@@ -347,6 +405,7 @@ describe('Omnichannel Communication Integrations: Gmail, Firebase & Telegram (20
       const res = await app.inject({
         method: 'POST',
         url: '/api/v1/integrations/telegram/send-onboarding-alert',
+        headers: authHeaders,
         payload: {
           chatId: 987654321,
           legalName: 'Apex Heart & Diagnostics Centre',

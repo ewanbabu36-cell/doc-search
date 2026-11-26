@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { type Language } from '../i18n.js';
 import { type PatientProfile, patientApi } from '../services/patient-api.js';
+import { qrSvgPath } from '../utils/qrSvg.js';
 
 export interface Tata1mgQuickOrderModalProps {
   isOpen: boolean;
@@ -28,13 +29,22 @@ export const Tata1mgQuickOrderModal: React.FC<Tata1mgQuickOrderModalProps> = ({
   // Pharmacy Order State
   const [useGenericSubstitution, setUseGenericSubstitution] = useState(true);
   const [selectedParchiSource, setSelectedParchiSource] = useState<'RECENT_VISIT' | 'UPLOAD_NEW'>('RECENT_VISIT');
-  const [deliveryAddress, setDeliveryAddress] = useState('Flat 402, Green Valley Apartments, Sector 14, Near City Park');
+  const [deliveryAddress, setDeliveryAddress] = useState('');
   const [orderConfirmed, setOrderConfirmed] = useState(false);
 
   // Lab Test Booking State
   const [selectedPackageId, setSelectedPackageId] = useState<string>('pkg-fullbody');
   const [selectedSlot, setSelectedSlot] = useState<string>('Tomorrow 07:30 AM - 08:30 AM (Fasting)');
   const [bookingConfirmed, setBookingConfirmed] = useState(false);
+
+  // Keep activeTab synchronized when parent opens modal on a specific tab
+  useEffect(() => {
+    if (isOpen) {
+      setActiveTab(initialTab);
+      setOrderConfirmed(false);
+      setBookingConfirmed(false);
+    }
+  }, [isOpen, initialTab]);
 
   // Dynamic Data States
   const [cartItems, setCartItems] = useState<Array<{
@@ -78,20 +88,25 @@ export const Tata1mgQuickOrderModal: React.FC<Tata1mgQuickOrderModalProps> = ({
       .catch(err => console.warn('Failed to load packages:', err))
       .finally(() => setIsLoadingPackages(false));
 
-    // Load initial medicines for cart from database catalog
-    fetch('/api/v1/patient/medicines/search?q=tab', { headers: patientApi.getAuthHeaders() })
-      .then(res => res.json())
-      .then(data => {
-        if (data.success && Array.isArray(data.medicines) && data.medicines.length > 0) {
-          setCartItems(data.medicines.slice(0, 5).map((m: any) => ({
-            brandName: m.brandName,
-            genericName: m.genericName,
-            brandPrice: m.brandPrice || 150,
-            genericPrice: m.genericPrice || 35
-          })));
-        }
-      })
-      .catch(err => console.warn('Failed to load medicines:', err));
+    // Load patient's prescribed medicines from their active medical records (never dump generic search items into cart)
+    if (patient.phone) {
+      fetch(`/api/v1/patient/prescriptions?phone=${encodeURIComponent(patient.phone)}`, { headers: patientApi.getAuthHeaders() })
+        .then(res => res.json())
+        .then(data => {
+          if (data.success && Array.isArray(data.prescriptions) && data.prescriptions.length > 0) {
+            const latestMeds = data.prescriptions[0]?.medicines;
+            if (Array.isArray(latestMeds) && latestMeds.length > 0) {
+              setCartItems(latestMeds.map((m: any) => ({
+                brandName: m.name || 'Prescribed Medicine',
+                genericName: m.genericName || m.name || 'Generic Equivalent',
+                brandPrice: Number(m.brandPrice) || 120,
+                genericPrice: Number(m.genericPrice) || 35
+              })));
+            }
+          }
+        })
+        .catch(err => console.warn('Failed to load prescriptions for cart:', err));
+    }
 
     // Load ABHA linked records
     fetch('/api/v1/patient/abha/records', { headers: patientApi.getAuthHeaders() })
@@ -198,7 +213,7 @@ export const Tata1mgQuickOrderModal: React.FC<Tata1mgQuickOrderModalProps> = ({
             <div>
               <div style={{ fontSize: '1rem', fontWeight: 900, color: '#F8FAFC' }}>
                 {activeTab === 'MEDICINE'
-                  ? isHindi ? 'टाटा 1mg-स्टाइल 1-टैप दवा ऑर्डर' : 'Tata 1mg-Style 1-Tap Pharmacy Express'
+                  ? isHindi ? '1-टैप फास्ट फार्मेसी एक्सप्रेस' : '1-Tap Pharmacy Express'
                   : activeTab === 'LAB_TEST'
                   ? isHindi ? 'घर बैठे लैब टेस्ट बुकिंग (NABL मान्यता प्राप्त)' : 'Book Home Lab Tests (NABL Accredited)'
                   : isHindi ? 'आयुष्मान भारत डिजिटल हेल्थ कार्ड (ABDM)' : 'Official ABDM ABHA Digital Health Card'}
@@ -494,7 +509,7 @@ export const Tata1mgQuickOrderModal: React.FC<Tata1mgQuickOrderModalProps> = ({
                   <div style={{ backgroundColor: '#1E293B', borderRadius: '14px', padding: '12px 14px', border: '1px solid rgba(255,255,255,0.08)' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
                       <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#94A3B8', textTransform: 'uppercase' }}>
-                        {isHindi ? 'पर्ची में लिखी दवाएं (5 Items)' : 'Prescription Medicines (5 Items)'}
+                        {isHindi ? `पर्ची की दवाएं (${medicineCart.items.length} Items)` : `Prescription Medicines (${medicineCart.items.length} Items)`}
                       </span>
                       <span style={{ fontSize: '0.6875rem', color: '#38BDF8', fontWeight: 700 }}>
                         {useGenericSubstitution ? '🟢 Jan Aushadhi Swapped' : '⚪ Branded Medicines'}
@@ -502,38 +517,63 @@ export const Tata1mgQuickOrderModal: React.FC<Tata1mgQuickOrderModalProps> = ({
                     </div>
 
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                      {medicineCart.items.map((med, idx) => (
-                        <div
-                          key={idx}
-                          style={{
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            alignItems: 'center',
-                            padding: '6px 0',
-                            borderBottom: idx < medicineCart.items.length - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none'
-                          }}
-                        >
-                          <div>
-                            <div style={{ fontSize: '0.8125rem', fontWeight: 800, color: '#F8FAFC' }}>
-                              {useGenericSubstitution ? med.genericName : med.brandName}
-                            </div>
-                            <div style={{ fontSize: '0.6875rem', color: '#94A3B8' }}>
-                              {useGenericSubstitution ? `Branded equiv: ${med.brandName}` : 'Standard Brand'}
-                            </div>
-                          </div>
-
-                          <div style={{ textAlign: 'right' }}>
-                            <div style={{ fontSize: '0.875rem', fontWeight: 900, color: useGenericSubstitution ? '#34D399' : '#F8FAFC' }}>
-                              ₹{useGenericSubstitution ? med.genericPrice : med.brandPrice}
-                            </div>
-                            {useGenericSubstitution && (
-                              <div style={{ fontSize: '0.625rem', color: '#64748B', textDecoration: 'line-through' }}>
-                                ₹{med.brandPrice}
-                              </div>
-                            )}
-                          </div>
+                      {medicineCart.items.length === 0 ? (
+                        <div style={{ padding: '12px 0', textAlign: 'center', fontSize: '0.8125rem', color: '#94A3B8' }}>
+                          {isHindi ? 'ऊपर दवा खोजकर कार्ट में जोड़ें।' : 'Search and add prescribed medicines above to place an order.'}
                         </div>
-                      ))}
+                      ) : (
+                        medicineCart.items.map((med, idx) => (
+                          <div
+                            key={idx}
+                            style={{
+                              display: 'flex',
+                              justifyContent: 'space-between',
+                              alignItems: 'center',
+                              padding: '6px 0',
+                              borderBottom: idx < medicineCart.items.length - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none'
+                            }}
+                          >
+                            <div>
+                              <div style={{ fontSize: '0.8125rem', fontWeight: 800, color: '#F8FAFC' }}>
+                                {useGenericSubstitution ? med.genericName : med.brandName}
+                              </div>
+                              <div style={{ fontSize: '0.6875rem', color: '#94A3B8' }}>
+                                {useGenericSubstitution ? `Branded equiv: ${med.brandName}` : 'Standard Brand'}
+                              </div>
+                            </div>
+
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                              <div style={{ textAlign: 'right' }}>
+                                <div style={{ fontSize: '0.875rem', fontWeight: 900, color: useGenericSubstitution ? '#34D399' : '#F8FAFC' }}>
+                                  ₹{useGenericSubstitution ? med.genericPrice : med.brandPrice}
+                                </div>
+                                {useGenericSubstitution && (
+                                  <div style={{ fontSize: '0.625rem', color: '#64748B', textDecoration: 'line-through' }}>
+                                    ₹{med.brandPrice}
+                                  </div>
+                                )}
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => setCartItems((prev) => prev.filter((_, i) => i !== idx))}
+                                title={isHindi ? 'हटाएं' : 'Remove item'}
+                                style={{
+                                  backgroundColor: 'rgba(239, 68, 68, 0.15)',
+                                  border: '1px solid rgba(239, 68, 68, 0.35)',
+                                  color: '#FCA5A5',
+                                  borderRadius: '6px',
+                                  padding: '2px 7px',
+                                  fontSize: '0.7rem',
+                                  fontWeight: 700,
+                                  cursor: 'pointer'
+                                }}
+                              >
+                                ✕
+                              </button>
+                            </div>
+                          </div>
+                        ))
+                      )}
                     </div>
                   </div>
 
@@ -546,6 +586,7 @@ export const Tata1mgQuickOrderModal: React.FC<Tata1mgQuickOrderModalProps> = ({
                       type="text"
                       value={deliveryAddress}
                       onChange={(e) => setDeliveryAddress(e.target.value)}
+                      placeholder={isHindi ? 'घर/फ्लैट नंबर, मोहल्ला, शहर और पिनकोड लिखें...' : 'Enter House/Flat No., Street, Landmark & PIN...'}
                       style={{
                         width: '100%',
                         backgroundColor: '#0B0F19',
@@ -565,7 +606,7 @@ export const Tata1mgQuickOrderModal: React.FC<Tata1mgQuickOrderModalProps> = ({
                       <div style={{ fontSize: '1.5rem', fontWeight: 900, color: '#38BDF8', lineHeight: 1 }}>
                         ₹{currentTotal}
                       </div>
-                      {useGenericSubstitution && (
+                      {useGenericSubstitution && savings > 0 && (
                         <div style={{ fontSize: '0.6875rem', color: '#10B981', fontWeight: 800 }}>
                           {isHindi ? `₹${savings} की बचत!` : `You Save ₹${savings}!`}
                         </div>
@@ -574,17 +615,28 @@ export const Tata1mgQuickOrderModal: React.FC<Tata1mgQuickOrderModalProps> = ({
 
                     <button
                       type="button"
-                      onClick={() => setOrderConfirmed(true)}
+                      disabled={medicineCart.items.length === 0 || !deliveryAddress.trim()}
+                      onClick={() => {
+                        if (medicineCart.items.length === 0) {
+                          showToast(isHindi ? 'कृपया पहले कम से कम 1 दवा कार्ट में जोड़ें।' : 'Add at least 1 medicine before placing an order.');
+                          return;
+                        }
+                        if (!deliveryAddress.trim()) {
+                          showToast(isHindi ? 'कृपया डिलीवरी का पूरा पता दर्ज करें।' : 'Please enter a delivery address.');
+                          return;
+                        }
+                        setOrderConfirmed(true);
+                      }}
                       style={{
-                        backgroundColor: '#0284C7',
+                        backgroundColor: medicineCart.items.length === 0 || !deliveryAddress.trim() ? '#334155' : '#0284C7',
                         color: '#FFFFFF',
                         border: 'none',
                         borderRadius: '14px',
                         padding: '12px 24px',
                         fontSize: '0.9375rem',
                         fontWeight: 900,
-                        cursor: 'pointer',
-                        boxShadow: '0 4px 14px rgba(2, 132, 199, 0.4)'
+                        cursor: medicineCart.items.length === 0 || !deliveryAddress.trim() ? 'not-allowed' : 'pointer',
+                        boxShadow: medicineCart.items.length === 0 || !deliveryAddress.trim() ? 'none' : '0 4px 14px rgba(2, 132, 199, 0.4)'
                       }}
                     >
                       {isHindi ? 'ऑर्डर कन्फर्म करें ➔' : 'Place Order ➔'}
@@ -786,14 +838,16 @@ export const Tata1mgQuickOrderModal: React.FC<Tata1mgQuickOrderModalProps> = ({
                       {patient.fullName}
                     </div>
                     <div style={{ fontSize: '0.75rem', color: '#93C5FD', fontFamily: 'monospace', marginTop: '4px' }}>
-                      ABHA ID: ${patient.uhid ? '91-' + (patient.phone ? patient.phone.slice(-4) : '2026') + '-8492-1049' : '91-8472-9018-2831'}
+                      {patient.abhaId
+                        ? `ABHA ID: ${patient.abhaId}`
+                        : (isHindi ? 'ABHA ID लिंक नहीं है — नीचे लिंक करें' : 'ABHA ID Not Linked Yet — Link Below')}
                     </div>
                     <div style={{ fontSize: '0.6875rem', color: '#34D399', fontWeight: 700, marginTop: '2px' }}>
-                      ${(patient.fullName || 'patient').toLowerCase().replace(/\s+/g, '.')}@abdm • {patient.gender} • Age: {patient.age}Y
+                      {patient.abhaAddress || patient.uhid} • {patient.gender} • Age: {patient.age}Y
                     </div>
                   </div>
 
-                  {/* QR Code Placeholder */}
+                  {/* Scannable ABDM / UHID QR Code */}
                   <div
                     style={{
                       width: '74px',
@@ -803,17 +857,32 @@ export const Tata1mgQuickOrderModal: React.FC<Tata1mgQuickOrderModalProps> = ({
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      color: '#0F172A',
-                      fontSize: '0.625rem',
-                      fontWeight: 900,
-                      textAlign: 'center',
-                      padding: '4px'
+                      padding: '5px'
                     }}
                   >
-                    <div>
-                      <div style={{ fontSize: '1.5rem' }}>📱</div>
-                      ABDM QR
-                    </div>
+                    {(() => {
+                      const abdmQr = qrSvgPath(
+                        JSON.stringify({
+                          abhaId: patient.abhaId || null,
+                          abhaAddress: patient.abhaAddress || null,
+                          uhid: patient.uhid,
+                          name: patient.fullName
+                        })
+                      );
+                      return (
+                        <svg
+                          width="64"
+                          height="64"
+                          viewBox={abdmQr.viewBox}
+                          role="img"
+                          aria-label={`ABDM Health Card QR for ${patient.uhid}`}
+                          style={{ display: 'block', shapeRendering: 'crispEdges' }}
+                        >
+                          <rect x="-10" y="-10" width="100" height="100" fill="#FFFFFF" />
+                          <path d={abdmQr.d} fill="#0F172A" />
+                        </svg>
+                      );
+                    })()}
                   </div>
                 </div>
 

@@ -14,6 +14,7 @@ import { DocSearchPlusSubscriptionModal } from './DocSearchPlusSubscriptionModal
 import { PaperlessPreArrivalIntakeModal } from './PaperlessPreArrivalIntakeModal.js';
 import { Tata1mgQuickOrderModal } from './Tata1mgQuickOrderModal.js';
 import { doctorReelsService } from '../services/doctor-reels-data.js';
+import { qrSvgPath } from '../utils/qrSvg.js';
 
 interface Props {
   language: Language;
@@ -552,7 +553,9 @@ export const PatientHomeScreen: React.FC<Props> = ({
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <span style={{ fontSize: '1.125rem' }}>🧾</span>
           <div style={{ fontSize: '0.8125rem', color: '#34D399', fontWeight: 700 }}>
-            {t.paidReceipt}: <strong>₹500</strong> Paid via UPI (Receipt #RCP-3817)
+            {patient.activeToken
+              ? `${t.paidReceipt}: OPD Token ${patient.activeToken.tokenNumber}`
+              : (language === 'hi' ? 'डिजिटल ओपीडी रसीदें व बिल वॉलेट' : 'Digital OPD Receipts & Billing Wallet')}
           </div>
         </div>
         <span style={{ fontSize: '0.75rem', color: '#34D399', fontWeight: 800 }}>View ➔</span>
@@ -706,7 +709,7 @@ export const PatientHomeScreen: React.FC<Props> = ({
           <span style={{ fontSize: '1.5rem' }}>👨‍⚕️</span>
           <div>
             <div style={{ fontSize: '0.875rem', fontWeight: 800, color: '#F8FAFC' }}>
-              {language === 'hi' ? 'सत्यापित डॉक्टर खोजें (0% ऐड-स्लॉट दलाली)' : 'Find Verified Doctors (0% Ad-Slots)'}
+              {language === 'hi' ? 'सत्यापित डॉक्टर खोजें (0% विज्ञापन रैंकिंग)' : 'Find Verified Doctors (Merit-Ranked)'}
             </div>
             <div style={{ fontSize: '0.6875rem', color: '#38BDF8' }}>
               {language === 'hi' ? 'शुद्ध मेरिट रैंकिंग • लाइव कतार व सबसे कम वेटिंग टाइम' : 'Pure Merit Ranking • Live Queue & Shortest Wait Time'}
@@ -770,7 +773,7 @@ export const PatientHomeScreen: React.FC<Props> = ({
           <span style={{ fontSize: '1.5rem' }}>🪪</span>
           <div>
             <div style={{ fontSize: '0.875rem', fontWeight: 900, color: '#38BDF8' }}>
-              {language === 'hi' ? 'पेपरलेस प्री-अराइवल चेक-इन (Zocdoc-स्टाइल)' : 'Paperless Pre-Arrival Check-in (Zocdoc-Style)'}
+              {language === 'hi' ? 'पेपरलेस प्री-अराइवल चेक-इन (फास्ट-पास)' : 'Paperless Pre-Arrival Check-in'}
             </div>
             <div style={{ fontSize: '0.6875rem', color: '#BAE6FD' }}>
               {language === 'hi' ? 'इंश्योरेंस कार्ड OCR स्कैन • डिजिटल लक्षण व सहमति पत्र • 0-वेट फास्ट पास' : 'Insurance Card OCR • Symptoms & E-Sign • 0-Wait Fast-Pass'}
@@ -884,17 +887,36 @@ export const PatientHomeScreen: React.FC<Props> = ({
             <h3 style={{ fontSize: '1.25rem', fontWeight: 900, marginBottom: '6px' }}>{t.emergencyPass}</h3>
             <p style={{ fontSize: '0.75rem', color: '#94A3B8', marginBottom: '20px' }}>{t.emergencyNotice}</p>
 
-            <div style={{ backgroundColor: '#FFFFFF', padding: '20px', borderRadius: '16px', display: 'inline-block', marginBottom: '20px' }}>
-              <div style={{ width: '160px', height: '160px', backgroundColor: '#000000', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#FFFFFF', fontSize: '0.75rem', fontWeight: 700 }}>
-                [QR: {patient.uhid}]
-              </div>
+            <div style={{ backgroundColor: '#FFFFFF', padding: '14px', borderRadius: '16px', display: 'inline-block', marginBottom: '20px' }}>
+              {(() => {
+                const qrPayload = JSON.stringify({
+                  uhid: patient.uhid,
+                  name: patient.fullName,
+                  bloodGroup: patient.bloodGroup,
+                  abha: patient.abhaId || null
+                });
+                const qr = qrSvgPath(qrPayload);
+                return (
+                  <svg
+                    width="168"
+                    height="168"
+                    viewBox={qr.viewBox}
+                    role="img"
+                    aria-label={`Emergency Health QR for ${patient.uhid}`}
+                    style={{ display: 'block', shapeRendering: 'crispEdges' }}
+                  >
+                    <rect x="-10" y="-10" width="100" height="100" fill="#FFFFFF" />
+                    <path d={qr.d} fill="#0F172A" />
+                  </svg>
+                );
+              })()}
             </div>
 
             <div style={{ textAlign: 'left', backgroundColor: 'rgba(255,255,255,0.04)', padding: '14px', borderRadius: '12px', fontSize: '0.8125rem', marginBottom: '20px' }}>
               <div><strong>Name:</strong> {patient.fullName} ({patient.age}y/{patient.gender[0]})</div>
               <div><strong>UHID:</strong> {patient.uhid}</div>
               <div><strong>Blood Group:</strong> <span style={{ color: '#F87171', fontWeight: 800 }}>{patient.bloodGroup}</span></div>
-              <div><strong>Allergies:</strong> {patient.allergies.join(', ')}</div>
+              <div><strong>Allergies:</strong> {patient.allergies.length > 0 ? patient.allergies.join(', ') : 'None Recorded'}</div>
             </div>
 
             <button
@@ -923,12 +945,16 @@ export const PatientHomeScreen: React.FC<Props> = ({
             onSelectPatient({
               ...patient,
               id: selected.id,
+              uhid: selected.uhid || `UHID-${selected.id.slice(-6).toUpperCase()}`,
               fullName: selected.name,
               age: selected.age,
               gender: selected.gender,
+              bloodGroup: selected.bloodGroup || 'Not Set',
+              allergies: Array.isArray(selected.allergies) ? selected.allergies : [],
               abhaId: selected.abhaId,
               abhaAddress: selected.abhaAddress,
-              relationship: selected.relationshipLabel
+              relationship: selected.relationshipLabel,
+              activeToken: selected.id === patient.id ? (patient.activeToken ?? null) : null
             });
           }}
         />

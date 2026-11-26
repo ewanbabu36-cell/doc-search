@@ -419,7 +419,7 @@ export const pharmacyManagementRoutes: FastifyPluginAsync = async (fastify) => {
     },
     async (request, reply) => {
       const body = (request.body || {}) as any;
-      const tenantId = body.tenantId || requireTenantId(request);
+      const tenantId = requireTenantId(request);
       const patientId = body.patientPhone || body.patientName || 'WALKIN-PATIENT';
 
       const items = (body.items || []).map((it: any) => ({
@@ -445,6 +445,7 @@ export const pharmacyManagementRoutes: FastifyPluginAsync = async (fastify) => {
       const data = await pharmacyManagementService.dispense(dispensePayload as any, request.session);
 
       // Statutory CDSCO register audit if prescriber is provided
+      const scheduleH1AuditErrors: string[] = [];
       if (body.doctorName && body.doctorNmcReg) {
         for (const item of items) {
           try {
@@ -452,19 +453,28 @@ export const pharmacyManagementRoutes: FastifyPluginAsync = async (fastify) => {
               invoiceNumber: data.invoiceNumber || `INV-${Date.now().toString().slice(-6)}`,
               prescriptionId: body.prescriptionId,
               patientName: body.patientName || 'Walk-in Patient',
-              patientPhone: body.patientPhone || '9999999999',
+              patientPhone: body.patientPhone || 'NOT_PROVIDED',
               doctorName: body.doctorName,
               doctorRegNumber: body.doctorNmcReg,
               drugName: item.medicationId,
               batchNumber: item.batchId,
               quantityDispensed: String(item.quantity)
             }, request.session);
-          } catch {}
+          } catch (auditErr: any) {
+            request.log.error({ err: auditErr, medicationId: item.medicationId }, '[PHARMACY_WALKIN] Failed to record Schedule H1 statutory entry');
+            scheduleH1AuditErrors.push(`${String(item.medicationId)}: ${auditErr?.message || 'Schedule H1 log failure'}`);
+          }
         }
       }
 
       reply.status(201);
-      return { success: true, data };
+      return {
+        success: true,
+        data: {
+          ...data,
+          ...(scheduleH1AuditErrors.length > 0 ? { scheduleH1AuditWarnings: scheduleH1AuditErrors } : {})
+        }
+      };
     }
   );
 

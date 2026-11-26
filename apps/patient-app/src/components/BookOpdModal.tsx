@@ -23,21 +23,37 @@ export const BookOpdModal: React.FC<Props> = ({ language, patient, onClose, onSu
   const [selectedDoctor, setSelectedDoctor] = useState(DEPARTMENTS[0]!.doctors[0]!);
   const [complaint, setComplaint] = useState(COMPLAINT_TAGS[0]!);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [bookingError, setBookingError] = useState<string | null>(null);
 
   const handleBook = async () => {
+    setBookingError(null);
     setIsSubmitting(true);
-    const res = await patientApiService.bookAppointment(patient.phone, selectedDept.name, complaint);
+    const res = await patientApiService.bookAppointment({
+      mobileNumber: patient.phone,
+      departmentName: selectedDept.name,
+      chiefComplaint: complaint,
+      doctorName: selectedDoctor
+    });
 
-    // Update active token with real server token if available
-    const newToken = res?.tokenNumber || `#${Math.floor(15 + Math.random() * 20)}`;
+    if (!res?.success || !res?.tokenNumber) {
+      setIsSubmitting(false);
+      setBookingError(
+        res?.message ||
+          (language === 'hi'
+            ? 'टोकन जनरेट नहीं हो सका। कृपया लॉगिन व इंटरनेट जाँचें।'
+            : 'Unable to book OPD token. Please verify session and try again.')
+      );
+      return;
+    }
+
     const updated: PatientProfile = {
       ...patient,
       activeToken: {
-        tokenNumber: newToken,
+        tokenNumber: res.tokenNumber,
         doctorName: selectedDoctor,
-        chamberRoom: `${selectedDept.name.split(' ')[0]} - Room 104`,
-        patientsAhead: 3,
-        estimatedWaitMins: res?.estimatedWaitMinutes || 12,
+        chamberRoom: `${selectedDept.name.split(' ')[0]} - OPD`,
+        patientsAhead: 0,
+        estimatedWaitMins: res.estimatedWaitMinutes || 15,
         isCalled: false
       }
     };
@@ -206,6 +222,24 @@ export const BookOpdModal: React.FC<Props> = ({ language, patient, onClose, onSu
             })}
           </div>
         </div>
+
+        {bookingError && (
+          <div
+            role="alert"
+            style={{
+              backgroundColor: 'rgba(239, 68, 68, 0.14)',
+              border: '1px solid rgba(239, 68, 68, 0.45)',
+              color: '#FCA5A5',
+              borderRadius: '12px',
+              padding: '10px 12px',
+              fontSize: '0.8125rem',
+              fontWeight: 700,
+              marginBottom: '12px'
+            }}
+          >
+            ⚠️ {bookingError}
+          </div>
+        )}
 
         {/* Confirm Button */}
         <button

@@ -401,18 +401,21 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
       return;
     }
 
-    // Only apply to routes that require authentication
-    const authIdx = preHandlers.indexOf(authenticate);
+    // Apply commercial access guard to all authenticated / role-gated / permission-gated partner routes
+    const authIdx = preHandlers.findIndex(
+      (fn) => fn === authenticate || Boolean((fn as any)?._docsearchAuthGuarded)
+    );
     if (authIdx === -1) {
       return;
     }
 
-    // Prevent duplicate commercial guards and insert right after authenticate
+    // Prevent duplicate commercial guards and insert immediately after authenticate (or before role/permission guards when authenticate comes from a plugin addHook)
     const hasCommercial = preHandlers.some(
       (fn) => fn === requireActiveCommercialAccess || fn?.name === 'requireActiveCommercialAccess'
     );
     if (!hasCommercial) {
-      preHandlers.splice(authIdx + 1, 0, requireActiveCommercialAccess);
+      const insertIdx = preHandlers[authIdx] === authenticate ? authIdx + 1 : authIdx;
+      preHandlers.splice(insertIdx, 0, requireActiveCommercialAccess);
       routeOptions.preHandler = preHandlers;
     }
   });

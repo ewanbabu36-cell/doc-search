@@ -47,7 +47,7 @@ class ServiceWorkerCompanion {
    * Register the Service Worker
    */
   public async register(): Promise<ServiceWorkerRegistration | null> {
-    if (typeof window === 'undefined' || !('serviceWorker' in navigator)) {
+    if (typeof window === 'undefined' || !('serviceWorker' in navigator) || !(import.meta as any).env?.PROD) {
       return null;
     }
 

@@ -157,8 +157,8 @@ export function adaptSidebarLabel(rawLabel: string, industryType?: string | null
   const trimmed = rawLabel.trim();
   if (dict[trimmed]) return dict[trimmed];
 
-  // Match without leading emoji
-  const withoutEmoji = rawLabel.replace(/^[\p{Emoji}\p{Emoji_Component}\p{Extended_Pictographic}\s]+/u, '').trim();
+  // Match without leading pictographic emoji (do NOT match ASCII digits 0-9 which Unicode \p{Emoji} includes)
+  const withoutEmoji = rawLabel.replace(/^(?:[\p{Extended_Pictographic}\u2600-\u27BF][\uFE0F\u200D]?|\s)+/u, '').trim();
   if (dict[withoutEmoji]) {
     return dict[withoutEmoji];
   }

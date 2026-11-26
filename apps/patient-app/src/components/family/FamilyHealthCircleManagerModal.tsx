@@ -3,11 +3,14 @@ import { patientApi } from '../../services/patient-api.js';
 
 export interface FamilyCircleMember {
   id: string;
+  uhid?: string | undefined;
   name: string;
   relationship: 'SELF' | 'FATHER' | 'MOTHER' | 'SPOUSE' | 'SON' | 'DAUGHTER' | 'OTHER';
   relationshipLabel: string;
   age: number;
   gender: 'MALE' | 'FEMALE' | 'OTHER';
+  bloodGroup?: string | undefined;
+  allergies?: string[] | undefined;
   abhaId: string;
   abhaAddress: string;
   chronicTags: string[];
@@ -20,11 +23,14 @@ export interface FamilyCircleMember {
 const DEFAULT_FAMILY_CIRCLE: FamilyCircleMember[] = [
   {
     id: 'fam-self-001',
+    uhid: 'UHID-FAM-001',
     name: 'Rajesh Sharma',
     relationship: 'SELF',
     relationshipLabel: 'Self (Account Holder)',
     age: 48,
     gender: 'MALE',
+    bloodGroup: 'B +ve',
+    allergies: ['None Known'],
     abhaId: '91-8765-4321-9876',
     abhaAddress: 'rajesh.sharma@abdm',
     chronicTags: ['Type 2 Diabetes', 'Mild HTN'],
@@ -35,11 +41,14 @@ const DEFAULT_FAMILY_CIRCLE: FamilyCircleMember[] = [
   },
   {
     id: 'fam-father-002',
+    uhid: 'UHID-FAM-002',
     name: 'Rameshwar Sharma',
     relationship: 'FATHER',
     relationshipLabel: 'Pita Ji (Father)',
     age: 74,
     gender: 'MALE',
+    bloodGroup: 'O +ve',
+    allergies: ['Penicillin'],
     abhaId: '91-1122-3344-5566',
     abhaAddress: 'rameshwar.74@abdm',
     chronicTags: ['Post-CABG Cardiac', 'Hypertension', 'Prostate'],
@@ -50,11 +59,14 @@ const DEFAULT_FAMILY_CIRCLE: FamilyCircleMember[] = [
   },
   {
     id: 'fam-mother-003',
+    uhid: 'UHID-FAM-003',
     name: 'Kamla Devi',
     relationship: 'MOTHER',
     relationshipLabel: 'Mata Ji (Mother)',
     age: 70,
     gender: 'FEMALE',
+    bloodGroup: 'A +ve',
+    allergies: ['Sulfa Drugs'],
     abhaId: '91-9988-7766-5544',
     abhaAddress: 'kamla.devi@abdm',
     chronicTags: ['Hypothyroidism', 'Osteoarthritis Knees'],
@@ -65,11 +77,14 @@ const DEFAULT_FAMILY_CIRCLE: FamilyCircleMember[] = [
   },
   {
     id: 'fam-child-004',
+    uhid: 'UHID-FAM-004',
     name: 'Ananya Sharma',
     relationship: 'DAUGHTER',
     relationshipLabel: 'Beti (Daughter)',
     age: 12,
     gender: 'FEMALE',
+    bloodGroup: 'AB +ve',
+    allergies: ['Dust Mites'],
     abhaId: '91-3344-5566-7788',
     abhaAddress: 'ananya.child@abdm',
     chronicTags: ['Pediatric Immunization Vault', 'Allergic Rhinitis'],
@@ -113,16 +128,19 @@ export const FamilyHealthCircleManagerModal: React.FC<FamilyHealthCircleManagerM
       if (Array.isArray(serverMembers) && serverMembers.length > 0) {
         const mapped: FamilyCircleMember[] = serverMembers.map((sm: any, idx: number) => ({
           id: sm.id,
+          uhid: sm.uhid || `MRN-${String(sm.id).slice(0, 6).toUpperCase()}`,
           name: sm.fullName,
           relationship: (sm.relationship || (idx === 0 ? 'SELF' : 'OTHER')) as any,
           relationshipLabel: sm.relationship || (idx === 0 ? 'Self (Account Holder)' : 'Family Member'),
           age: sm.age || 35,
           gender: sm.gender || 'MALE',
-          abhaId: sm.abhaId || `91-${Math.floor(1000 + Math.random() * 9000)}-4433-2211`,
-          abhaAddress: sm.abhaAddress || `${sm.fullName.toLowerCase().replace(/\s+/g, '.')}@abdm`,
-          chronicTags: sm.allergies || ['Active Patient Vault'],
-          activeRxCount: 1,
-          labReportCount: 1,
+          bloodGroup: sm.bloodGroup || 'Not Set',
+          allergies: Array.isArray(sm.allergies) ? sm.allergies : [],
+          abhaId: sm.abhaId || '',
+          abhaAddress: sm.abhaAddress || '',
+          chronicTags: Array.isArray(sm.allergies) && sm.allergies.length > 0 ? sm.allergies : ['Active Patient Vault'],
+          activeRxCount: sm.activeRxCount ?? 0,
+          labReportCount: sm.labReportCount ?? 0,
           avatarIcon: sm.gender === 'FEMALE' ? '👵' : '👨',
           isPrimaryAccountHolder: idx === 0
         }));
@@ -158,16 +176,19 @@ export const FamilyHealthCircleManagerModal: React.FC<FamilyHealthCircleManagerM
         );
       } catch {}
     }
-    // Update active patient in API service
+    // Update active patient in API service with that member's actual demographic & clinical fields
     patientApi.setPatient({
       id: member.id,
-      uhid: `MRN-${member.id.slice(0, 6).toUpperCase()}`,
+      uhid: member.uhid || `MRN-${member.id.slice(0, 6).toUpperCase()}`,
       fullName: member.name,
       age: member.age,
       gender: member.gender,
-      phone: patientApi.getCurrentPatient()?.phone || '+91 98765 43210',
-      bloodGroup: 'B +ve',
-      allergies: member.chronicTags || [],
+      phone: patientApi.getCurrentPatient()?.phone || '',
+      bloodGroup: member.bloodGroup || 'Not Set',
+      allergies: Array.isArray(member.allergies) ? member.allergies : [],
+      abhaId: member.abhaId || undefined,
+      abhaAddress: member.abhaAddress || undefined,
+      relationship: member.relationshipLabel,
       activeToken: null
     });
     if (onSelectActiveMember) {

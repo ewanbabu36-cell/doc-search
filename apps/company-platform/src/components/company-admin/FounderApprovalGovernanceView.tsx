@@ -15,6 +15,8 @@ export const FounderApprovalGovernanceView: React.FC<Props> = ({
   const [loading, setLoading] = useState(false);
   const [filterStatus, setFilterStatus] = useState<string>('ALL');
   const [actionMessage, setActionMessage] = useState<string | null>(null);
+  const [rejectTargetId, setRejectTargetId] = useState<string | null>(null);
+  const [rejectRemarks, setRejectRemarks] = useState<string>('');
 
   const normEmail = (currentUserEmail || '').toLowerCase();
   const isFounder =
@@ -47,15 +49,24 @@ export const FounderApprovalGovernanceView: React.FC<Props> = ({
     setTimeout(() => setActionMessage(null), 5000);
   };
 
-  const handleReject = async (id: string) => {
+  const handleReject = (id: string) => {
     if (!isFounder) {
-      setActionMessage('⚠️ Access Denied: Only Founder MERAJ SHARIF has the authority to reject form submissions.');
+      setActionMessage('⚠️ Access Denied: Only authorized Founders have the authority to reject form submissions.');
       setTimeout(() => setActionMessage(null), 5000);
       return;
     }
-    const remarks = window.prompt('Enter rejection remarks / reason:');
-    if (!remarks) return;
-    await founderApprovalService.rejectRequest(id, remarks);
+    setRejectTargetId(id);
+    setRejectRemarks('');
+  };
+
+  const handleConfirmReject = async (id: string) => {
+    if (!rejectRemarks.trim()) {
+      setActionMessage('⚠️ Please enter rejection remarks before confirming.');
+      return;
+    }
+    await founderApprovalService.rejectRequest(id, rejectRemarks.trim());
+    setRejectTargetId(null);
+    setRejectRemarks('');
     setActionMessage('❌ Request rejected by Founder. Task has been marked REJECTED.');
     await loadData();
     setTimeout(() => setActionMessage(null), 5000);
@@ -301,14 +312,39 @@ export const FounderApprovalGovernanceView: React.FC<Props> = ({
                       <td style={{ padding: '12px 16px', textAlign: 'right' }}>
                         {isPending ? (
                           isFounder ? (
-                            <div style={{ display: 'flex', gap: '6px', justifyContent: 'flex-end' }}>
-                              <Button variant="primary" size="sm" onClick={() => handleApprove(r.id)}>
-                                ✅ Approve & Complete
-                              </Button>
-                              <Button variant="danger" size="sm" onClick={() => handleReject(r.id)}>
-                                ❌ Reject
-                              </Button>
-                            </div>
+                            rejectTargetId === r.id ? (
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', minWidth: '220px', textAlign: 'left' }}>
+                                <input
+                                  type="text"
+                                  value={rejectRemarks}
+                                  onChange={(e) => setRejectRemarks(e.target.value)}
+                                  placeholder="Enter rejection reason..."
+                                  style={{
+                                    padding: '5px 8px',
+                                    borderRadius: '6px',
+                                    border: '1px solid #FCA5A5',
+                                    fontSize: '12px'
+                                  }}
+                                />
+                                <div style={{ display: 'flex', gap: '6px', justifyContent: 'flex-end' }}>
+                                  <Button variant="danger" size="sm" onClick={() => handleConfirmReject(r.id)}>
+                                    Confirm Reject
+                                  </Button>
+                                  <Button variant="secondary" size="sm" onClick={() => setRejectTargetId(null)}>
+                                    Cancel
+                                  </Button>
+                                </div>
+                              </div>
+                            ) : (
+                              <div style={{ display: 'flex', gap: '6px', justifyContent: 'flex-end' }}>
+                                <Button variant="primary" size="sm" onClick={() => handleApprove(r.id)}>
+                                  ✅ Approve & Complete
+                                </Button>
+                                <Button variant="danger" size="sm" onClick={() => handleReject(r.id)}>
+                                  ❌ Reject
+                                </Button>
+                              </div>
+                            )
                           ) : (
                             <span
                               style={{

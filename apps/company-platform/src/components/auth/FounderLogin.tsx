@@ -234,7 +234,7 @@ export const FounderLogin: React.FC<FounderLoginProps> = ({ onLoginSuccess }) =>
                 marginBottom: '4px'
               }}
             >
-              <span>⚡ Dev Helper: <strong>founder@docsearch.health</strong></span>
+              <span>⚡ Dev Email Helper: <strong>founder@docsearch.health</strong></span>
               <button
                 type="button"
                 onClick={() => {
@@ -252,7 +252,7 @@ export const FounderLogin: React.FC<FounderLoginProps> = ({ onLoginSuccess }) =>
                   fontSize: '0.75rem'
                 }}
               >
-                1-Click Dev Fill
+                Prefill Email
               </button>
             </div>
           )}

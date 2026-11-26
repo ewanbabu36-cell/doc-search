@@ -1762,7 +1762,7 @@ export const DocSearchLandingPage: React.FC = () => {
                           <span style={{ fontSize: '1.0625rem', fontWeight: 700, color: '#FFFFFF' }}>Dr. Vivek Sengupta</span>
                           <span title="Verified NMC Practitioner" style={{ color: '#F59E0B', fontSize: '0.875rem' }}>🏅</span>
                         </div>
-                        <div style={{ fontSize: '0.8125rem', color: '#94A3B8' }}>Chief Neurosurgeon • Apollo Delhi</div>
+                        <div style={{ fontSize: '0.8125rem', color: '#94A3B8' }}>Chief Neurosurgeon • Metro Neuro Institute</div>
                         <div style={{ fontSize: '0.75rem', color: '#38BDF8', marginTop: '2px' }}>⚡ 22 Yrs Exp • 2,100+ Neuro Surgeries</div>
                       </div>
                     </div>
@@ -1991,7 +1991,7 @@ export const DocSearchLandingPage: React.FC = () => {
                       <div style={{ fontSize: '2rem' }}>🧪</div>
                       <div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                          <span style={{ fontSize: '1.0625rem', fontWeight: 700, color: '#FFFFFF' }}>Tata 1mg & SRL Diagnostics Hub</span>
+                          <span style={{ fontSize: '1.0625rem', fontWeight: 700, color: '#FFFFFF' }}>DocSearch NABL Diagnostics Hub</span>
                           <span title="NABL ISO 15189 Certified" style={{ color: '#10B981', fontSize: '0.875rem' }}>🛡️</span>
                         </div>
                         <div style={{ fontSize: '0.8125rem', color: '#94A3B8' }}>NABL ISO 15189 Certified Lab • Roche Cobas 8000 Analyzers</div>
@@ -3097,7 +3097,7 @@ export const DocSearchLandingPage: React.FC = () => {
                     <input
                       required
                       type="text"
-                      placeholder="e.g. Apollo / Fortis / AIIMS"
+                      placeholder="e.g. City Apex Hospital / Lifecare Diagnostics"
                       value={demoForm.hospitalName}
                       onChange={(e) => setDemoForm({ ...demoForm, hospitalName: e.target.value })}
                       style={{ width: '100%', padding: '10px 14px', borderRadius: '8px', backgroundColor: 'rgba(30, 41, 59, 0.7)', border: '1px solid rgba(255, 255, 255, 0.1)', color: '#F8FAFC', fontSize: '0.875rem' }}
@@ -3382,10 +3382,10 @@ export const DocSearchLandingPage: React.FC = () => {
               </div>
 
               {[
-                { name: 'Dr. Alok Verma', role: 'Chief Cardiologist • AIIMS Delhi', badge: '🟢 Active Now', fee: '₹800', organ: 'HEART' as const, avatar: '👨‍⚕️' },
-                { name: 'Dr. Vivek Sengupta', role: 'Senior Neurosurgeon • Apollo Delhi', badge: '⚡ Video Ready', fee: '₹1,200', organ: 'BRAIN' as const, avatar: '👨‍⚕️' },
-                { name: 'Dr. Ananya Sen', role: 'Pediatric Specialist • Fortis Memorial', badge: '🟢 Active Now', fee: '₹650', organ: 'PEDIATRICS' as const, avatar: '👩‍⚕️' },
-                { name: 'Tata 1mg Diagnostic Hub', role: 'NABL ISO 15189 Molecular Lab', badge: '⚡ 30m Doorstep', fee: '₹499', organ: 'PATHOLOGY' as const, avatar: '🧪' }
+                { name: 'Dr. Alok Verma', role: 'Chief Cardiologist • Apex Heart Institute', badge: '🟢 Active Now', fee: '₹800', organ: 'HEART' as const, avatar: '👨‍⚕️' },
+                { name: 'Dr. Vivek Sengupta', role: 'Senior Neurosurgeon • Metro Neuro Institute', badge: '⚡ Video Ready', fee: '₹1,200', organ: 'BRAIN' as const, avatar: '👨‍⚕️' },
+                { name: 'Dr. Ananya Sen', role: 'Pediatric Specialist • ChildCare Specialty', badge: '🟢 Active Now', fee: '₹650', organ: 'PEDIATRICS' as const, avatar: '👩‍⚕️' },
+                { name: 'DocSearch Diagnostic Hub', role: 'NABL ISO 15189 Molecular Lab', badge: '⚡ 30m Doorstep', fee: '₹499', organ: 'PATHOLOGY' as const, avatar: '🧪' }
               ].map((doc) => (
                 <div
                   key={doc.name}

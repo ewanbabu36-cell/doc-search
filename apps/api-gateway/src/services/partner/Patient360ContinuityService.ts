@@ -1881,8 +1881,8 @@ export class Patient360ContinuityService {
       }
     }
 
-    // Check duplicate active slot booking for same patient + doctor + slotDate + slotTime
-    const existingDup = Array.from(this.appointmentsById.values()).find(
+    // 1. Check idempotent replay for the SAME patient + doctor + slotDate + slotTime
+    const existingSamePatient = Array.from(this.appointmentsById.values()).find(
       (a) =>
         a.tenantId === tenantId &&
         a.patientId === pat.patientId &&
@@ -1891,8 +1891,26 @@ export class Patient360ContinuityService {
         a.slotTime === input.slotTime &&
         a.status !== 'CANCELLED'
     );
-    if (existingDup) {
-      return { appointment: existingDup, idempotentReplay: true };
+    if (existingSamePatient) {
+      return { appointment: existingSamePatient, idempotentReplay: true };
+    }
+
+    // 2. Prevent double-booking the SAME doctor + date + time slot across DIFFERENT patients
+    const slotConflict = Array.from(this.appointmentsById.values()).find(
+      (a) =>
+        a.tenantId === tenantId &&
+        a.patientId !== pat.patientId &&
+        a.doctorId === input.doctorId &&
+        a.slotDate === input.slotDate &&
+        a.slotTime === input.slotTime &&
+        a.status !== 'CANCELLED'
+    );
+    if (slotConflict) {
+      throw new AppError({
+        message: `Slot ${input.slotTime} on ${input.slotDate} with doctor ${input.doctorId} is already booked.`,
+        code: ErrorCode.CONFLICT,
+        statusCode: 409
+      });
     }
 
     const nowIso = new Date().toISOString();

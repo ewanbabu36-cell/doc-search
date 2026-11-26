@@ -698,24 +698,45 @@ export const labDiagnosticsRoutes: FastifyPluginAsync = async (fastify) => {
         }
       }, request.session);
 
+      const isVerifiedReport = Boolean(
+        order.status === 'VERIFIED' ||
+        order.status === 'REVIEWED' ||
+        order.status === 'DELIVERED' ||
+        order.report?.reportStatus === 'FINAL' ||
+        order.verifiedBy ||
+        order.report?.verifyingPathologist
+      );
+      let computedAge: number | null = null;
+      if ((order as any).patientDob) {
+        const dobDate = new Date((order as any).patientDob);
+        if (!Number.isNaN(dobDate.getTime())) {
+          const diffYears = Math.floor((Date.now() - dobDate.getTime()) / (365.25 * 24 * 60 * 60 * 1000));
+          if (diffYears >= 0 && diffYears <= 130) computedAge = diffYears;
+        }
+      }
+
       const pdfBuffer = generatePathologyPdf({
         orderNumber: order.orderNumber,
-        reportNumber: `REP-${order.orderNumber}`,
-        patientName: order.patientId === '55555555-8492-4555-8555-849208492001' ? 'Rahul Kumar' : 'Patient',
-        patientMrn: order.patientId === '55555555-8492-4555-8555-849208492001' ? 'MRN-84920' : 'MRN-UNKNOWN',
-        patientAge: 32,
-        patientGender: 'Male',
-        orderingDoctor: 'Dr. Rajesh Sharma, MD',
-        accessionNumber: order.specimen?.accessionNumber || 'ACC-2026-00001',
-        specimenType: order.specimen?.specimenType || 'WHOLE_BLOOD',
-        facilityName: 'DOC SEARCH Demo Hospital — Main Laboratory',
+        reportNumber: order.report?.reportNumber || `REP-${order.orderNumber}`,
+        patientName: order.patientName || 'Patient Record',
+        patientMrn: order.patientMrn || 'N/A',
+        patientAge: computedAge,
+        patientGender: (order as any).patientGender || 'Not Specified',
+        orderingDoctor: order.orderingDoctorName || 'Attending Clinician',
+        accessionNumber: order.specimen?.accessionNumber || 'PENDING-ACCESSION',
+        specimenType: order.specimen?.specimenType || order.specimens?.[0]?.specimenType || 'SPECIMEN',
+        facilityName: (order as any).facilityName || (request.session as any).tenantName || 'Diagnostic Laboratory',
         organizationName: 'DOC SEARCH HEALTHCARE OS',
         orderedAt: order.orderedAt.toISOString(),
-        finalizedAt: new Date().toISOString(),
-        investigationName: order.testName || 'Complete Blood Count (CBC) with Differential',
-        category: order.category || 'HEMATOLOGY',
-        impression: 'All measured analytes and hematological parameters clinically correlated. IQC verified.',
-        verifyingPathologist: 'Dr. Shalini Deshmukh, MD (Pathology)',
+        finalizedAt: order.report?.finalizedAt ? new Date(order.report.finalizedAt).toISOString() : null,
+        reportStatus: order.report?.reportStatus || order.status || 'PRELIMINARY',
+        investigationName: order.testName || order.report?.reportTitle || 'Laboratory Investigation',
+        category: order.category || 'DIAGNOSTICS',
+        impression: order.report?.impression || (isVerifiedReport
+          ? 'Measured analytes clinically correlated and verified.'
+          : 'Preliminary laboratory findings awaiting pathologist verification.'),
+        verifyingPathologist: order.report?.verifyingPathologist || order.verifiedBy || 'PENDING PATHOLOGIST VERIFICATION',
+        isVerified: isVerifiedReport,
         results: order.results.length > 0 ? order.results.map((r) => ({
           parameterName: r.parameterName,
           resultValue: r.resultValue,
@@ -819,9 +840,8 @@ export const labDiagnosticsRoutes: FastifyPluginAsync = async (fastify) => {
   // 12. LABORATORY: PATHOLOGIST COCKPIT SPECIMENS
   // ==========================================
   const getCockpitSpecimensHandler = async (request: any) => {
-    // Return live specimens from database or empty array
     try {
-      const orders = await labDiagnosticsService.searchOrders((request as any).session || { tenantId: '11111111-1111-4000-8000-000000000001', userId: 'usr-system' });
+      const orders = await labDiagnosticsService.searchOrders(request.session);
       const richSpecimens = (orders || []).map((ord: any) => ({
         id: ord.id,
         orderNumber: ord.orderNumber || `ORD-${ord.id.slice(0, 8)}`,
@@ -858,6 +878,6 @@ export const labDiagnosticsRoutes: FastifyPluginAsync = async (fastify) => {
     }
   };
 
-  fastify.get('/api/v1/laboratory/specimens/cockpit', getCockpitSpecimensHandler);
-  fastify.get('/api/v1/partner/lab/specimens/cockpit', getCockpitSpecimensHandler);
+  fastify.get('/api/v1/laboratory/specimens/cockpit', { preHandler: [authenticate, requirePermission('lab:orders', 'read')] }, getCockpitSpecimensHandler);
+  fastify.get('/api/v1/partner/lab/specimens/cockpit', { preHandler: [authenticate, requirePermission('lab:orders', 'read')] }, getCockpitSpecimensHandler);
 };

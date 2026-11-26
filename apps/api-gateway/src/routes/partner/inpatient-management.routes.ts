@@ -66,12 +66,12 @@ export const inpatientManagementRoutes: FastifyPluginAsync = async (fastify) => 
       const admissions = await inpatientManagementService.getAdmissions(request.session, 'ADMITTED');
       const wards = await inpatientManagementService.getWards(request.session);
 
-      const totalBeds = beds?.length || 24;
-      const occupiedBeds = admissions?.length || 8;
+      const totalBeds = beds?.length ?? 0;
+      const occupiedBeds = admissions?.length ?? 0;
       const availableBeds = Math.max(0, totalBeds - occupiedBeds);
-      const icuBeds = beds?.filter((b: any) => (b.wardName || b.wardType || '').toUpperCase().includes('ICU')) || [];
-      const icuOccupied = admissions?.filter((a: any) => (a.wardName || a.bedNumber || '').toUpperCase().includes('ICU'))?.length || 1;
-      const icuTotal = icuBeds.length || 4;
+      const icuBeds = beds?.filter((b: any) => (b.wardName || b.wardType || b.bedClass || '').toUpperCase().includes('ICU')) || [];
+      const icuOccupied = admissions?.filter((a: any) => (a.wardName || a.bedNumber || a.bedCode || '').toUpperCase().includes('ICU'))?.length ?? 0;
+      const icuTotal = icuBeds.length;
 
       return {
         success: true,
@@ -79,12 +79,12 @@ export const inpatientManagementRoutes: FastifyPluginAsync = async (fastify) => 
           totalBeds,
           occupiedBeds,
           availableBeds,
-          occupancyPercentage: Math.round((occupiedBeds / (totalBeds || 1)) * 100),
+          occupancyPercentage: totalBeds > 0 ? Math.round((occupiedBeds / totalBeds) * 100) : 0,
           icuTotal,
           icuOccupied,
           icuAvailable: Math.max(0, icuTotal - icuOccupied),
-          icuOccupancyPercentage: Math.round((icuOccupied / (icuTotal || 1)) * 100),
-          wardsCount: wards?.length || 4,
+          icuOccupancyPercentage: icuTotal > 0 ? Math.round((icuOccupied / icuTotal) * 100) : 0,
+          wardsCount: wards?.length ?? 0,
           activeAdmissionsCount: occupiedBeds,
           timestamp: new Date().toISOString()
         }
@@ -150,7 +150,10 @@ export const inpatientManagementRoutes: FastifyPluginAsync = async (fastify) => 
         maxAllowedBeds = 35;
       }
 
-      const currentBeds = body.activeBedsCount !== undefined ? body.activeBedsCount : 10;
+      const existingBeds = await inpatientManagementService.getBeds(request.session);
+      const dbBedCount = existingBeds?.length ?? 0;
+      const requestedBeds = body.activeBedsCount !== undefined ? Number(body.activeBedsCount) : dbBedCount;
+      const currentBeds = Math.max(dbBedCount, Number.isFinite(requestedBeds) ? requestedBeds : dbBedCount);
       const isQuotaExceeded = currentBeds >= maxAllowedBeds;
 
       if (isQuotaExceeded) {

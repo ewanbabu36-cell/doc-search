@@ -117,7 +117,7 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({
     }
   }, [theme, storageKey]);
 
-  // Universal Click Ripple Engine
+  // Universal Interactive Pointer Glow/Press Tracking (Zero imperative React DOM mutation)
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
@@ -127,16 +127,12 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({
       ) as HTMLElement | null;
 
       if (target) {
-        const rect = target.getBoundingClientRect();
-        const ripple = document.createElement('span');
-        ripple.className = 'ds-click-ripple';
-        ripple.style.left = `${e.clientX - rect.left}px`;
-        ripple.style.top = `${e.clientY - rect.top}px`;
-        target.appendChild(ripple);
-
-        setTimeout(() => {
-          ripple.remove();
-        }, 650);
+        target.dataset['dsPressed'] = 'true';
+        window.setTimeout(() => {
+          if (target.isConnected) {
+            delete target.dataset['dsPressed'];
+          }
+        }, 220);
       }
     };
 

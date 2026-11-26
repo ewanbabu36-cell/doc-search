@@ -42,10 +42,22 @@ export const DynamicRoleDocumentChecklist: React.FC<DynamicRoleDocumentChecklist
       const role = currentUser?.role || 'DOCTOR';
       const facilityType = currentUser?.organizationType || 'LABORATORY';
       const token = getAuthToken();
+      if (!token) {
+        setData(null);
+        setLoading(false);
+        return;
+      }
+      const resolvedTenantId = (currentUser as any)?.tenantId || (() => {
+        try {
+          const raw = localStorage.getItem('docsearch_partner_staff_auth');
+          return raw ? JSON.parse(raw)?.tenantId : '';
+        } catch { return ''; }
+      })();
+      const tenantQuery = resolvedTenantId ? `&tenantId=${encodeURIComponent(resolvedTenantId)}` : '';
       const res = await fetch(
-        `/api/v1/compliance/documents/requirements?role=${encodeURIComponent(role)}&facilityType=${encodeURIComponent(facilityType)}&tenantId=11111111-1111-4111-8111-111111111111`,
+        `/api/v1/compliance/documents/requirements?role=${encodeURIComponent(role)}&facilityType=${encodeURIComponent(facilityType)}${tenantQuery}`,
         {
-          headers: token ? { Authorization: `Bearer ${token}` } : {}
+          headers: { Authorization: `Bearer ${token}` }
         }
       );
       if (res.ok) {
@@ -101,9 +113,15 @@ export const DynamicRoleDocumentChecklist: React.FC<DynamicRoleDocumentChecklist
 
     setIsUploading(true);
     try {
+      const resolvedTenantId = (currentUser as any)?.tenantId || (() => {
+        try {
+          const raw = localStorage.getItem('docsearch_partner_staff_auth');
+          return raw ? JSON.parse(raw)?.tenantId : '';
+        } catch { return ''; }
+      })();
       const payload = {
         documentTypeCode: selectedReq.documentType.code,
-        ownerEntityId: '11111111-1111-4111-8111-111111111111',
+        ...(resolvedTenantId ? { ownerEntityId: resolvedTenantId } : {}),
         ownerEntityType: 'TENANT',
         role: currentUser?.role || 'DOCTOR',
         facilityType: currentUser?.organizationType || 'LABORATORY',
@@ -119,9 +137,6 @@ export const DynamicRoleDocumentChecklist: React.FC<DynamicRoleDocumentChecklist
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-user-id': '99999999-9999-4999-8999-999999999999',
-          'x-user-email': currentUser?.email || 'staff@tatapathology.com',
-          'x-tenant-id': '11111111-1111-4111-8111-111111111111',
           ...(token ? { Authorization: `Bearer ${token}` } : {})
         },
         body: JSON.stringify(payload)

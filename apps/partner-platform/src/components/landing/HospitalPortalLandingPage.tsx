@@ -114,7 +114,7 @@ export const HospitalPortalLandingPage: React.FC<HospitalPortalLandingPageProps>
             <div className="ds-card-body">
               <div className="ds-card-caption">Now Calling</div>
               <div className="ds-card-number">Token #42</div>
-              <div className="ds-card-subinfo">Amit Verma (34M) • Dr. Apollo</div>
+              <div className="ds-card-subinfo">Amit Verma (34M) • Dr. Arvind Mehta</div>
             </div>
 
             <div className="ds-card-footer">

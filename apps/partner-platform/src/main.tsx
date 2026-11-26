@@ -11,12 +11,13 @@ import { type HospitalStaffUser } from './components/auth/HospitalStaffLogin.js'
 import { HospitalPortalLandingPage } from './components/landing/HospitalPortalLandingPage.js';
 import { ensureAuthToken, isTokenExpired } from './services/api-client.js';
 import { pwaCompanion } from './services/pwa-companion.js';
+import { hospitalEventBus } from './services/hospital-event-bus.js';
 import { offlineTokenCacheService } from './services/offline-token-cache.js';
 import '../../../packages/ui-kit/src/styles/themes.css';
 import '../../../packages/ui-kit/src/styles/base.css';
 
-// Initialize PWA Service Worker for offline resilience and quick caching
-if (typeof window !== 'undefined') {
+// Initialize PWA Service Worker only in production builds where /sw.js bundle exists
+if (typeof window !== 'undefined' && (import.meta as any).env?.PROD) {
   void pwaCompanion.registerServiceWorker();
 }
 
@@ -67,8 +68,10 @@ const App: React.FC = () => {
       }
 
       let token = localStorage.getItem('docsearch_auth_token') || localStorage.getItem('auth_token');
-      if (!token || isTokenExpired(token)) {
+      if ((!token || isTokenExpired(token)) && localStorage.getItem('docsearch_refresh_token')) {
         token = await ensureAuthToken();
+      } else if (token && isTokenExpired(token)) {
+        token = null;
       }
 
       if (!token) {
@@ -102,8 +105,8 @@ const App: React.FC = () => {
             role: primaryRole,
             roleTitle: primaryRole.replace(/_/g, ' '),
             department: json.data.department || 'Healthcare Operations',
-            tenantName: json.data.tenantName || 'Apollo Multispecialty Hospital',
-            tenantId: json.data.tenantId || '11111111-1111-4111-8111-111111111111',
+            tenantName: json.data.tenantName || 'Partner Health Facility',
+            tenantId: json.data.tenantId || '',
             organizationType: json.data.organizationType || 'HOSPITAL',
             allowedWorkspaces: ['HOSPITAL'],
             defaultModule: 'clinical-consultation',
@@ -115,6 +118,9 @@ const App: React.FC = () => {
 
           setCurrentUser(verifiedUser);
           localStorage.setItem('docsearch_partner_staff_auth', JSON.stringify(verifiedUser));
+          if (verifiedUser.tenantId) {
+            hospitalEventBus.initSseBridge(verifiedUser.tenantId);
+          }
 
           // Set active operator in offline token cache to isolate mutations
           offlineTokenCacheService.setCurrentOperator(verifiedUser.id, verifiedUser.name, verifiedUser.role);
@@ -175,8 +181,13 @@ const App: React.FC = () => {
     localStorage.setItem('docsearch_partner_staff_auth', JSON.stringify(user));
     offlineTokenCacheService.setCurrentOperator(user.id, user.name, user.role);
 
-    // Broadcast authenticated SSO token to Master Gateway Hub
+    // Initialize SSE real-time bridge now that operator is authenticated
     const curToken = localStorage.getItem('docsearch_auth_token');
+    if (curToken && user.tenantId) {
+      hospitalEventBus.initSseBridge(user.tenantId);
+    }
+
+    // Broadcast authenticated SSO token to Master Gateway Hub
     if (typeof window !== 'undefined' && window.parent && window.parent !== window && curToken) {
       window.parent.postMessage({
         type: 'DOCSEARCH_SSO_SYNC',

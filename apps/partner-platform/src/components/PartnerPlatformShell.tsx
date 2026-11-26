@@ -966,7 +966,7 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
     ? 'All Pharmacy & POS Modules'
     : isClinicVertical
     ? 'All Clinic & OPD Modules'
-    : 'All 38 Hospital Modules';
+    : 'Hospital Modules Directory';
 
   const drawerDirectorySubtitle = isLabOrPathology
     ? 'Diagnostics'
@@ -1676,17 +1676,7 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
               icon: <span>👥</span>,
               isActive: activeModule === 'staff-administration',
               onClick: () => setActiveModule('staff-administration')
-            },
-            ...(isHospitalExecutive(currentUser?.role) ? [
-              {
-                id: 'all-modules-drawer-trigger' as PartnerModuleKey,
-                moduleId: 'hospital-home' as PartnerModuleKey,
-                label: '📁 View All 38 Modules Drawer',
-                icon: <span>📁</span>,
-                isActive: isAllModulesDrawerOpen,
-                onClick: () => setIsAllModulesDrawerOpen(true)
-              }
-            ] : [])
+            }
           ]
         }
       ]);
@@ -2804,22 +2794,6 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
                             <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: '#38BDF8' }} />
                             My Smart Desk
                           </button>
-                          <button
-                            type="button"
-                            onClick={() => setIsAllModulesDrawerOpen(true)}
-                            style={{
-                              background: 'none',
-                              border: 'none',
-                              color: '#38BDF8',
-                              fontSize: '0.65rem',
-                              fontWeight: 700,
-                              cursor: 'pointer',
-                              padding: '0 2px'
-                            }}
-                            title="Open All 38 Hospital Modules Drawer"
-                          >
-                            All 38 ➔
-                          </button>
                         </div>
 
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '4px' }}>
@@ -2907,7 +2881,7 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
                           cursor: 'pointer',
                           transition: 'all 0.15s ease'
                         }}
-                        title="Open All 38 Hospital Modules Drawer (Searchable catalog & categories)"
+                        title="Open Hospital Modules Directory (Searchable catalog & categories)"
                       >
                         📁
                       </button>
@@ -2938,14 +2912,14 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
                           e.currentTarget.style.backgroundColor = 'rgba(56, 189, 248, 0.08)';
                           e.currentTarget.style.borderColor = 'rgba(56, 189, 248, 0.3)';
                         }}
-                        title="Open All 38 Hospital Modules Drawer (Searchable catalog & domain tabs)"
+                        title="Open Hospital Modules Directory (Searchable catalog & domain tabs)"
                       >
                         <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                           <span>📁</span>
-                          <span>All 38 Modules</span>
+                          <span>All Hospital Modules</span>
                         </div>
                         <span style={{ fontSize: '0.625rem', backgroundColor: 'rgba(56, 189, 248, 0.18)', color: '#38BDF8', padding: '1.5px 6px', borderRadius: '4px', fontWeight: 800 }}>
-                          Drawer ➔
+                          Catalog ➔
                         </span>
                       </button>
                     )
@@ -4906,7 +4880,7 @@ export const PartnerPlatformShell: React.FC<PartnerPlatformShellProps> = ({ curr
                           }}
                           onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.06)')}
                           onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
-                          title={`Open Slide-Over Directory of ${drawerDirectoryTitle}`}
+                          title={`Open Directory of ${drawerDirectoryTitle}`}
                         >
                           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                             <span>📂</span>

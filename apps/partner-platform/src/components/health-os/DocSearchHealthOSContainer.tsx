@@ -141,8 +141,8 @@ export const DocSearchHealthOSContainer: React.FC<DocSearchHealthOSContainerProp
     return initial.id === 'pharmacy-medication';
   });
 
-  const resolvedTenantId = currentUser.tenantId || '11111111-1111-4111-8111-111111111111';
-  const facilityBrand = currentUser.tenantName || 'DocSearch Apollo Multispecialty Hospital';
+  const resolvedTenantId = currentUser.tenantId || '';
+  const facilityBrand = currentUser.tenantName || 'DocSearch Partner Health Facility';
 
   // 1. Launch / Foreground App
   const handleLaunchApp = useCallback((app: HealthOSAppItem) => {

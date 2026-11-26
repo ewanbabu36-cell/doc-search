@@ -537,7 +537,7 @@ export const AllHospitalModulesDrawer: React.FC<AllHospitalModulesDrawerProps> =
                 padding: '4px 8px',
                 borderRadius: '6px'
               }}
-              title="Close Drawer"
+              title="Close Modules Catalog"
             >
               ✕
             </button>

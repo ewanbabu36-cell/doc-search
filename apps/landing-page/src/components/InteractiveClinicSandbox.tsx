@@ -12,7 +12,7 @@ interface Props {
 export const InteractiveClinicSandbox: React.FC<Props> = ({
   onOpenDemoModal,
   onOpenRegisterModal,
-  partnerPortalUrl = 'http://localhost:5174'
+  partnerPortalUrl = 'http://localhost:5173'
 }) => {
   const [activePersona, setActivePersona] = useState<SandboxPersona>('SOLO_CLINIC');
 

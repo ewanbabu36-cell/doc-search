@@ -13,8 +13,23 @@ import { gmailMailerService } from '../../services/communication/GmailMailerServ
 import { firebaseIntegrationService } from '../../services/communication/FirebaseIntegrationService.js';
 import { telegramBotService } from '../../services/communication/TelegramBotService.js';
 import { createLogger } from '@docsearch/shared-core';
+import { authenticate, requireRoles } from '../../plugins/auth-guard.js';
 
 const logger = createLogger('omnichannel-integrations-routes');
+const OMNICHANNEL_DISPATCH_ROLES = [
+  'SUPER_ADMIN',
+  'COMPANY_ADMIN',
+  'HOSPITAL_ADMIN',
+  'CLINIC_ADMIN',
+  'BRANCH_MANAGER',
+  'CHIEF_MEDICAL_OFFICER',
+  'DOCTOR',
+  'NURSE',
+  'LAB_TECHNICIAN',
+  'PHARMACIST',
+  'RECEPTIONIST'
+] as const;
+const OMNICHANNEL_ADMIN_ROLES = ['SUPER_ADMIN', 'COMPANY_ADMIN', 'HOSPITAL_ADMIN', 'CLINIC_ADMIN'] as const;
 
 export const omnichannelIntegrationsRoutes: FastifyPluginAsync = async (fastify) => {
   // ==========================================
@@ -42,12 +57,12 @@ export const omnichannelIntegrationsRoutes: FastifyPluginAsync = async (fastify)
     });
   });
 
-  fastify.get('/api/v1/integrations/gmail/verify', async (_request, reply) => {
+  fastify.get('/api/v1/integrations/gmail/verify', { preHandler: [authenticate, requireRoles(...OMNICHANNEL_ADMIN_ROLES)] }, async (_request, reply) => {
     const verification = await gmailMailerService.verifyConnection();
     return reply.status(verification.success ? 200 : 400).send(verification);
   });
 
-  fastify.post('/api/v1/integrations/gmail/send-test', async (request: any, reply) => {
+  fastify.post('/api/v1/integrations/gmail/send-test', { preHandler: [authenticate, requireRoles(...OMNICHANNEL_ADMIN_ROLES)] }, async (request: any, reply) => {
     const { toEmail } = request.body || {};
     const targetEmail = toEmail || process.env['GMAIL_USER'] || 'test@example.com';
     const result = await gmailMailerService.send({
@@ -67,7 +82,7 @@ export const omnichannelIntegrationsRoutes: FastifyPluginAsync = async (fastify)
     return reply.status(200).send({ success: true, result });
   });
 
-  fastify.post('/api/v1/integrations/gmail/send-otp', async (request: any, reply) => {
+  fastify.post('/api/v1/integrations/gmail/send-otp', { preHandler: [authenticate, requireRoles(...OMNICHANNEL_DISPATCH_ROLES)] }, async (request: any, reply) => {
     const { toEmail, otp, expiresMinutes } = request.body || {};
     if (!toEmail || !otp) {
       return reply.status(400).send({ success: false, error: 'toEmail and otp are required' });
@@ -77,7 +92,7 @@ export const omnichannelIntegrationsRoutes: FastifyPluginAsync = async (fastify)
     return reply.status(200).send({ success: true, result });
   });
 
-  fastify.post('/api/v1/integrations/gmail/send-appointment', async (request: any, reply) => {
+  fastify.post('/api/v1/integrations/gmail/send-appointment', { preHandler: [authenticate, requireRoles(...OMNICHANNEL_DISPATCH_ROLES)] }, async (request: any, reply) => {
     const { toEmail, patientName, doctorName, hospitalName, tokenNumber, slotTime, date, trackUrl } = request.body || {};
     if (!toEmail || !patientName || !doctorName || !tokenNumber) {
       return reply.status(400).send({ success: false, error: 'Missing required appointment confirmation details' });
@@ -95,7 +110,7 @@ export const omnichannelIntegrationsRoutes: FastifyPluginAsync = async (fastify)
     return reply.status(200).send({ success: true, result });
   });
 
-  fastify.post('/api/v1/integrations/gmail/send-lab-report', async (request: any, reply) => {
+  fastify.post('/api/v1/integrations/gmail/send-lab-report', { preHandler: [authenticate, requireRoles(...OMNICHANNEL_DISPATCH_ROLES)] }, async (request: any, reply) => {
     const { toEmail, patientName, testName, labName, reportId, downloadUrl } = request.body || {};
     if (!toEmail || !patientName || !testName || !reportId) {
       return reply.status(400).send({ success: false, error: 'Missing required lab report details' });
@@ -111,7 +126,7 @@ export const omnichannelIntegrationsRoutes: FastifyPluginAsync = async (fastify)
     return reply.status(200).send({ success: true, result });
   });
 
-  fastify.post('/api/v1/integrations/gmail/send-critical-alert', async (request: any, reply) => {
+  fastify.post('/api/v1/integrations/gmail/send-critical-alert', { preHandler: [authenticate, requireRoles(...OMNICHANNEL_DISPATCH_ROLES)] }, async (request: any, reply) => {
     const { doctorEmail, patientName, patientUhId, parameterName, observedValue, normalRange, technicianName, urgentActionUrl } = request.body || {};
     if (!doctorEmail || !patientName || !parameterName || !observedValue) {
       return reply.status(400).send({ success: false, error: 'Missing required critical panic alert parameters' });
@@ -129,7 +144,7 @@ export const omnichannelIntegrationsRoutes: FastifyPluginAsync = async (fastify)
     return reply.status(200).send({ success: true, result });
   });
 
-  fastify.post('/api/v1/integrations/gmail/send-custom', async (request: any, reply) => {
+  fastify.post('/api/v1/integrations/gmail/send-custom', { preHandler: [authenticate, requireRoles(...OMNICHANNEL_DISPATCH_ROLES)] }, async (request: any, reply) => {
     const { to, subject, html, text, category } = request.body || {};
     if (!to || !subject || !html) {
       return reply.status(400).send({ success: false, error: 'to, subject, and html are required' });
@@ -149,12 +164,12 @@ export const omnichannelIntegrationsRoutes: FastifyPluginAsync = async (fastify)
     });
   });
 
-  fastify.get('/api/v1/integrations/firebase/verify', async (_request, reply) => {
+  fastify.get('/api/v1/integrations/firebase/verify', { preHandler: [authenticate, requireRoles(...OMNICHANNEL_ADMIN_ROLES)] }, async (_request, reply) => {
     const verification = await firebaseIntegrationService.verifyConnection();
     return reply.status(verification.success ? 200 : 400).send(verification);
   });
 
-  fastify.post('/api/v1/integrations/firebase/register-device', async (request: any, reply) => {
+  fastify.post('/api/v1/integrations/firebase/register-device', { preHandler: [authenticate] }, async (request: any, reply) => {
     const { userId, token, platform, tenantId, role } = request.body || {};
     if (!userId || !token || !platform) {
       return reply.status(400).send({ success: false, error: 'userId, token, and platform are required' });
@@ -170,7 +185,7 @@ export const omnichannelIntegrationsRoutes: FastifyPluginAsync = async (fastify)
     return reply.status(200).send({ success: true, data: registered });
   });
 
-  fastify.post('/api/v1/integrations/firebase/send-push', async (request: any, reply) => {
+  fastify.post('/api/v1/integrations/firebase/send-push', { preHandler: [authenticate, requireRoles(...OMNICHANNEL_DISPATCH_ROLES)] }, async (request: any, reply) => {
     const { targetToken, topic, notification, tenantId, userId } = request.body || {};
     if ((!targetToken && !topic) || !notification?.title || !notification?.body) {
       return reply.status(400).send({ success: false, error: 'targetToken or topic, and notification {title, body} are required' });
@@ -186,7 +201,7 @@ export const omnichannelIntegrationsRoutes: FastifyPluginAsync = async (fastify)
     return reply.status(200).send({ success: true, result });
   });
 
-  fastify.post('/api/v1/integrations/firebase/send-queue-turn', async (request: any, reply) => {
+  fastify.post('/api/v1/integrations/firebase/send-queue-turn', { preHandler: [authenticate, requireRoles(...OMNICHANNEL_DISPATCH_ROLES)] }, async (request: any, reply) => {
     const { deviceToken, tokenNumber, patientName, doctorName, cabinNumber } = request.body || {};
     if (!deviceToken || !tokenNumber || !patientName || !doctorName) {
       return reply.status(400).send({ success: false, error: 'deviceToken, tokenNumber, patientName, doctorName are required' });
@@ -201,7 +216,7 @@ export const omnichannelIntegrationsRoutes: FastifyPluginAsync = async (fastify)
     return reply.status(200).send({ success: true, result });
   });
 
-  fastify.post('/api/v1/integrations/firebase/send-critical-lab-alert', async (request: any, reply) => {
+  fastify.post('/api/v1/integrations/firebase/send-critical-lab-alert', { preHandler: [authenticate, requireRoles(...OMNICHANNEL_DISPATCH_ROLES)] }, async (request: any, reply) => {
     const { doctorDeviceToken, patientName, uhid, testName, panicValue } = request.body || {};
     if (!doctorDeviceToken || !patientName || !testName || !panicValue) {
       return reply.status(400).send({ success: false, error: 'doctorDeviceToken, patientName, testName, panicValue are required' });
@@ -216,7 +231,7 @@ export const omnichannelIntegrationsRoutes: FastifyPluginAsync = async (fastify)
     return reply.status(200).send({ success: true, result });
   });
 
-  fastify.post('/api/v1/integrations/firebase/broadcast-code-blue', async (request: any, reply) => {
+  fastify.post('/api/v1/integrations/firebase/broadcast-code-blue', { preHandler: [authenticate, requireRoles(...OMNICHANNEL_DISPATCH_ROLES)] }, async (request: any, reply) => {
     const { roomNumber, wing, floor } = request.body || {};
     if (!roomNumber) {
       return reply.status(400).send({ success: false, error: 'roomNumber is required' });
@@ -230,7 +245,7 @@ export const omnichannelIntegrationsRoutes: FastifyPluginAsync = async (fastify)
     return reply.status(200).send({ success: true, result });
   });
 
-  fastify.post('/api/v1/integrations/firebase/verify-token', async (request: any, reply) => {
+  fastify.post('/api/v1/integrations/firebase/verify-token', { preHandler: [authenticate] }, async (request: any, reply) => {
     const { idToken } = request.body || {};
     if (!idToken) {
       return reply.status(400).send({ success: false, error: 'idToken is required' });
@@ -254,12 +269,16 @@ export const omnichannelIntegrationsRoutes: FastifyPluginAsync = async (fastify)
     });
   });
 
-  fastify.get('/api/v1/integrations/telegram/verify', async (_request, reply) => {
+  fastify.get('/api/v1/integrations/telegram/verify', { preHandler: [authenticate, requireRoles(...OMNICHANNEL_ADMIN_ROLES)] }, async (_request, reply) => {
     const verification = await telegramBotService.verifyBotGetMe();
     return reply.status(verification.success ? 200 : 400).send(verification);
   });
 
   fastify.post('/api/v1/integrations/telegram/webhook', async (request: any, reply) => {
+    const configuredSecret = process.env['TELEGRAM_WEBHOOK_SECRET'];
+    if (configuredSecret && request.headers['x-telegram-bot-api-secret-token'] !== configuredSecret) {
+      return reply.status(401).send({ success: false, error: 'Invalid Telegram webhook secret token' });
+    }
     const update = request.body;
     logger.info('[TELEGRAM_WEBHOOK] Inbound update received', { updateId: update?.update_id });
 
@@ -283,7 +302,7 @@ export const omnichannelIntegrationsRoutes: FastifyPluginAsync = async (fastify)
     });
   });
 
-  fastify.post('/api/v1/integrations/telegram/send-message', async (request: any, reply) => {
+  fastify.post('/api/v1/integrations/telegram/send-message', { preHandler: [authenticate, requireRoles(...OMNICHANNEL_DISPATCH_ROLES)] }, async (request: any, reply) => {
     const { chatId, text, parseMode, replyMarkup } = request.body || {};
     if (!chatId || !text) {
       return reply.status(400).send({ success: false, error: 'chatId and text are required' });
@@ -293,7 +312,7 @@ export const omnichannelIntegrationsRoutes: FastifyPluginAsync = async (fastify)
     return reply.status(200).send({ success: true, result });
   });
 
-  fastify.post('/api/v1/integrations/telegram/send-panic-alert', async (request: any, reply) => {
+  fastify.post('/api/v1/integrations/telegram/send-panic-alert', { preHandler: [authenticate, requireRoles(...OMNICHANNEL_DISPATCH_ROLES)] }, async (request: any, reply) => {
     const { chatId, patientName, uhid, parameterName, observedValue, normalRange, technicianName } = request.body || {};
     if (!chatId || !patientName || !parameterName || !observedValue) {
       return reply.status(400).send({ success: false, error: 'chatId, patientName, parameterName, observedValue are required' });
@@ -310,7 +329,7 @@ export const omnichannelIntegrationsRoutes: FastifyPluginAsync = async (fastify)
     return reply.status(200).send({ success: true, result });
   });
 
-  fastify.post('/api/v1/integrations/telegram/send-queue-alert', async (request: any, reply) => {
+  fastify.post('/api/v1/integrations/telegram/send-queue-alert', { preHandler: [authenticate, requireRoles(...OMNICHANNEL_DISPATCH_ROLES)] }, async (request: any, reply) => {
     const { chatId, tokenNumber, patientName, doctorName, cabinNumber, hospitalName } = request.body || {};
     if (!chatId || !tokenNumber || !patientName || !doctorName) {
       return reply.status(400).send({ success: false, error: 'chatId, tokenNumber, patientName, doctorName are required' });
@@ -326,7 +345,7 @@ export const omnichannelIntegrationsRoutes: FastifyPluginAsync = async (fastify)
     return reply.status(200).send({ success: true, result });
   });
 
-  fastify.post('/api/v1/integrations/telegram/send-onboarding-alert', async (request: any, reply) => {
+  fastify.post('/api/v1/integrations/telegram/send-onboarding-alert', { preHandler: [authenticate, requireRoles(...OMNICHANNEL_DISPATCH_ROLES)] }, async (request: any, reply) => {
     const { chatId, legalName, vertical, city, tenantId, autoApproved } = request.body || {};
     if (!legalName || !vertical || !tenantId) {
       return reply.status(400).send({ success: false, error: 'legalName, vertical, tenantId are required' });

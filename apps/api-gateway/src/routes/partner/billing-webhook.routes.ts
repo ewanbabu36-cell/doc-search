@@ -1,4 +1,5 @@
 import { type FastifyPluginAsync } from 'fastify';
+import crypto from 'node:crypto';
 import { billingManagementService } from '../../services/partner/BillingManagementService.js';
 import { AppError, ErrorCode, createLogger } from '@docsearch/shared-core';
 import { env } from '../../config/env.js';
@@ -78,9 +79,23 @@ export const billingWebhookRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.post(
     '/api/v1/partner/billing/webhooks/upi-soundbox',
     async (request, reply) => {
-      const soundboxSecretHeader = request.headers['x-soundbox-secret'] || request.headers['x-soundbox-signature'] || request.headers['x-api-key'];
-      const expectedSecret = env.UPI_SOUNDBOX_WEBHOOK_SECRET;
-      if (!soundboxSecretHeader || soundboxSecretHeader !== expectedSecret) {
+      const soundboxSecretHeader = String(
+        request.headers['x-soundbox-secret'] ||
+        request.headers['x-soundbox-signature'] ||
+        request.headers['x-api-key'] ||
+        ''
+      );
+      const expectedSecret = process.env['UPI_SOUNDBOX_WEBHOOK_SECRET'] || env.UPI_SOUNDBOX_WEBHOOK_SECRET;
+      if (!expectedSecret || expectedSecret === 'docsearch_soundbox_secret_default') {
+        throw new AppError({
+          message: 'UPI Soundbox webhook is disabled until a dedicated UPI_SOUNDBOX_WEBHOOK_SECRET is configured.',
+          code: ErrorCode.SERVICE_UNAVAILABLE,
+          statusCode: 503
+        });
+      }
+      const receivedHash = crypto.createHash('sha256').update(soundboxSecretHeader).digest();
+      const expectedHash = crypto.createHash('sha256').update(expectedSecret).digest();
+      if (!soundboxSecretHeader || !crypto.timingSafeEqual(receivedHash, expectedHash)) {
         throw new AppError({
           message: 'Unauthorized Soundbox webhook: Missing or invalid secret key header.',
           code: ErrorCode.UNAUTHORIZED,

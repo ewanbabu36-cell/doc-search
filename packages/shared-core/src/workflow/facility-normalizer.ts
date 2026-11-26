@@ -973,7 +973,10 @@ export function isModuleAllowedForPartnerProfile(rawPartnerType: string | null |
   if (normMod.startsWith('PHARMACY_WHOLESALE')) {
     return allowed.includes('PHARMACY_WHOLESALE');
   }
-  if (normMod.startsWith('PHARMACY_') || normMod === 'PHARMACY-MEDICATION' || normMod === 'PHARMACY-POS') {
+  if (normMod === 'PHARMACY_POS' || normMod === 'PHARMACY-POS') {
+    return allowed.includes('PHARMACY_POS');
+  }
+  if (normMod.startsWith('PHARMACY_') || normMod === 'PHARMACY-MEDICATION') {
     return allowed.includes('PHARMACY_POS') || allowed.includes('PHARMACY');
   }
   if (normMod.startsWith('LAB_') || normMod.startsWith('PATHOLOGY_') || normMod === 'PATHOLOGY-LIMS' || normMod === 'CLINICAL-INVESTIGATION') {
