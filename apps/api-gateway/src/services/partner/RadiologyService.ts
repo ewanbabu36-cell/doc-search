@@ -1650,6 +1650,11 @@ export class RadiologyService {
           ...data,
           reportId: (existingReport as any).id || reportId,
           alertCode,
+          flaggedByRadiologist:
+            (data.flaggedByRadiologist as string) ||
+            session.actorEmail ||
+            session.userId ||
+            'Duty Radiologist',
           status: (data.status as string) || 'FLAGGED_PENDING_NOTIFICATION',
           tenantId: scope.tenantId,
           partnerId: data.partnerId || scope.tenantId,

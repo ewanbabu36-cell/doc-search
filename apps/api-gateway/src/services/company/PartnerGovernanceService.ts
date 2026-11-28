@@ -1,10 +1,16 @@
+import crypto from 'node:crypto';
 import { createLogger, AppError, ErrorCode } from '@docsearch/shared-core';
 import { realAuthService } from '../core/RealAuthService.js';
 import type { RoleType } from '@docsearch/api-contracts';
+import type { SessionContext } from '@docsearch/auth';
 import {
   getDatabase,
   getTestDatabase,
-  partnerGovernanceOverrides
+  withSecurityContext,
+  partnerGovernanceOverrides,
+  partnerProfiles,
+  eq,
+  and
 } from '@docsearch/database';
 import { toDeterministicUuid } from '../../repositories/company/PartnerOnboardingRepository.js';
 import { sessionRevocationService } from '../core/SessionRevocationService.js';
@@ -72,6 +78,7 @@ export interface PartnerGovernanceData {
   partnerType: string;
   modules: GovernanceModule[];
   quotas: GovernanceQuotas;
+  quotasOverridden?: boolean | undefined;
   killSwitches: GovernanceKillSwitches;
   staffUsers: GovernanceStaffUser[];
   auditLog: GovernanceAuditEntry[];
@@ -116,6 +123,83 @@ export class PartnerGovernanceService {
     }
   }
 
+  private async persistGovernanceRow(
+    partnerId: string,
+    effectiveTenantId: string,
+    moduleCode: string,
+    fields: Partial<typeof partnerGovernanceOverrides.$inferInsert>
+  ): Promise<void> {
+    const db = getDatabase();
+    if (!db) return;
+    const now = new Date();
+    let resolvedTenantId = effectiveTenantId;
+    try {
+      const lookupSession: SessionContext = {
+        userId: '00000000-0000-4000-8000-000000000001',
+        tenantId: effectiveTenantId,
+        roles: ['SUPER_ADMIN'],
+        permissions: ['*'],
+        dataScope: 'global',
+        sessionId: 'partner-governance-lookup',
+        actorEmail: 'system@docsearch.internal',
+        isSuperAdmin: true
+      };
+      const mapped = await withSecurityContext(db, lookupSession, async (tx) => {
+        const [prof] = await tx
+          .select({ tenantId: partnerProfiles.tenantId })
+          .from(partnerProfiles)
+          .where(eq(partnerProfiles.id, partnerId))
+          .limit(1);
+        return prof?.tenantId || null;
+      });
+      if (mapped) {
+        resolvedTenantId = mapped;
+        this.associatePartnerTenant(partnerId, mapped);
+      }
+    } catch {
+      // Keep effectiveTenantId fallback
+    }
+
+    const scopedSession: SessionContext = {
+      userId: '00000000-0000-4000-8000-000000000001',
+      tenantId: resolvedTenantId,
+      roles: ['SUPER_ADMIN'],
+      permissions: ['*'],
+      dataScope: 'global',
+      sessionId: 'partner-governance-sync',
+      actorEmail: String(fields.updatedBy || 'system@docsearch.internal'),
+      isSuperAdmin: true
+    };
+    await withSecurityContext(db, scopedSession, async (tx) => {
+      const [existing] = await tx
+        .select({ id: partnerGovernanceOverrides.id })
+        .from(partnerGovernanceOverrides)
+        .where(
+          and(
+            eq(partnerGovernanceOverrides.tenantId, resolvedTenantId),
+            eq(partnerGovernanceOverrides.moduleCode, moduleCode)
+          )
+        )
+        .limit(1);
+
+      if (existing) {
+        await tx
+          .update(partnerGovernanceOverrides)
+          .set({ ...fields, updatedAt: now })
+          .where(eq(partnerGovernanceOverrides.id, existing.id));
+      } else {
+        await tx.insert(partnerGovernanceOverrides).values({
+          id: crypto.randomUUID(),
+          partnerId,
+          tenantId: resolvedTenantId,
+          moduleCode,
+          ...fields,
+          updatedAt: now
+        });
+      }
+    });
+  }
+
   /**
    * Syncs existing partner governance records from PostgreSQL database
    */
@@ -124,7 +208,15 @@ export class PartnerGovernanceService {
     if (!db) return;
 
     try {
-      const rows = await db.select().from(partnerGovernanceOverrides);
+      const rows = await withSecurityContext(
+        db,
+        {
+          userId: '00000000-0000-4000-8000-000000000001',
+          tenantId: '00000000-0000-4000-8000-000000000000',
+          isSuperAdmin: true
+        },
+        (tx) => tx.select().from(partnerGovernanceOverrides)
+      );
       for (const row of rows) {
         let record = this.overridesStore.get(row.partnerId) || this.overridesStore.get(row.tenantId);
         if (!record) {
@@ -134,11 +226,19 @@ export class PartnerGovernanceService {
         const mod = record.modules.find((m) => m.code.toUpperCase() === row.moduleCode.toUpperCase());
         if (mod) {
           mod.status = row.status as ModuleStatus;
+          mod.lastModifiedBy = row.updatedBy || 'HQ Database Policy';
+          mod.reason = row.reason || 'Persisted governance override';
           if (row.trialEndsAt) mod.trialEndsAt = new Date(row.trialEndsAt).toISOString();
         }
 
-        if (row.maxBeds !== null && row.maxBeds !== undefined) record.quotas.maxBeds = row.maxBeds;
-        if (row.maxDoctorSeats !== null && row.maxDoctorSeats !== undefined) record.quotas.maxDoctorSeats = row.maxDoctorSeats;
+        if (row.maxBeds !== null && row.maxBeds !== undefined) {
+          record.quotas.maxBeds = row.maxBeds;
+          record.quotasOverridden = true;
+        }
+        if (row.maxDoctorSeats !== null && row.maxDoctorSeats !== undefined) {
+          record.quotas.maxDoctorSeats = row.maxDoctorSeats;
+          record.quotasOverridden = true;
+        }
         if (row.storageQuotaGb !== null && row.storageQuotaGb !== undefined) record.quotas.storageQuotaGb = row.storageQuotaGb;
         if (row.monthlyWhatsAppCredits !== null && row.monthlyWhatsAppCredits !== undefined) record.quotas.monthlyWhatsAppCredits = row.monthlyWhatsAppCredits;
 
@@ -388,27 +488,12 @@ export class PartnerGovernanceService {
           ? snapshot.tenantId
           : toDeterministicUuid(snapshot.tenantId || partnerId);
 
-        await db.insert(partnerGovernanceOverrides)
-          .values({
-            partnerId,
-            tenantId: effectiveTenantId,
-            moduleCode,
-            status: targetStatus,
-            trialEndsAt: trialEndsDate,
-            reason,
-            updatedBy: actor,
-            updatedAt: new Date()
-          })
-          .onConflictDoUpdate({
-            target: [partnerGovernanceOverrides.tenantId, partnerGovernanceOverrides.moduleCode],
-            set: {
-              status: targetStatus,
-              trialEndsAt: trialEndsDate,
-              reason,
-              updatedBy: actor,
-              updatedAt: new Date()
-            }
-          });
+        await this.persistGovernanceRow(partnerId, effectiveTenantId, moduleCode, {
+          status: targetStatus,
+          trialEndsAt: trialEndsDate,
+          reason,
+          updatedBy: actor
+        });
       } catch (err) {
         logger.warn('Failed to persist module toggle to PostgreSQL:', { error: String(err) });
       }
@@ -553,29 +638,13 @@ export class PartnerGovernanceService {
           ? snapshot.tenantId
           : toDeterministicUuid(snapshot.tenantId || partnerId);
 
-        await db.insert(partnerGovernanceOverrides)
-          .values({
-            partnerId,
-            tenantId: effectiveTenantId,
-            moduleCode: 'KILL_SWITCH',
-            globalFreeze: snapshot.killSwitches.globalFreeze,
-            billingFreeze: snapshot.killSwitches.billingFreeze,
-            communicationFreeze: snapshot.killSwitches.communicationFreeze,
-            reason,
-            updatedBy: actor,
-            updatedAt: new Date()
-          })
-          .onConflictDoUpdate({
-            target: [partnerGovernanceOverrides.tenantId, partnerGovernanceOverrides.moduleCode],
-            set: {
-              globalFreeze: snapshot.killSwitches.globalFreeze,
-              billingFreeze: snapshot.killSwitches.billingFreeze,
-              communicationFreeze: snapshot.killSwitches.communicationFreeze,
-              reason,
-              updatedBy: actor,
-              updatedAt: new Date()
-            }
-          });
+        await this.persistGovernanceRow(partnerId, effectiveTenantId, 'KILL_SWITCH', {
+          globalFreeze: snapshot.killSwitches.globalFreeze,
+          billingFreeze: snapshot.killSwitches.billingFreeze,
+          communicationFreeze: snapshot.killSwitches.communicationFreeze,
+          reason,
+          updatedBy: actor
+        });
       } catch (err) {
         logger.warn('Failed to persist kill switch to PostgreSQL:', { error: String(err) });
       }
@@ -600,6 +669,7 @@ export class PartnerGovernanceService {
       ...snapshot.quotas,
       ...quotas
     };
+    snapshot.quotasOverridden = true;
 
     snapshot.auditLog.unshift({
       id: `audit-${Date.now()}`,
@@ -622,31 +692,14 @@ export class PartnerGovernanceService {
           ? snapshot.tenantId
           : toDeterministicUuid(snapshot.tenantId || partnerId);
 
-        await db.insert(partnerGovernanceOverrides)
-          .values({
-            partnerId,
-            tenantId: effectiveTenantId,
-            moduleCode: 'RESOURCE_QUOTAS',
-            maxBeds: snapshot.quotas.maxBeds,
-            maxDoctorSeats: snapshot.quotas.maxDoctorSeats,
-            storageQuotaGb: snapshot.quotas.storageQuotaGb,
-            monthlyWhatsAppCredits: snapshot.quotas.monthlyWhatsAppCredits,
-            reason,
-            updatedBy: actor,
-            updatedAt: new Date()
-          })
-          .onConflictDoUpdate({
-            target: [partnerGovernanceOverrides.tenantId, partnerGovernanceOverrides.moduleCode],
-            set: {
-              maxBeds: snapshot.quotas.maxBeds,
-              maxDoctorSeats: snapshot.quotas.maxDoctorSeats,
-              storageQuotaGb: snapshot.quotas.storageQuotaGb,
-              monthlyWhatsAppCredits: snapshot.quotas.monthlyWhatsAppCredits,
-              reason,
-              updatedBy: actor,
-              updatedAt: new Date()
-            }
-          });
+        await this.persistGovernanceRow(partnerId, effectiveTenantId, 'RESOURCE_QUOTAS', {
+          maxBeds: snapshot.quotas.maxBeds,
+          maxDoctorSeats: snapshot.quotas.maxDoctorSeats,
+          storageQuotaGb: snapshot.quotas.storageQuotaGb,
+          monthlyWhatsAppCredits: snapshot.quotas.monthlyWhatsAppCredits,
+          reason,
+          updatedBy: actor
+        });
       } catch (err) {
         logger.warn('Failed to persist quotas to PostgreSQL:', { error: String(err) });
       }
@@ -673,6 +726,23 @@ export class PartnerGovernanceService {
       if (alt) record = this.overridesStore.get(alt);
     }
     return Boolean(record?.killSwitches?.billingFreeze || record?.killSwitches?.globalFreeze);
+  }
+
+  public hasExplicitQuotaOverride(tenantIdOrPartnerId: string): boolean {
+    let record = this.overridesStore.get(tenantIdOrPartnerId);
+    if (!record) {
+      const alt = this.partnerToTenantMap.get(tenantIdOrPartnerId) || this.tenantToPartnerMap.get(tenantIdOrPartnerId);
+      if (alt) record = this.overridesStore.get(alt);
+    }
+    if (!record) {
+      for (const rec of this.overridesStore.values()) {
+        if (rec.partnerId === tenantIdOrPartnerId || rec.tenantId === tenantIdOrPartnerId) {
+          record = rec;
+          break;
+        }
+      }
+    }
+    return Boolean(record?.quotasOverridden);
   }
 
   public getModuleOverride(tenantIdOrPartnerId: string, featureCode: string): boolean | undefined {
@@ -710,7 +780,13 @@ export class PartnerGovernanceService {
     if (!mod) return undefined;
 
     if (mod.status === 'DISABLED') return false;
-    if (mod.status === 'ACTIVE') return true;
+    if (mod.status === 'ACTIVE') {
+      // System Default Provisioning defaults must NOT override authoritative plan entitlements.
+      if (mod.lastModifiedBy === 'System Default Provisioning' && mod.reason === 'Initial onboarding profile default') {
+        return undefined;
+      }
+      return true;
+    }
     if (mod.status === 'TRIAL') {
       if (mod.trialEndsAt && new Date(mod.trialEndsAt).getTime() < Date.now()) {
         return false;

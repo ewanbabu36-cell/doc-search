@@ -133,7 +133,7 @@ describe('P0 SECURITY + CLINICAL SAFETY PATCH TEST SUITE', () => {
         "start_date", "renewal_date", "end_date"
       )
       VALUES 
-        ('44444444-4444-4444-8444-444444444401', '${TEST_SEEDS.PARTNER_ID_A}', '${TEST_SEEDS.PRODUCT_ID}', '${TEST_SEEDS.PLAN_PRO_ID}', '1.0.0', 'SUSPENDED', 'MONTHLY', now() - interval '30 days', now() + interval '30 days', now() + interval '30 days')
+        ('44444444-4444-4444-8444-444444444487', '${TEST_SEEDS.PARTNER_ID_A}', '${TEST_SEEDS.PRODUCT_ID}', '${TEST_SEEDS.PLAN_PRO_ID}', '1.0.0', 'SUSPENDED', 'MONTHLY', now() - interval '30 days', now() + interval '30 days', now() + interval '30 days')
       ON CONFLICT DO NOTHING;
 
       INSERT INTO "company"."licenses" (
@@ -142,7 +142,7 @@ describe('P0 SECURITY + CLINICAL SAFETY PATCH TEST SUITE', () => {
         "issued_at", "start_date", "expiry_date", "grace_period_end", "signature"
       )
       VALUES 
-        ('44444444-4444-4444-8444-444444444402', 'LIC-SUSPENDED-SEEDA-PRO1', '${TEST_SEEDS.PARTNER_ID_A}', '${suspendedTenant}', '44444444-4444-4444-8444-444444444401', '${TEST_SEEDS.PLAN_PRO_ID}', 'COMMERCIAL', 'SUSPENDED', 'ACTIVATED', 50, 25, 3, now() - interval '30 days', now() - interval '30 days', now() + interval '30 days', now() + interval '37 days', 'seed_signature_suspended')
+        ('44444444-4444-4444-8444-444444444488', 'LIC-SUSPENDED-SEEDA-PRO1', '${TEST_SEEDS.PARTNER_ID_A}', '${suspendedTenant}', '44444444-4444-4444-8444-444444444487', '${TEST_SEEDS.PLAN_PRO_ID}', 'COMMERCIAL', 'SUSPENDED', 'ACTIVATED', 50, 25, 3, now() - interval '30 days', now() - interval '30 days', now() + interval '30 days', now() + interval '37 days', 'seed_signature_suspended')
       ON CONFLICT DO NOTHING;
 
       -- Seed unentitled tenant (plan without MODULE_AI_COPILOT)
@@ -177,7 +177,7 @@ describe('P0 SECURITY + CLINICAL SAFETY PATCH TEST SUITE', () => {
 
     doctorATokenUser1 = createTestToken({ userId: 'usr-doc-01', tenantId: tenantA });
     doctorATokenUser2 = createTestToken({ userId: 'usr-doc-02', tenantId: tenantA });
-    doctorBToken = createTestToken({ userId: 'usr-doc-b-01', tenantId: tenantB });
+    doctorBToken = createTestToken({ userId: 'usr-doc-b-01', tenantId: tenantB, branchId: TEST_SEEDS.FACILITY_ID_B });
     receptionToken = createTestToken({ userId: 'usr-rec-01', roles: ['RECEPTION'], permissions: ['reception:read'] });
     financeToken = createTestToken({ userId: 'usr-fin-01', roles: ['FINANCE'], permissions: ['finance:read'] });
     expiredToken = createTestToken({ userId: 'usr-exp-01', tenantId: expiredTenant });
@@ -580,7 +580,7 @@ describe('P0 SECURITY + CLINICAL SAFETY PATCH TEST SUITE', () => {
         headers: { authorization: `Bearer ${doctorBToken}` },
         payload: {
           patientId: patientBId,
-          doctorId: TEST_SEEDS.DOCTOR_ID,
+          doctorId: '88888888-8888-4888-8888-888888888802',
           encounterType: 'WALK_IN',
           chiefComplaint: 'Orphan test'
         }

@@ -109,7 +109,7 @@ export default defineConfig({
     emptyOutDir: true,
     cssCodeSplit: true,
     assetsInlineLimit: 4096,
-    chunkSizeWarningLimit: 2500,
+    chunkSizeWarningLimit: 600,
     minify: 'esbuild',
     rollupOptions: {
       output: {
@@ -134,13 +134,13 @@ export default defineConfig({
           if (id.includes('/packages/shared-core/') || id.includes('/packages/api-contracts/')) {
             return 'vendor-core-contracts';
           }
-          // 6. Common Shell Overlays, Command Palettes & Docks
-          if (id.includes('/apps/partner-platform/src/components/common/') || id.includes('/apps/partner-platform/src/components/security/')) {
-            return 'chunk-shell-widgets';
+          // 6. Security overlays only (do NOT bundle lazy /common/ modals into one eager 1.5MB chunk)
+          if (id.includes('/apps/partner-platform/src/components/security/')) {
+            return 'chunk-security-widgets';
           }
-          // 7. Clinical Client Services & Local Event Hubs (unified to avoid circular chunking)
-          if (id.includes('/apps/partner-platform/src/services/') || id.includes('/apps/partner-platform/src/utils/')) {
-            return 'chunk-partner-core-services';
+          // 7. Split domain client APIs cleanly instead of monolithic core-services bundle
+          if (id.includes('/apps/partner-platform/src/services/api-client') || id.includes('/apps/partner-platform/src/utils/partnerRolePermissions')) {
+            return 'chunk-partner-api-core';
           }
           // 8. Generic Third-Party Vendor
           if (id.includes('node_modules')) {

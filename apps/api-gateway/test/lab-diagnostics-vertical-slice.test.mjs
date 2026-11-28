@@ -1,8 +1,9 @@
 import { describe, it, before, after } from 'node:test';
 import assert from 'node:assert/strict';
+import crypto from 'node:crypto';
 import { buildApp } from '../dist/app.js';
 import { signJwt } from '@docsearch/auth';
-import { setupTestDatabase, TEST_SEEDS } from '@docsearch/database';
+import { setupTestDatabase, TEST_SEEDS, getDatabase, partnerProfiles, subscriptions, licenses, eq } from '@docsearch/database';
 
 describe('Lab & Diagnostics Vertical Slice: Order -> Specimen -> Result -> Verification -> Review -> History', () => {
   let app;
@@ -36,7 +37,8 @@ describe('Lab & Diagnostics Vertical Slice: Order -> Specimen -> Result -> Verif
         'lab:orders:update',
         'lab:specimens:create',
         'lab:results:create',
-        'lab:results:update'
+        'lab:results:update',
+        'lab:results:validate'
       ],
       iss: ISSUER,
       aud: AUDIENCE
@@ -52,6 +54,29 @@ describe('Lab & Diagnostics Vertical Slice: Order -> Specimen -> Result -> Verif
     testDb = await setupTestDatabase();
     process.env['JWT_SECRET'] = MASTER_SECRET;
     process.env['NODE_ENV'] = 'development';
+
+    const db = getDatabase();
+    await db
+      .update(partnerProfiles)
+      .set({
+        partnerType: 'HOSPITAL',
+        metadata: { partnerType: 'HOSPITAL', facilityType: 'HOSPITAL' }
+      })
+      .where(eq(partnerProfiles.tenantId, TENANT_B));
+    await db
+      .update(subscriptions)
+      .set({ planId: TEST_SEEDS.PLAN_PRO_ID })
+      .where(eq(subscriptions.partnerId, TEST_SEEDS.PARTNER_ID_B));
+    const licenseSecret = process.env['LICENSE_HMAC_SECRET'] || MASTER_SECRET;
+    const newSigB = crypto
+      .createHmac('sha256', licenseSecret)
+      .update(`LIC-CARE-STARTER-001:${TEST_SEEDS.PARTNER_ID_B}:${TENANT_B}:${TEST_SEEDS.SUBSCRIPTION_ID_B}:${TEST_SEEDS.PLAN_PRO_ID}`)
+      .digest('hex');
+    await db
+      .update(licenses)
+      .set({ planId: TEST_SEEDS.PLAN_PRO_ID, signature: newSigB })
+      .where(eq(licenses.tenantId, TENANT_B));
+
     app = await buildApp();
     await app.ready();
   });

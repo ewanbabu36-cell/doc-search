@@ -1,8 +1,48 @@
-import type { FastifyInstance } from 'fastify';
+import type { FastifyInstance, FastifyRequest } from 'fastify';
 import helmet from '@fastify/helmet';
 import cors from '@fastify/cors';
 import rateLimit from '@fastify/rate-limit';
+import { verifyJwt, type VerifiedTokenClaims } from '@docsearch/auth';
 import { env } from '../config/env.js';
+
+function resolveVerifiedRateLimitPrincipal(
+  request: FastifyRequest
+): { tenantId: string; userId: string } | null {
+  const cached = (request as any).__rlVerifiedPrincipal;
+  if (cached !== undefined) return cached;
+
+  if (request.session?.userId && request.session?.tenantId) {
+    const res = { tenantId: request.session.tenantId, userId: request.session.userId };
+    (request as any).__rlVerifiedPrincipal = res;
+    return res;
+  }
+
+  const rawAuth = request.headers.authorization;
+  if (typeof rawAuth === 'string' && rawAuth.startsWith('Bearer ')) {
+    const token = rawAuth.slice(7).trim();
+    if (token) {
+      try {
+        const claims = verifyJwt<VerifiedTokenClaims>(token, {
+          secret: process.env['JWT_SECRET'] || env.JWT_SECRET,
+          expectedIssuer: env.JWT_ISSUER,
+          expectedAudience: env.JWT_AUDIENCE
+        });
+        const userId = claims.sub || (claims as any).userId;
+        const tenantId = claims.tenantId;
+        if (userId && tenantId) {
+          const res = { tenantId: String(tenantId), userId: String(userId) };
+          (request as any).__rlVerifiedPrincipal = res;
+          return res;
+        }
+      } catch {
+        // Invalid or forged token: fall back to strict IP throttling
+      }
+    }
+  }
+
+  (request as any).__rlVerifiedPrincipal = null;
+  return null;
+}
 
 export async function registerSecurityPlugins(app: FastifyInstance): Promise<void> {
   // 1. Security Headers via Helmet
@@ -103,16 +143,17 @@ export async function registerSecurityPlugins(app: FastifyInstance): Promise<voi
       request.url.startsWith('/api/v1/partner/billing/webhooks') ||
       request.url.startsWith('/api/v1/webhooks/notifications'),
     keyGenerator: (request) => {
-      // 1. Only cryptographically verified and attached sessions receive user/tenant rate limit keys
-      if (request.session?.userId && request.session?.tenantId) {
-        return `auth:${request.session.tenantId}:${request.session.userId}`;
+      // 1. Only cryptographically verified sessions/JWTs receive user/tenant rate limit keys
+      const verified = resolveVerifiedRateLimitPrincipal(request);
+      if (verified) {
+        return `auth:${verified.tenantId}:${verified.userId}`;
       }
       // 2. Strict fallback to client IP for all unauthenticated or unverified traffic
       return `ip:${request.ip}`;
     },
     max: (request) => {
-      // 🛡️ High throughput quota strictly reserved for cryptographically authenticated users
-      if (request.session?.userId) {
+      // 🛡️ High throughput quota strictly reserved for cryptographically verified users
+      if (resolveVerifiedRateLimitPrincipal(request)) {
         return 10000;
       }
       // Strict anti-abuse / anti-spray quota for unauthenticated public traffic

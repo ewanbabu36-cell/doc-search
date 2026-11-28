@@ -1,5 +1,7 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
+const isDevLiveReload = process.env['CAPACITOR_LIVE_RELOAD'] === 'true';
+
 const config: CapacitorConfig = {
   appId: 'com.docsearch.aarogya360',
   appName: 'Aarogya360 - DocSearch Patient App',
@@ -8,11 +10,11 @@ const config: CapacitorConfig = {
   server: {
     androidScheme: 'https',
     iosScheme: 'capacitor',
-    cleartext: true,
+    cleartext: isDevLiveReload,
     hostname: 'patient.docsearch.in'
   },
   android: {
-    allowMixedContent: true,
+    allowMixedContent: isDevLiveReload,
     captureInput: true,
     webContentsDebuggingEnabled: false,
     backgroundColor: '#0B0F19'

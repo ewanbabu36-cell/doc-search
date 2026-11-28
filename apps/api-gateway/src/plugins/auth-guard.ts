@@ -9,7 +9,7 @@ import {
 } from '@docsearch/auth';
 import type { PermissionAction, RoleType } from '@docsearch/api-contracts';
 import { AppError, ErrorCode, createLogger } from '@docsearch/shared-core';
-import { getDatabase, breakGlassAccess, operationalPartners, partnerProfiles, operationalFacilities, eq, and } from '@docsearch/database';
+import { getDatabase, withSecurityContext, breakGlassAccess, operationalPartners, partnerProfiles, operationalFacilities, eq, and } from '@docsearch/database';
 import { env } from '../config/env.js';
 import { enforceIdempotency } from './idempotency.js';
 import { sessionRevocationService } from '../services/core/SessionRevocationService.js';
@@ -20,6 +20,12 @@ import { isValidUuid } from '../utils/uuid-guard.js';
 import { identitySecurityFoundationService } from '../services/security/IdentitySecurityFoundationService.js';
 
 const logger = createLogger('auth-guard');
+
+type ExtendedSessionContext = SessionContext & {
+  email?: string;
+  roles: RoleType[];
+  permissions: string[];
+};
 
 async function verifyActiveBreakGlassForPatientChart(
   session: SessionContext,
@@ -49,9 +55,9 @@ async function verifyActiveBreakGlassForPatientChart(
 
     const nowMs = Date.now();
     const userUuid = toDeterministicUuid(session.userId);
-    const callerEmail = (session.actorEmail || (session as any).email || '').toLowerCase().trim();
+    const callerEmail = (session.actorEmail || (session as ExtendedSessionContext).email || '').toLowerCase().trim();
 
-    const activeGrant = rows.find((r: any) => {
+    const activeGrant = rows.find((r) => {
       if (r.revokedAt) return false;
       const expMs = r.expiresAt ? new Date(r.expiresAt).getTime() : 0;
       if (expMs <= nowMs) return false;
@@ -153,13 +159,14 @@ export function extractAuthTokenFromRequest(request: FastifyRequest): string | n
     }
   }
 
-  if (!raw && (request as any).cookies) {
+  const requestCookies = (request as FastifyRequest & { cookies?: Record<string, string | undefined> }).cookies;
+  if (!raw && requestCookies) {
     const cookieToken =
-      (request as any).cookies['docsearch_auth_token'] ||
-      (request as any).cookies['docsearch_company_token'] ||
-      (request as any).cookies['docsearch_partner_token'] ||
-      (request as any).cookies['token'] ||
-      (request as any).cookies['auth_token'];
+      requestCookies['docsearch_auth_token'] ||
+      requestCookies['docsearch_company_token'] ||
+      requestCookies['docsearch_partner_token'] ||
+      requestCookies['token'] ||
+      requestCookies['auth_token'];
     if (typeof cookieToken === 'string' && cookieToken.trim()) {
       raw = cookieToken.trim();
     }
@@ -224,8 +231,9 @@ export async function authenticate(request: FastifyRequest, reply: FastifyReply)
     // effective_from <= NOW AND (effective_to IS NULL OR effective_to > NOW)
     // =========================================================================
     const nowMs = Date.now();
-    const claimEffectiveFrom = (claims as any).effectiveFrom || (claims as any).roleEffectiveFrom;
-    const claimEffectiveTo = (claims as any).effectiveTo || (claims as any).roleEffectiveTo;
+    const extClaims = claims as unknown as Record<string, string | number | Date | undefined>;
+    const claimEffectiveFrom = extClaims['effectiveFrom'] || extClaims['roleEffectiveFrom'];
+    const claimEffectiveTo = extClaims['effectiveTo'] || extClaims['roleEffectiveTo'];
 
     if (claimEffectiveFrom && new Date(claimEffectiveFrom).getTime() > nowMs) {
       throw new AppError({
@@ -275,7 +283,7 @@ export async function authenticate(request: FastifyRequest, reply: FastifyReply)
           const effectiveActiveRoles = (
             filteredRoles.length > 0 ? filteredRoles : (temporalEval.activeRoles as RoleType[])
           ).map((r) => String(r).toUpperCase());
-          (built as any).roles = effectiveActiveRoles as RoleType[];
+          (built as ExtendedSessionContext).roles = effectiveActiveRoles as RoleType[];
 
           // Invariant (P1-05): Expired/future role assignments contribute ZERO permissions.
           // Recompute allowed permission prefixes from remaining activeRoles so stale JWT permissions
@@ -321,7 +329,7 @@ export async function authenticate(request: FastifyRequest, reply: FastifyReply)
           }
 
           if (!allowedPrefixes.has('*')) {
-            (built as any).permissions = (built.permissions || []).filter((perm) => {
+            (built as ExtendedSessionContext).permissions = (built.permissions || []).filter((perm) => {
               const pLower = String(perm).toLowerCase();
               for (const prefix of allowedPrefixes) {
                 if (pLower === prefix || pLower.startsWith(prefix)) {
@@ -401,11 +409,27 @@ export async function authenticate(request: FastifyRequest, reply: FastifyReply)
       if (headers['x-tenant-id'] === '11111111-1111-4111-8111-111111111111') headers['x-tenant-id'] = request.session.tenantId;
     }
 
+    const PLATFORM_HQ_TENANTS = new Set([
+      '00000000-0000-4000-8000-000000000000',
+      '00000000-0000-4000-8000-000000000001',
+      '00000000-0000-4000-a000-000000000001'
+    ]);
+    const isCompanyHqRoute = rawReqUrl.startsWith('/api/v1/company/');
+    const sessionRolesUpper = (request.session.roles || []).map((r) => String(r).toUpperCase());
+    const isHqCrossTenantAuthorized =
+      Boolean(request.session.isSuperAdmin) ||
+      (isCompanyHqRoute &&
+        (sessionRolesUpper.includes('SUPER_ADMIN') ||
+          sessionRolesUpper.includes('COMPANY_ADMIN') ||
+          ((sessionRolesUpper.includes('FINANCE_MANAGER') ||
+            sessionRolesUpper.includes('CHIEF_FINANCIAL_OFFICER')) &&
+            PLATFORM_HQ_TENANTS.has(String(request.session.tenantId || '').toLowerCase()))));
+
     if (
       !isSecurityEvalEndpoint &&
       clientTenantId &&
       typeof clientTenantId === 'string' &&
-      !request.session.isSuperAdmin &&
+      !isHqCrossTenantAuthorized &&
       clientTenantId !== request.session.tenantId
     ) {
       logger.warn('Cross-tenant access attempt blocked', {
@@ -443,9 +467,11 @@ export async function authenticate(request: FastifyRequest, reply: FastifyReply)
       !isSecurityEvalEndpoint &&
       clientPartnerId &&
       typeof clientPartnerId === 'string' &&
-      !request.session.isSuperAdmin &&
+      !isHqCrossTenantAuthorized &&
       !request.session.roles.includes('COMPANY_ADMIN') &&
-      clientPartnerId !== request.session.tenantId
+      clientPartnerId !== request.session.tenantId &&
+      clientPartnerId !== (request.session as any).partnerId &&
+      clientPartnerId !== request.session.organizationId
     ) {
       let isPartnerOfTenant = false;
       const db = getDatabase();
@@ -464,16 +490,18 @@ export async function authenticate(request: FastifyRequest, reply: FastifyReply)
           if (opP) {
             isPartnerOfTenant = true;
           } else if (isValidUuid(clientPartnerId)) {
-            const [pp] = await db
-              .select({ id: partnerProfiles.id })
-              .from(partnerProfiles)
-              .where(
-                and(
-                  eq(partnerProfiles.tenantId, request.session.tenantId),
-                  eq(partnerProfiles.id, clientPartnerId)
+            const [pp] = await withSecurityContext(db, request.session, (tx) =>
+              tx
+                .select({ id: partnerProfiles.id })
+                .from(partnerProfiles)
+                .where(
+                  and(
+                    eq(partnerProfiles.tenantId, request.session.tenantId),
+                    eq(partnerProfiles.id, clientPartnerId)
+                  )
                 )
-              )
-              .limit(1);
+                .limit(1)
+            );
             if (pp) isPartnerOfTenant = true;
           }
         } catch {}
@@ -643,7 +671,7 @@ export function requireAnyPermission(...permissions: { resource: string; action:
 /**
  * PreHandler Factory: Enforces role membership requirement.
  */
-export function requireRoles(...roles: RoleType[]) {
+export function requireRoles(...roles: (RoleType | string)[]) {
   const handler = async (request: FastifyRequest, _reply: FastifyReply): Promise<void> => {
     if (!request.session) {
       throw AppError.unauthorized('Authentication required before checking roles');
@@ -709,7 +737,7 @@ export function requireBranchScope(
  * Guarantees that request execution fails closed if authenticated tenant context is absent.
  */
 export function requireTenantId(request: FastifyRequest): string {
-  const session = (request as any).session as SessionContext | undefined;
+  const session = (request as FastifyRequest & { session?: SessionContext }).session;
   if (!session?.tenantId) {
     throw AppError.unauthorized('Authenticated tenant context is required. No tenantId found in session.');
   }

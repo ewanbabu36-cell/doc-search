@@ -190,7 +190,9 @@ export const documentVerificationRoutes: FastifyPluginAsync = async (fastify) =>
       preHandler: [authenticate, requirePermission('compliance:documents', 'read')]
     },
     async (request, reply) => {
-      if (!isAuthorizedHqComplianceCaller(request.session)) {
+      const query = (request.query || {}) as Record<string, any>;
+      const isTenantSelfScope = query['scope'] === 'tenant' && Boolean(request.session?.tenantId);
+      if (!isAuthorizedHqComplianceCaller(request.session) && !isTenantSelfScope) {
         throw new AppError({
           message: 'Access denied: Only authorized HQ Compliance Officers, Company Admins, or Super Admins may access the verification queue.',
           code: ErrorCode.FORBIDDEN,
@@ -198,7 +200,6 @@ export const documentVerificationRoutes: FastifyPluginAsync = async (fastify) =>
         });
       }
 
-      const query = (request.query || {}) as Record<string, any>;
       const queue = await documentVerificationRepository.getVerificationQueue(query, {
         userId: request.session.userId,
         tenantId: request.session.tenantId,

@@ -57,7 +57,10 @@ describe('DOC SEARCH — Disaster Recovery, Database Resilience & Migration Inte
       assert.equal(res.statusCode, 200);
       const body = JSON.parse(res.body);
       assert.equal(body.status, 'ready');
-      assert.equal(body.database, 'connected');
+      assert.equal(
+        typeof body.database === 'string' ? body.database === 'connected' : body.database?.connected === true,
+        true
+      );
     });
 
     it('1.2: GET /ready returns 503 Service Unavailable when database query fails (Fail-Closed)', async () => {
@@ -80,7 +83,10 @@ describe('DOC SEARCH — Disaster Recovery, Database Resilience & Migration Inte
         assert.equal(res.statusCode, 503, 'Readiness probe MUST return 503 when database is unreachable');
         const body = JSON.parse(res.body);
         assert.equal(body.status, 'not_ready');
-        assert.equal(body.database, 'disconnected');
+        assert.equal(
+          typeof body.database === 'string' ? body.database === 'disconnected' : body.database?.connected === false,
+          true
+        );
       } finally {
         // Restore healthy database
         setTestDatabase(originalDb);
@@ -96,7 +102,10 @@ describe('DOC SEARCH — Disaster Recovery, Database Resilience & Migration Inte
       assert.equal(res.statusCode, 200);
       const body = JSON.parse(res.body);
       assert.equal(body.status, 'ready');
-      assert.equal(body.database, 'connected');
+      assert.equal(
+        typeof body.database === 'string' ? body.database === 'connected' : body.database?.connected === true,
+        true
+      );
     });
 
     it('1.4: Database write mutations fail-closed with 503 and do not silently fake success when DB is down', async () => {

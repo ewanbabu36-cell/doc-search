@@ -83,9 +83,11 @@ describe('HQ Central Control: Enterprise Node-Locking, Multi-Seat, Renewal & Rem
   // STAGE 1: Machine Fingerprint Discovery & Hardware Profile Extraction
   // =========================================================================
   it('STAGE 1: GET /api/v1/license/machine-fingerprint returns deterministic hardware node telemetry', async () => {
+    const adminToken = createCompanyAdminToken();
     const res = await app.inject({
       method: 'GET',
-      url: '/api/v1/license/machine-fingerprint'
+      url: '/api/v1/license/machine-fingerprint',
+      headers: { Authorization: `Bearer ${adminToken}` }
     });
 
     assert.strictEqual(res.statusCode, 200);
@@ -246,11 +248,12 @@ describe('HQ Central Control: Enterprise Node-Locking, Multi-Seat, Renewal & Rem
   // STAGE 4: Real-Time Heartbeat, Grace Countdown & Clock Drift Defense
   // =========================================================================
   it('STAGE 4: POST /api/v1/license/heartbeat verifies active node health and blocks clock rollback', async () => {
+    const adminToken = createCompanyAdminToken();
     // 1. Normal valid heartbeat
     const beatRes = await app.inject({
       method: 'POST',
       url: '/api/v1/license/heartbeat',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { Authorization: `Bearer ${adminToken}`, 'Content-Type': 'application/json' },
       payload: {
         tenantId: PARTNER_TENANT_ID,
         machineFingerprint: currentMachineFingerprint,
@@ -274,7 +277,7 @@ describe('HQ Central Control: Enterprise Node-Locking, Multi-Seat, Renewal & Rem
     const rollbackRes = await app.inject({
       method: 'POST',
       url: '/api/v1/license/heartbeat',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { Authorization: `Bearer ${adminToken}`, 'Content-Type': 'application/json' },
       payload: {
         tenantId: PARTNER_TENANT_ID,
         machineFingerprint: currentMachineFingerprint,
@@ -312,7 +315,7 @@ describe('HQ Central Control: Enterprise Node-Locking, Multi-Seat, Renewal & Rem
     const blockedBeatRes = await app.inject({
       method: 'POST',
       url: '/api/v1/license/heartbeat',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { Authorization: `Bearer ${adminToken}`, 'Content-Type': 'application/json' },
       payload: {
         tenantId: PARTNER_TENANT_ID,
         machineFingerprint: currentMachineFingerprint,
@@ -360,7 +363,7 @@ describe('HQ Central Control: Enterprise Node-Locking, Multi-Seat, Renewal & Rem
     const restoredBeatRes = await app.inject({
       method: 'POST',
       url: '/api/v1/license/heartbeat',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { Authorization: `Bearer ${adminToken}`, 'Content-Type': 'application/json' },
       payload: {
         tenantId: PARTNER_TENANT_ID,
         machineFingerprint: currentMachineFingerprint,
@@ -396,7 +399,7 @@ describe('HQ Central Control: Enterprise Node-Locking, Multi-Seat, Renewal & Rem
     const secondaryBeatRes = await app.inject({
       method: 'POST',
       url: '/api/v1/license/heartbeat',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { Authorization: `Bearer ${adminToken}`, 'Content-Type': 'application/json' },
       payload: {
         tenantId: PARTNER_TENANT_ID,
         machineFingerprint: 'MPR-ABCD-1234-5678',
@@ -413,7 +416,7 @@ describe('HQ Central Control: Enterprise Node-Locking, Multi-Seat, Renewal & Rem
     const primaryBeatRes = await app.inject({
       method: 'POST',
       url: '/api/v1/license/heartbeat',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { Authorization: `Bearer ${adminToken}`, 'Content-Type': 'application/json' },
       payload: {
         tenantId: PARTNER_TENANT_ID,
         machineFingerprint: currentMachineFingerprint,

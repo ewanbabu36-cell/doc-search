@@ -2,6 +2,15 @@ import React, { useState } from 'react';
 import { type Language } from '../i18n.js';
 import { patientApiService, type PatientProfile } from '../services/patient-api.js';
 
+const BOOKING_ERR_LABEL: Record<Language, string> = {
+  en: 'Unable to book OPD token. Please verify session and try again.',
+  hi: 'टोकन जनरेट नहीं हो सका। कृपया लॉगिन व इंटरनेट जाँचें।',
+  mr: 'टोकन बुक करता आले नाही. कृपया लॉगिन आणि इंटरनेट तपासा.',
+  bn: 'OPD টোকেন বুক করা যায়নি। অনুগ্রহ করে লগইন ও ইন্টারনেট যাচাই করুন।',
+  ta: 'OPD டோக்கன் பதிவு செய்ய முடியவில்லை. உள்நுழைவைச் சரிபார்க்கவும்.',
+  te: 'OPD టోకెన్ బుక్ చేయలేకపోయాము. దయచేసి లాగిన్ మరియు నెట్‌వర్క్ తనిఖీ చేయండి.'
+};
+
 interface Props {
   language: Language;
   patient: PatientProfile;
@@ -37,12 +46,7 @@ export const BookOpdModal: React.FC<Props> = ({ language, patient, onClose, onSu
 
     if (!res?.success || !res?.tokenNumber) {
       setIsSubmitting(false);
-      setBookingError(
-        res?.message ||
-          (language === 'hi'
-            ? 'टोकन जनरेट नहीं हो सका। कृपया लॉगिन व इंटरनेट जाँचें।'
-            : 'Unable to book OPD token. Please verify session and try again.')
-      );
+      setBookingError(res?.message || BOOKING_ERR_LABEL[language] || BOOKING_ERR_LABEL.en);
       return;
     }
 

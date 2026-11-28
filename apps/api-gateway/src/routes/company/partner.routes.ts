@@ -8,6 +8,7 @@ import { realAuthService } from '../../services/core/RealAuthService.js';
 import { partnerOnboardingRepository, toDeterministicUuid } from '../../repositories/company/PartnerOnboardingRepository.js';
 import {
   getDatabase,
+  withSecurityContext,
   partnerOnboardingStagedRegistrations,
   partnerProfiles,
   operationalPartners,
@@ -78,11 +79,14 @@ async function assertPartnerTenantScope(partnerId: string, session: any): Promis
   const db = getDatabase();
   if (db) {
     try {
-      const [p] = await db
-        .select({ id: partnerProfiles.id, tenantId: partnerProfiles.tenantId })
-        .from(partnerProfiles)
-        .where(or(eq(partnerProfiles.id, partnerId), eq(partnerProfiles.tenantId, partnerId)))
-        .limit(1);
+      const p = await withSecurityContext(db, session, async (tx) => {
+        const [row] = await tx
+          .select({ id: partnerProfiles.id, tenantId: partnerProfiles.tenantId })
+          .from(partnerProfiles)
+          .where(or(eq(partnerProfiles.id, partnerId), eq(partnerProfiles.tenantId, partnerId)))
+          .limit(1);
+        return row;
+      });
       if (p && (p.tenantId === session.tenantId || p.id === session.tenantId)) {
         return;
       }
@@ -431,127 +435,129 @@ export const partnerRoutes: FastifyPluginAsync = async (fastify) => {
       let matchedProfile: any = null;
       let matchedStaged: any = null;
 
-      // 1. Check partnerProfiles table in DB
-      try {
-        const allProfiles = await db.select().from(partnerProfiles);
-        matchedProfile = allProfiles.find(
-          (p) =>
-            p.id === partnerId ||
-            p.id === deterministicId ||
-            p.tenantId === partnerId ||
-            p.legalName.toLowerCase() === partnerId.toLowerCase() ||
-            p.tradeName.toLowerCase() === partnerId.toLowerCase() ||
-            p.primaryContactEmail.toLowerCase() === partnerId.toLowerCase()
-        );
-      } catch (err: any) {
-        fastify.log.error('partnerProfiles query error: ' + String(err));
-        throw new AppError({
-          message: 'Failed to query partner profiles from database.',
-          code: ErrorCode.DATABASE_ERROR,
-          statusCode: 500
-        });
-      }
-
-      // 2. Check staged registrations
-      try {
-        const allStaged = await db.select().from(partnerOnboardingStagedRegistrations);
-        matchedStaged = allStaged.find(
-          (s) =>
-            s.id === partnerId ||
-            s.id === deterministicId ||
-            s.tenantDraftId === partnerId ||
-            s.organizationName.toLowerCase() === partnerId.toLowerCase() ||
-            s.contactEmail.toLowerCase() === partnerId.toLowerCase()
-        );
-      } catch (stagedErr: any) {
-        fastify.log.error('stagedRegistrations query error: ' + String(stagedErr));
-        throw new AppError({
-          message: 'Failed to query staged registrations from database.',
-          code: ErrorCode.DATABASE_ERROR,
-          statusCode: 500
-        });
-      }
-
-      if (!matchedProfile && !matchedStaged) {
-        throw AppError.notFound(`Partner ${partnerId} not found`);
-      }
-
-      if (matchedProfile) {
+      await withSecurityContext(db, request.session, async (tx) => {
+        // 1. Check partnerProfiles table in DB
         try {
-          const currentMeta = (matchedProfile.metadata as Record<string, any>) || {};
-          const updatedMeta = {
-            ...currentMeta,
-            ...(body.metadata || {}),
-            ...(body.city ? { city: body.city } : {}),
-            ...(body.state ? { state: body.state } : {})
-          };
-
-          const [upd] = await db
-            .update(partnerProfiles)
-            .set({
-              legalName: body.legalName || matchedProfile.legalName,
-              tradeName: body.tradeName || matchedProfile.tradeName,
-              partnerType: (body.partnerType || matchedProfile.partnerType) as any,
-              lifecycleStatus: body.lifecycleStatus || matchedProfile.lifecycleStatus,
-              verificationStatus: body.verificationStatus || matchedProfile.verificationStatus,
-              primaryContactName: body.primaryContactName || matchedProfile.primaryContactName,
-              primaryContactPhone: body.primaryContactPhone || matchedProfile.primaryContactPhone,
-              primaryContactEmail: body.primaryContactEmail || matchedProfile.primaryContactEmail,
-              metadata: updatedMeta,
-              updatedAt: new Date()
-            })
-            .where(eq(partnerProfiles.id, matchedProfile.id))
-            .returning();
-
-          if (upd) {
-            updatedProfile = upd;
-          }
+          const allProfiles = await tx.select().from(partnerProfiles);
+          matchedProfile = allProfiles.find(
+            (p) =>
+              p.id === partnerId ||
+              p.id === deterministicId ||
+              p.tenantId === partnerId ||
+              p.legalName.toLowerCase() === partnerId.toLowerCase() ||
+              p.tradeName.toLowerCase() === partnerId.toLowerCase() ||
+              p.primaryContactEmail.toLowerCase() === partnerId.toLowerCase()
+          );
         } catch (err: any) {
-          fastify.log.error('partnerProfiles update error: ' + String(err));
+          fastify.log.error('partnerProfiles query error: ' + String(err));
           throw new AppError({
-            message: 'Failed to update partner profile in database.',
+            message: 'Failed to query partner profiles from database.',
             code: ErrorCode.DATABASE_ERROR,
             statusCode: 500
           });
         }
-      }
 
-      if (matchedStaged) {
+        // 2. Check staged registrations
         try {
-          const payload = (matchedStaged.registrationPayload as Record<string, any>) || {};
-          const newPayload = {
-            ...payload,
-            ...(body.city ? { city: body.city } : {}),
-            ...(body.state ? { state: body.state } : {}),
-            ...(body.metadata || {})
-          };
-
-          const [updStaged] = await db
-            .update(partnerOnboardingStagedRegistrations)
-            .set({
-              organizationName: body.legalName || body.tradeName || matchedStaged.organizationName,
-              organizationType: body.partnerType ? normalizeFacilityProfile(body.partnerType).workspace : matchedStaged.organizationType,
-              status: body.lifecycleStatus === 'SUSPENDED' ? 'SUSPENDED' : (body.verificationStatus === 'VERIFIED' ? 'APPROVED' : matchedStaged.status),
-              contactEmail: body.primaryContactEmail || matchedStaged.contactEmail,
-              contactPhone: body.primaryContactPhone || matchedStaged.contactPhone,
-              registrationPayload: newPayload,
-              updatedAt: new Date()
-            })
-            .where(eq(partnerOnboardingStagedRegistrations.id, matchedStaged.id))
-            .returning();
-
-          if (!updatedProfile && updStaged) {
-            updatedProfile = updStaged;
-          }
+          const allStaged = await tx.select().from(partnerOnboardingStagedRegistrations);
+          matchedStaged = allStaged.find(
+            (s) =>
+              s.id === partnerId ||
+              s.id === deterministicId ||
+              s.tenantDraftId === partnerId ||
+              s.organizationName.toLowerCase() === partnerId.toLowerCase() ||
+              s.contactEmail.toLowerCase() === partnerId.toLowerCase()
+          );
         } catch (stagedErr: any) {
-          fastify.log.error('stagedRegistrations update error: ' + String(stagedErr));
+          fastify.log.error('stagedRegistrations query error: ' + String(stagedErr));
           throw new AppError({
-            message: 'Failed to update staged registration in database.',
+            message: 'Failed to query staged registrations from database.',
             code: ErrorCode.DATABASE_ERROR,
             statusCode: 500
           });
         }
-      }
+
+        if (!matchedProfile && !matchedStaged) {
+          throw AppError.notFound(`Partner ${partnerId} not found`);
+        }
+
+        if (matchedProfile) {
+          try {
+            const currentMeta = (matchedProfile.metadata as Record<string, any>) || {};
+            const updatedMeta = {
+              ...currentMeta,
+              ...(body.metadata || {}),
+              ...(body.city ? { city: body.city } : {}),
+              ...(body.state ? { state: body.state } : {})
+            };
+
+            const [upd] = await tx
+              .update(partnerProfiles)
+              .set({
+                legalName: body.legalName || matchedProfile.legalName,
+                tradeName: body.tradeName || matchedProfile.tradeName,
+                partnerType: (body.partnerType || matchedProfile.partnerType) as any,
+                lifecycleStatus: body.lifecycleStatus || matchedProfile.lifecycleStatus,
+                verificationStatus: body.verificationStatus || matchedProfile.verificationStatus,
+                primaryContactName: body.primaryContactName || matchedProfile.primaryContactName,
+                primaryContactPhone: body.primaryContactPhone || matchedProfile.primaryContactPhone,
+                primaryContactEmail: body.primaryContactEmail || matchedProfile.primaryContactEmail,
+                metadata: updatedMeta,
+                updatedAt: new Date()
+              })
+              .where(eq(partnerProfiles.id, matchedProfile.id))
+              .returning();
+
+            if (upd) {
+              updatedProfile = upd;
+            }
+          } catch (err: any) {
+            fastify.log.error('partnerProfiles update error: ' + String(err));
+            throw new AppError({
+              message: 'Failed to update partner profile in database.',
+              code: ErrorCode.DATABASE_ERROR,
+              statusCode: 500
+            });
+          }
+        }
+
+        if (matchedStaged) {
+          try {
+            const payload = (matchedStaged.registrationPayload as Record<string, any>) || {};
+            const newPayload = {
+              ...payload,
+              ...(body.city ? { city: body.city } : {}),
+              ...(body.state ? { state: body.state } : {}),
+              ...(body.metadata || {})
+            };
+
+            const [updStaged] = await tx
+              .update(partnerOnboardingStagedRegistrations)
+              .set({
+                organizationName: body.legalName || body.tradeName || matchedStaged.organizationName,
+                organizationType: body.partnerType ? normalizeFacilityProfile(body.partnerType).workspace : matchedStaged.organizationType,
+                status: body.lifecycleStatus === 'SUSPENDED' ? 'SUSPENDED' : (body.verificationStatus === 'VERIFIED' ? 'APPROVED' : matchedStaged.status),
+                contactEmail: body.primaryContactEmail || matchedStaged.contactEmail,
+                contactPhone: body.primaryContactPhone || matchedStaged.contactPhone,
+                registrationPayload: newPayload,
+                updatedAt: new Date()
+              })
+              .where(eq(partnerOnboardingStagedRegistrations.id, matchedStaged.id))
+              .returning();
+
+            if (!updatedProfile && updStaged) {
+              updatedProfile = updStaged;
+            }
+          } catch (stagedErr: any) {
+            fastify.log.error('stagedRegistrations update error: ' + String(stagedErr));
+            throw new AppError({
+              message: 'Failed to update staged registration in database.',
+              code: ErrorCode.DATABASE_ERROR,
+              statusCode: 500
+            });
+          }
+        }
+      });
 
       // 3. Disk Fixture & Credential Sync (Non-blocking secondary sync)
       try {

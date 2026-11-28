@@ -42,9 +42,9 @@ export const commercialOperationsRoutes: FastifyPluginAsync = async (fastify) =>
   // PILLAR 1: SURGERY FINANCING & 0% CHECKOUT EMI ENGINE (vs Practo Care & Bajaj Finserv)
   // =========================================================================
 
-  // Pre-approve Instant 0% Medical EMI
+  // Pre-approve Instant 0% Medical EMI (Honest Income + Bureau Consent Pre-Qualification)
   fastify.post('/api/v1/partner/billing/surgery-financing/pre-approve', { preHandler: [requireRoles(...FINANCE_BILLING_ROLES)] }, async (request, reply) => {
-    const body = request.body as {
+    const body = (request.body || {}) as {
       patientName?: string;
       patientPhone?: string;
       procedureName?: string;
@@ -52,9 +52,20 @@ export const commercialOperationsRoutes: FastifyPluginAsync = async (fastify) =>
       cibilScoreBand?: string;
     };
 
-    const packageAmount = Number(body.packageAmount) || 50000;
-    const band = body.cibilScoreBand || '750_EXCELLENT';
-    const isApproved = band !== 'BELOW_600_POOR';
+    const packageAmount = Number(body.packageAmount);
+    if (!Number.isFinite(packageAmount) || packageAmount <= 0) {
+      return reply.status(400).send({
+        success: false,
+        error: 'VALIDATION_ERROR',
+        message: 'A positive packageAmount is required for financing eligibility calculation.'
+      });
+    }
+
+    const band = body.cibilScoreBand ? String(body.cibilScoreBand).trim() : null;
+    const isApproved = band ? band !== 'BELOW_600_POOR' : false;
+    const preApprovalStatus = band
+      ? (isApproved ? 'PRE_APPROVED_INSTANT' : 'MANUAL_UNDERWRITING_REQUIRED')
+      : 'ESTIMATED_PENDING_BUREAU_KYC';
 
     // 0% Interest EMI calculation for 3, 6, 12 months with merchant subvention fee
     const plans = [
@@ -92,7 +103,8 @@ export const commercialOperationsRoutes: FastifyPluginAsync = async (fastify) =>
       data: {
         packageAmount,
         cibilScoreBand: band,
-        preApprovalStatus: isApproved ? 'PRE_APPROVED_INSTANT' : 'MANUAL_UNDERWRITING_REQUIRED',
+        bureauVerificationStatus: band ? 'PARTNER_DECLARED_BAND' : 'PENDING_EXTERNAL_BUREAU_CONSENT',
+        preApprovalStatus,
         creditLimitGranted: isApproved ? Math.max(packageAmount, 150000) : 0,
         availableFinancingPartners: ['BAJAJ_FINSERV_HEALTH', 'SAVEIN', 'PROPELLD'],
         plans
@@ -103,23 +115,51 @@ export const commercialOperationsRoutes: FastifyPluginAsync = async (fastify) =>
   // Apply for Surgery 0% EMI Loan
   fastify.post('/api/v1/partner/billing/surgery-financing/apply', async (request, reply) => {
     const tenantId = requireTenantId(request);
-    const body = request.body as any;
+    const body = (request.body || {}) as {
+      patientName?: string;
+      patientPhone?: string;
+      procedureName?: string;
+      packageAmount?: number;
+      downPayment?: number;
+      loanAmount?: number;
+      tenureMonths?: number;
+      financingPartner?: string;
+      cibilScoreBand?: string;
+    };
     const db = getDatabase();
 
-    const packageAmount = Number(body.packageAmount) || 65000;
-    const downPayment = Number(body.downPayment) || 0;
-    const loanAmount = Number(body.loanAmount) || (packageAmount - downPayment);
-    const tenureMonths = Number(body.tenureMonths) || 6;
-    const subventionRatePct = tenureMonths === 3 ? 2.5 : tenureMonths === 6 ? 3.5 : 4.0;
+    const patientName = typeof body.patientName === 'string' ? body.patientName.trim() : '';
+    const patientPhone = typeof body.patientPhone === 'string' ? body.patientPhone.trim() : '';
+    const procedureName = typeof body.procedureName === 'string' ? body.procedureName.trim() : '';
+    if (!patientName || !patientPhone) {
+      return reply.status(400).send({
+        success: false,
+        error: 'VALIDATION_ERROR',
+        message: 'patientName and patientPhone are required to submit a financing application.'
+      });
+    }
+
+    const packageAmount = Number(body.packageAmount);
+    if (!Number.isFinite(packageAmount) || packageAmount <= 0) {
+      return reply.status(400).send({
+        success: false,
+        error: 'VALIDATION_ERROR',
+        message: 'A positive packageAmount is required.'
+      });
+    }
+    const downPayment = Math.max(0, Number(body.downPayment) || 0);
+    const loanAmount = Number(body.loanAmount) || Math.max(0, packageAmount - downPayment);
+    const tenureMonths = [3, 6, 9, 12, 18, 24].includes(Number(body.tenureMonths)) ? Number(body.tenureMonths) : 6;
+    const subventionRatePct = tenureMonths <= 3 ? 2.5 : tenureMonths <= 6 ? 3.5 : 4.0;
     const subventionAmount = Math.round(loanAmount * (subventionRatePct / 100));
     const monthlyEmiAmount = Math.round(loanAmount / tenureMonths);
     const loanReferenceNumber = `EMI-BJF-${Date.now().toString().slice(-6)}`;
 
     const [inserted] = await db.insert(surgeryEmiApplications).values({
       tenantId,
-      patientName: body.patientName || 'Walk-in Patient',
-      patientPhone: body.patientPhone || '+91 98110 00000',
-      procedureName: body.procedureName || 'Surgical Procedure',
+      patientName,
+      patientPhone,
+      procedureName: procedureName || 'Surgical Procedure',
       packageAmount: String(packageAmount),
       downPayment: String(downPayment),
       loanAmount: String(loanAmount),
@@ -127,15 +167,15 @@ export const commercialOperationsRoutes: FastifyPluginAsync = async (fastify) =>
       monthlyEmiAmount: String(monthlyEmiAmount),
       subventionRatePct: String(subventionRatePct),
       subventionAmount: String(subventionAmount),
-      financingPartner: body.financingPartner || 'BAJAJ_FINSERV',
-      cibilScoreBand: body.cibilScoreBand || '750_EXCELLENT',
-      status: 'PRE_APPROVED',
+      financingPartner: typeof body.financingPartner === 'string' && body.financingPartner.trim() ? body.financingPartner.trim() : 'BAJAJ_FINSERV',
+      cibilScoreBand: typeof body.cibilScoreBand === 'string' && body.cibilScoreBand.trim() ? body.cibilScoreBand.trim() : 'PENDING_BUREAU_KYC',
+      status: 'PENDING_LENDER_UNDERWRITING',
       loanReferenceNumber
     }).returning();
 
     return reply.status(201).send({
       success: true,
-      message: '0% Surgery EMI Application submitted and instant pre-approved!',
+      message: '0% Surgery EMI Application submitted for lender underwriting and KYC verification.',
       data: inserted
     });
   });
@@ -257,7 +297,7 @@ export const commercialOperationsRoutes: FastifyPluginAsync = async (fastify) =>
     });
   });
 
-  // Disburse 0% Medical Loan to Hospital Escrow
+  // Disburse 0% Medical Loan to Hospital Escrow (Fail-Closed unless live Lender Escrow API configured)
   fastify.post('/api/v1/partner/commercial/surgery-financing/disburse-loan', { preHandler: [requireRoles(...FINANCE_BILLING_ROLES)] }, async (request, reply) => {
     const tenantId = requireTenantId(request);
     const body = (request.body || {}) as {
@@ -270,38 +310,53 @@ export const commercialOperationsRoutes: FastifyPluginAsync = async (fastify) =>
       financingPartner?: string;
     };
 
-    const loanAmount = Number(body.loanAmount) || 65000;
-    const tenureMonths = Number(body.tenureMonths) || 6;
+    if (!body.patientName?.trim() || !body.patientPhone?.trim() || !Number.isFinite(Number(body.loanAmount)) || Number(body.loanAmount) <= 0) {
+      return reply.status(400).send({
+        success: false,
+        error: 'VALIDATION_ERROR',
+        message: 'patientName, patientPhone, and positive loanAmount are required for loan escrow disbursement.'
+      });
+    }
+
+    const hasEscrowGateway = Boolean(process.env['FINANCING_ESCROW_API_KEY']);
+    if (process.env['NODE_ENV'] === 'production' && !hasEscrowGateway) {
+      return reply.status(503).send({
+        success: false,
+        error: 'LENDER_GATEWAY_NOT_CONFIGURED',
+        message: 'External lender escrow disbursement gateway is not configured (FINANCING_ESCROW_API_KEY required).'
+      });
+    }
+
+    const loanAmount = Number(body.loanAmount);
+    const tenureMonths = [3, 6, 9, 12, 18, 24].includes(Number(body.tenureMonths)) ? Number(body.tenureMonths) : 6;
     const monthlyEmi = Math.round(loanAmount / tenureMonths);
     const loanRef = `LOAN-DISB-${Date.now().toString().slice(-8)}`;
-    const escrowSettlementRef = `ESCROW-HOSP-${Date.now().toString().slice(-8)}`;
+    const escrowSettlementRef = hasEscrowGateway ? `ESCROW-HOSP-${Date.now().toString().slice(-8)}` : null;
 
     const db = getDatabase();
-    try {
-      await db.insert(surgeryEmiApplications).values({
-        tenantId,
-        patientName: body.patientName || 'Kamlesh Verma',
-        patientPhone: body.patientPhone || '+91 98110 00000',
-        procedureName: body.procedureName || 'Laparoscopic Cholecystectomy',
-        packageAmount: String(loanAmount),
-        downPayment: '0',
-        loanAmount: String(loanAmount),
-        tenureMonths,
-        monthlyEmiAmount: String(monthlyEmi),
-        subventionRatePct: '3.5',
-        subventionAmount: String(Math.round(loanAmount * 0.035)),
-        financingPartner: body.financingPartner || 'BAJAJ_FINSERV_HEALTH',
-        cibilScoreBand: '750_EXCELLENT',
-        status: 'DISBURSED',
-        loanReferenceNumber: loanRef
-      });
-    } catch (err: any) {
-      fastify.log.warn(`[SurgeryDisb] DB insert warning: ${err.message}`);
-    }
+    await db.insert(surgeryEmiApplications).values({
+      tenantId,
+      patientName: body.patientName.trim(),
+      patientPhone: body.patientPhone.trim(),
+      procedureName: body.procedureName?.trim() || 'Surgical Procedure',
+      packageAmount: String(loanAmount),
+      downPayment: '0',
+      loanAmount: String(loanAmount),
+      tenureMonths,
+      monthlyEmiAmount: String(monthlyEmi),
+      subventionRatePct: '3.5',
+      subventionAmount: String(Math.round(loanAmount * 0.035)),
+      financingPartner: body.financingPartner?.trim() || 'BAJAJ_FINSERV_HEALTH',
+      cibilScoreBand: 'PENDING_BUREAU_KYC',
+      status: hasEscrowGateway ? 'DISBURSED' : 'QUEUED_FOR_LENDER_ESCROW',
+      loanReferenceNumber: loanRef
+    });
 
     return reply.status(201).send({
       success: true,
-      message: '0% Medical EMI Loan disbursed directly to Hospital Escrow Account',
+      message: hasEscrowGateway
+        ? '0% Medical EMI Loan disbursed directly to Hospital Escrow Account'
+        : 'Loan disbursement queued pending lender escrow webhook confirmation',
       data: {
         loanReferenceNumber: loanRef,
         escrowSettlementRef,
@@ -309,7 +364,7 @@ export const commercialOperationsRoutes: FastifyPluginAsync = async (fastify) =>
         tenureMonths,
         monthlyEmiAmount: monthlyEmi,
         patientZeroCostEmiPassed: true,
-        disbursementStatus: 'ESCROW_FUNDED',
+        disbursementStatus: hasEscrowGateway ? 'ESCROW_FUNDED' : 'QUEUED_PENDING_ESCROW_GATEWAY',
         firstEmiDueDate: new Date(Date.now() + 30 * 86400000).toISOString().split('T')[0],
         disbursementTimestamp: new Date().toISOString()
       }

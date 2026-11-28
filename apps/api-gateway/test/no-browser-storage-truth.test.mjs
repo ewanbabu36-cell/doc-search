@@ -2,6 +2,7 @@ import { describe, it, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { buildApp } from '../dist/app.js';
 import { signJwt } from '@docsearch/auth';
+import { setupTestDatabase } from '@docsearch/database';
 
 describe('Source of Truth Verification: PostgreSQL/API without Browser Storage', () => {
   let app;
@@ -38,6 +39,7 @@ describe('Source of Truth Verification: PostgreSQL/API without Browser Storage',
   before(async () => {
     process.env['JWT_SECRET'] = MASTER_SECRET;
     process.env['NODE_ENV'] = 'development';
+    await setupTestDatabase({ seedBaseline: true, seedDemoFixtures: true });
     app = await buildApp();
     await app.ready();
   });

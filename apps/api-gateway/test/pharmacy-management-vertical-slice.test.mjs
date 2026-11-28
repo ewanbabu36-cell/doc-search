@@ -114,8 +114,13 @@ describe('Pharmacy & Dispensing Vertical Slice: Rx -> Queue -> FEFO -> Dispense 
   // STEP 3: Receive Two Batches for FEFO Verification and One Expired Batch
   it('STEP 3: Receive Batch A (nearer expiry), Batch B (further expiry), and Batch Expired', async () => {
     const token = createTestToken();
+    const nowMs = Date.now();
+    const mfgPast = new Date(nowMs - 120 * 24 * 3600 * 1000).toISOString();
+    const expiryIn30Days = new Date(nowMs + 30 * 24 * 3600 * 1000).toISOString();
+    const expiryIn180Days = new Date(nowMs + 180 * 24 * 3600 * 1000).toISOString();
+    const expiredInPast = new Date(nowMs - 60 * 24 * 3600 * 1000).toISOString();
 
-    // Batch A: Expiry in 30 days (2026-09-30)
+    // Batch A: Expiry in 30 days
     const resA = await app.inject({
       method: 'POST',
       url: '/api/v1/partner/pharmacy/batches/receive-stock',
@@ -124,8 +129,8 @@ describe('Pharmacy & Dispensing Vertical Slice: Rx -> Queue -> FEFO -> Dispense 
         medicationId: testMedicationId,
         batchNumber: 'BATCH-AMOX-A01',
         manufacturer: 'Cipla Ltd',
-        manufacturingDate: '2026-01-01T00:00:00Z',
-        expiryDate: '2026-09-30T00:00:00Z',
+        manufacturingDate: mfgPast,
+        expiryDate: expiryIn30Days,
         quantity: 50,
         unitCost: 10.0,
         supplierReference: 'PO-2026-001'
@@ -133,7 +138,7 @@ describe('Pharmacy & Dispensing Vertical Slice: Rx -> Queue -> FEFO -> Dispense 
     });
     assert.strictEqual(resA.statusCode, 201);
 
-    // Batch B: Expiry in 180 days (2027-02-28)
+    // Batch B: Expiry in 180 days
     const resB = await app.inject({
       method: 'POST',
       url: '/api/v1/partner/pharmacy/batches/receive-stock',
@@ -142,8 +147,8 @@ describe('Pharmacy & Dispensing Vertical Slice: Rx -> Queue -> FEFO -> Dispense 
         medicationId: testMedicationId,
         batchNumber: 'BATCH-AMOX-B02',
         manufacturer: 'Cipla Ltd',
-        manufacturingDate: '2026-02-01T00:00:00Z',
-        expiryDate: '2027-02-28T00:00:00Z',
+        manufacturingDate: mfgPast,
+        expiryDate: expiryIn180Days,
         quantity: 100,
         unitCost: 9.5,
         supplierReference: 'PO-2026-002'
@@ -151,7 +156,7 @@ describe('Pharmacy & Dispensing Vertical Slice: Rx -> Queue -> FEFO -> Dispense 
     });
     assert.strictEqual(resB.statusCode, 201);
 
-    // Batch C: Expired batch in past (2025-12-31)
+    // Batch C: Expired batch in past
     const resC = await app.inject({
       method: 'POST',
       url: '/api/v1/partner/pharmacy/batches/receive-stock',
@@ -161,7 +166,7 @@ describe('Pharmacy & Dispensing Vertical Slice: Rx -> Queue -> FEFO -> Dispense 
         batchNumber: 'BATCH-AMOX-EXP01',
         manufacturer: 'Cipla Ltd',
         manufacturingDate: '2024-01-01T00:00:00Z',
-        expiryDate: '2025-12-31T00:00:00Z',
+        expiryDate: expiredInPast,
         quantity: 20,
         unitCost: 5.0,
         supplierReference: 'PO-2024-099'
@@ -315,7 +320,7 @@ describe('Pharmacy & Dispensing Vertical Slice: Rx -> Queue -> FEFO -> Dispense 
       payload
     });
 
-    assert.strictEqual(res.statusCode, 500);
+    assert.strictEqual(res.statusCode, 409);
   });
 
   // STEP 9: Stock Movement Ledger Verification

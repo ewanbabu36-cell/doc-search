@@ -34,14 +34,23 @@ export const DoctorHealthReelsScreen: React.FC<Props> = ({
   const containerRef = useRef<HTMLDivElement>(null);
   const videoRefs = useRef<Map<string, HTMLVideoElement>>(new Map());
 
-  // Reload reels when category changes
+  // Reload reels live from API gateway (with offline localStorage cache fallback)
   useEffect(() => {
-    const list = doctorReelsService.getReels(selectedCategory);
-    setReels(list);
+    let active = true;
+    const cachedList = doctorReelsService.getReels(selectedCategory);
+    setReels(cachedList);
     setCurrentIndex(0);
     if (containerRef.current) {
       containerRef.current.scrollTo({ top: 0, behavior: 'smooth' });
     }
+    void doctorReelsService.fetchReels(selectedCategory).then((liveList) => {
+      if (active && liveList.length > 0) {
+        setReels(liveList);
+      }
+    });
+    return () => {
+      active = false;
+    };
   }, [selectedCategory]);
 
   // Jump to initial reel if passed
@@ -161,14 +170,16 @@ export const DoctorHealthReelsScreen: React.FC<Props> = ({
 
   const handleShare = (reel: DoctorReelDto) => {
     doctorReelsService.incrementShares(reel.id);
-    const text = `🩺 *डॉक्टर स्वास्थ्य सलाह — ${reel.doctorName}*\n\n"${reel.title}"\n\n📌 मुख्य सुझाव:\n${reel.clinicalDos.map((d, i) => `${i + 1}. ${d}`).join('\n')}\n\n👉 DocSearch ऐप पर डॉक्टर से परामर्श बुक करें: https://docsearch.health/reels/${reel.id}`;
+    const text = `🩺 *डॉक्टर स्वास्थ्य सलाह — ${reel.doctorName}*\n\n"${reel.title}"\n\n📌 मुख्य सुझाव:\n${reel.clinicalDos.map((d, i) => `${i + 1}. ${d}`).join('\n')}\n\n👉 DocSearch ऐप पर डॉक्टर से परामर्श बुक करें: https://patient.docsearch.in/reels/${reel.id}`;
     
     if (navigator.share) {
       navigator.share({
         title: reel.title,
         text,
-        url: `https://docsearch.health/reels/${reel.id}`
-      }).catch(() => {});
+        url: `https://patient.docsearch.in/reels/${reel.id}`
+      }).catch((err) => {
+        console.warn('[DoctorHealthReelsScreen] Web share dismissed:', err);
+      });
     } else {
       navigator.clipboard.writeText(text);
       setShowShareToast(true);
@@ -352,7 +363,32 @@ export const DoctorHealthReelsScreen: React.FC<Props> = ({
           scrollbarWidth: 'none'
         }}
       >
-        {reels.map((reel, idx) => {
+        {reels.length === 0 ? (
+          <div
+            style={{
+              height: '100%',
+              minHeight: '70dvh',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: '32px',
+              textAlign: 'center',
+              color: '#CBD5E1'
+            }}
+          >
+            <div style={{ fontSize: '2.5rem', marginBottom: '12px' }}>🩺</div>
+            <h3 style={{ margin: '0 0 8px', color: '#F8FAFC', fontSize: '1.125rem' }}>
+              {language === 'hi' ? 'अभी कोई सत्यापित डॉक्टर रील प्रकाशित नहीं हुई है' : 'No verified doctor health reels published yet'}
+            </h3>
+            <p style={{ margin: 0, maxWidth: '340px', fontSize: '0.85rem', color: '#94A3B8' }}>
+              {language === 'hi'
+                ? 'पंजीकृत डॉक्टरों द्वारा नई स्वास्थ्य सलाह प्रकाशित होने पर वे यहाँ दिखाई देंगी।'
+                : 'Verified health education shorts published by partner doctors will appear here.'}
+            </p>
+          </div>
+        ) : (
+        reels.map((reel, idx) => {
           const isCurrent = idx === currentIndex;
           return (
             <div
@@ -824,7 +860,8 @@ export const DoctorHealthReelsScreen: React.FC<Props> = ({
               </div>
             </div>
           );
-        })}
+        })
+        )}
       </div>
 
       {/* 4. DO'S & DON'TS CLINICAL CHECKLIST BOTTOM SHEET MODAL */}

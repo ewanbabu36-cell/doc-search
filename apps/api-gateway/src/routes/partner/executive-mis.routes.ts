@@ -53,7 +53,7 @@ export const executiveMisRoutes: FastifyPluginAsync = async (app) => {
     {
       preHandler: [
         authenticate,
-        requireRoles('SUPER_ADMIN', 'COMPANY_ADMIN', 'FINANCE_MANAGER', 'HOSPITAL_ADMIN', 'CLINIC_ADMIN', 'BILLING_CLERK')
+        requireRoles('SUPER_ADMIN', 'COMPANY_ADMIN', 'FINANCE_MANAGER', 'HOSPITAL_ADMIN', 'CLINIC_ADMIN', 'EXECUTIVE_DIRECTOR', 'CHIEF_MEDICAL_OFFICER', 'CFO', 'BILLING_CLERK')
       ]
     },
     async (request, reply) => {
@@ -94,7 +94,7 @@ export const executiveMisRoutes: FastifyPluginAsync = async (app) => {
     {
       preHandler: [
         authenticate,
-        requireRoles('SUPER_ADMIN', 'COMPANY_ADMIN', 'FINANCE_MANAGER', 'HOSPITAL_ADMIN', 'CLINIC_ADMIN', 'PHARMACIST')
+        requireRoles('SUPER_ADMIN', 'COMPANY_ADMIN', 'FINANCE_MANAGER', 'HOSPITAL_ADMIN', 'CLINIC_ADMIN', 'EXECUTIVE_DIRECTOR', 'CHIEF_MEDICAL_OFFICER', 'CFO', 'PHARMACIST')
       ]
     },
     async (request, reply) => {
@@ -123,7 +123,7 @@ export const executiveMisRoutes: FastifyPluginAsync = async (app) => {
     {
       preHandler: [
         authenticate,
-        requireRoles('SUPER_ADMIN', 'COMPANY_ADMIN', 'FINANCE_MANAGER', 'HOSPITAL_ADMIN', 'CLINIC_ADMIN')
+        requireRoles('SUPER_ADMIN', 'COMPANY_ADMIN', 'FINANCE_MANAGER', 'HOSPITAL_ADMIN', 'CLINIC_ADMIN', 'EXECUTIVE_DIRECTOR', 'CHIEF_MEDICAL_OFFICER', 'CFO')
       ]
     },
     async (request, reply) => {

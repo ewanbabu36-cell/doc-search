@@ -8,6 +8,15 @@ interface Props {
   onClose: () => void;
 }
 
+const PAID_BADGE: Record<Language, string> = {
+  en: 'PAID & VERIFIED',
+  hi: 'भुगतान सफल (PAID)',
+  mr: 'पैसे भरले आणि सत्यापित (PAID)',
+  bn: 'পরিশোধিত ও যাচাইকৃত (PAID)',
+  ta: 'கட்டணம் செலுத்தப்பட்டது (PAID)',
+  te: 'చెల్లించబడింది & ధృవీకరించబడింది (PAID)'
+};
+
 export const DigitalReceiptModal: React.FC<Props> = ({ language, patient, onClose }) => {
   return (
     <div
@@ -41,7 +50,7 @@ export const DigitalReceiptModal: React.FC<Props> = ({ language, patient, onClos
         {/* Top Close */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
           <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#10B981', backgroundColor: '#ECFDF5', padding: '4px 10px', borderRadius: '12px' }}>
-            ● {language === 'hi' ? 'भुगतान सफल (PAID)' : 'PAID & VERIFIED'}
+            ● {PAID_BADGE[language] || PAID_BADGE.en}
           </div>
           <button
             type="button"

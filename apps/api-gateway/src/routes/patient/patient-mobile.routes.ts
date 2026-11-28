@@ -192,8 +192,8 @@ export const patientMobileRoutes: FastifyPluginAsync = async (app) => {
     const payload = PatientRequestOtpSchema.parse(request.body);
     const { last10 } = normalizePhone(payload.mobileNumber);
 
-    // 🛡️ SECURITY SHIELD 1: OTP Anti-Bombing & Brute-Force Rate Limiting
-    const rateCheck = otpAntiBombingGuard.checkOtpAllowed(payload.mobileNumber, request.ip);
+    // 🛡️ SECURITY SHIELD 1: OTP Anti-Bombing & Brute-Force Rate Limiting (Redis/PostgreSQL backed)
+    const rateCheck = await otpAntiBombingGuard.checkOtpAllowedAsync(payload.mobileNumber, request.ip);
     if (!rateCheck.allowed) {
       return reply.status(429).send({
         success: false,
@@ -204,11 +204,11 @@ export const patientMobileRoutes: FastifyPluginAsync = async (app) => {
       });
     }
 
-    // Record OTP dispatch in rate-limiting bucket
-    otpAntiBombingGuard.recordOtpDispatched(payload.mobileNumber, request.ip);
+    // Record OTP dispatch in persistent rate-limiting bucket
+    await otpAntiBombingGuard.recordOtpDispatchedAsync(payload.mobileNumber, request.ip);
 
     // Generate and store secure hashed OTP with 5-minute expiry (AUTH-001)
-    const generatedOtp = otpAntiBombingGuard.generateAndStoreOtp(payload.mobileNumber);
+    const generatedOtp = await otpAntiBombingGuard.generateAndStoreOtpAsync(payload.mobileNumber);
     const isProduction = env.NODE_ENV === 'production';
 
     // 🛡️ SECURITY SHIELD 2: Real Healthcare SMS Gateway Dispatch (P1-01)
@@ -267,10 +267,10 @@ export const patientMobileRoutes: FastifyPluginAsync = async (app) => {
     const { last10, withCountry } = normalizePhone(payload.mobileNumber);
     const db = getDatabase();
 
-    // Strict Cryptographic OTP Validation (AUTH-001)
+    // Strict Cryptographic OTP Validation (AUTH-001, Redis/PostgreSQL backed)
     const isProduction = env.NODE_ENV === 'production';
     if (isProduction) {
-      if (payload.otp === '1234' || !otpAntiBombingGuard.verifyStoredOtp(payload.mobileNumber, payload.otp)) {
+      if (payload.otp === '1234' || !(await otpAntiBombingGuard.verifyStoredOtpAsync(payload.mobileNumber, payload.otp))) {
         throw new AppError({
           message: 'Invalid or expired OTP entered. Please request a new verification code.',
           code: ErrorCode.VALIDATION_ERROR,
@@ -278,7 +278,7 @@ export const patientMobileRoutes: FastifyPluginAsync = async (app) => {
         });
       }
     } else {
-      const isStoredValid = otpAntiBombingGuard.verifyStoredOtp(payload.mobileNumber, payload.otp);
+      const isStoredValid = await otpAntiBombingGuard.verifyStoredOtpAsync(payload.mobileNumber, payload.otp);
       const isDevFallback = payload.otp === '1234' || payload.otp === '123456';
       if (!isStoredValid && !isDevFallback) {
         throw new AppError({
@@ -1573,7 +1573,9 @@ export const patientMobileRoutes: FastifyPluginAsync = async (app) => {
             .where(eq(operationalPartners.tenantId, targetTenantId))
             .limit(1);
           partnerId = partner?.id;
-        } catch {}
+        } catch (err) {
+          logger.warn('Partner lookup failed during mobile patient fallback resolution', { targetTenantId, error: String(err) });
+        }
 
         const createdInput: any = {
           tenantId: targetTenantId,

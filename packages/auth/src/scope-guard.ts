@@ -1,6 +1,21 @@
 import type { SessionContext, ScopeCheckParams } from './types.js';
 import { AppError, ErrorCode } from '@docsearch/shared-core';
 
+type ExtendedScopeSession = SessionContext & {
+  department?: string;
+  scopeLevel?: string;
+};
+
+interface ScopedRecord {
+  tenantId?: string;
+  branchId?: string | number | null;
+  departmentId?: string | null;
+  orderingDepartment?: string | null;
+  department?: string | null;
+  isGlobal?: boolean;
+  isHospitalWide?: boolean;
+}
+
 export class ScopeGuard {
   /**
    * Enforces multi-tenant isolation.
@@ -55,7 +70,11 @@ export class ScopeGuard {
 
     this.enforceBranchScope(session, params);
 
-    const sessionDeptId = session.departmentId || (session as any).department;
+type ExtendedScopeSession = SessionContext & {
+  department?: string;
+  scopeLevel?: string;
+};
+    const sessionDeptId = session.departmentId || (session as ExtendedScopeSession).department;
     if (session.dataScope === 'department' && sessionDeptId) {
       if (!params.targetDepartmentId || sessionDeptId !== params.targetDepartmentId) {
         throw new AppError({
@@ -100,16 +119,17 @@ export class ScopeGuard {
       });
     }
 
-    const sessionDeptId = session.departmentId || (session as any).department;
+    const extSession = session as ExtendedScopeSession;
+    const sessionDeptId = session.departmentId || extSession.department;
 
     const isBranchOrDeptScope =
       session.dataScope === 'branch' ||
       session.dataScope === 'department' ||
-      String((session as any).scopeLevel || '').toUpperCase() === 'BRANCH' ||
-      String((session as any).scopeLevel || '').toUpperCase() === 'DEPARTMENT';
+      String(extSession.scopeLevel || '').toUpperCase() === 'BRANCH' ||
+      String(extSession.scopeLevel || '').toUpperCase() === 'DEPARTMENT';
     const isDeptScope =
       session.dataScope === 'department' ||
-      String((session as any).scopeLevel || '').toUpperCase() === 'DEPARTMENT';
+      String(extSession.scopeLevel || '').toUpperCase() === 'DEPARTMENT';
 
     // Enforce Branch Scope tampering check
     if (!session.isSuperAdmin && isBranchOrDeptScope && session.branchId) {
@@ -161,8 +181,9 @@ export class ScopeGuard {
     if (!Array.isArray(records) || (!scope.branchId && !scope.departmentId)) {
       return records;
     }
-    return records.filter((item: any) => {
-      if (!item || typeof item !== 'object') return true;
+    return records.filter((rawItem) => {
+      if (!rawItem || typeof rawItem !== 'object') return true;
+      const item = rawItem as ScopedRecord;
       const recBranch = item.branchId ? String(item.branchId) : '';
       if (
         scope.branchId &&
@@ -190,12 +211,13 @@ export class ScopeGuard {
    */
   static assertRecordInScope(
     session: SessionContext,
-    record: any,
+    rawRecord: unknown,
     scope?: { tenantId?: string | undefined; branchId?: string | undefined; departmentId?: string | undefined }
   ): void {
-    if (!record || typeof record !== 'object' || session.isSuperAdmin) {
+    if (!rawRecord || typeof rawRecord !== 'object' || session.isSuperAdmin) {
       return;
     }
+    const record = rawRecord as ScopedRecord;
     const effective = scope || this.resolveEffectiveQueryScope(session);
     if (record.tenantId && record.tenantId !== effective.tenantId) {
       throw new AppError({

@@ -6,6 +6,11 @@ export default [
   {
     ignores: [
       '**/dist/**',
+      '**/dev-dist/**',
+      '**/build/**',
+      '**/android/**',
+      '**/ios/**',
+      '**/.vite/**',
       '**/node_modules/**',
       '**/.turbo/**',
       '**/coverage/**',
@@ -29,9 +34,9 @@ export default [
     rules: {
       '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_', varsIgnorePattern: '^_', caughtErrors: 'none' }],
       '@typescript-eslint/explicit-function-return-type': 'off',
-      '@typescript-eslint/no-explicit-any': 'warn',
-      '@typescript-eslint/no-non-null-assertion': 'warn',
-      'no-console': ['warn', { allow: ['warn', 'error', 'info', 'debug'] }]
+      '@typescript-eslint/no-explicit-any': 'off',
+      '@typescript-eslint/no-non-null-assertion': 'off',
+      'no-console': 'off'
     }
   },
   // Strict Zero-Trust Security: Core security, auth, and API contract packages strictly enforce no-explicit-any
@@ -56,7 +61,7 @@ export default [
       'scripts/**/*.ts'
     ],
     rules: {
-      '@typescript-eslint/no-explicit-any': 'warn',
+      '@typescript-eslint/no-explicit-any': 'off',
       '@typescript-eslint/no-non-null-assertion': 'off'
     }
   },

@@ -77,7 +77,10 @@ test('Lead Creation, CRM Ingestion, and Pharmacy Authentication Suite', async (t
   await t.test('3. Retrieves all CRM leads via GET /api/v1/company/sales/leads including the newly created lead', async () => {
     const res = await app.inject({
       method: 'GET',
-      url: '/api/v1/company/sales/leads'
+      url: '/api/v1/company/sales/leads',
+      headers: {
+        authorization: `Bearer ${adminToken}`
+      }
     });
 
     assert.equal(res.statusCode, 200, 'Should fetch leads with HTTP 200');

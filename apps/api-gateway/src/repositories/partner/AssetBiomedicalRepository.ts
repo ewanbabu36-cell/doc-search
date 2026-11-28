@@ -176,12 +176,49 @@ export class AssetBiomedicalRepository {
   private auditStore: BiomedicalAuditRecord[] = [];
 
   async getOverviewMetrics(tenantId: string, dbClient = getDatabase()) {
-    const assets = await this.getAssets(tenantId, dbClient);
-    const totalAssetsCount = assets.length || 148;
-    const activeOperationalCount = assets.filter(a => (a as any).status === 'OPERATIONAL' || (a as any).operationalStatus === 'OPERATIONAL').length || Math.min(totalAssetsCount, 140);
-    const underMaintenanceCount = assets.filter(a => (a as any).status === 'UNDER_MAINTENANCE' || (a as any).status === 'BREAKDOWN').length || 5;
-    const breakdownCount = assets.filter(a => (a as any).status === 'BREAKDOWN').length || 2;
-    const condemnedCount = assets.filter(a => (a as any).status === 'CONDEMNED').length || 1;
+    const [assets, ppmSchedules, workOrders, calibrations] = await Promise.all([
+      this.getAssets(tenantId, dbClient),
+      this.getPpmSchedules(tenantId, dbClient),
+      this.getWorkOrders(tenantId, dbClient),
+      this.getCalibrationRecords(tenantId, dbClient)
+    ]);
+
+    const totalAssetsCount = assets.length;
+    const activeOperationalCount = assets.filter(
+      (a) => (a as any).status === 'OPERATIONAL' || (a as any).operationalStatus === 'OPERATIONAL'
+    ).length;
+    const underMaintenanceCount = assets.filter(
+      (a) => (a as any).status === 'UNDER_MAINTENANCE' || (a as any).status === 'BREAKDOWN'
+    ).length;
+    const breakdownCount = assets.filter((a) => (a as any).status === 'BREAKDOWN').length;
+    const condemnedCount = assets.filter((a) => (a as any).status === 'CONDEMNED').length;
+
+    const nowMs = Date.now();
+    const overduePpmCount = ppmSchedules.filter((p: any) => {
+      if (p.status === 'COMPLETED') return false;
+      if (p.status === 'OVERDUE') return true;
+      const sched = p.scheduledDate ? new Date(p.scheduledDate).getTime() : NaN;
+      return Number.isFinite(sched) && sched < nowMs;
+    }).length;
+    const pendingCalibrationCount = calibrations.filter(
+      (c: any) => c.calibrationStatus === 'PENDING' || c.calibrationStatus === 'DUE' || c.calibrationStatus === 'EXPIRED'
+    ).length;
+    const openWorkOrders = workOrders.filter(
+      (w: any) => !['COMPLETED', 'VERIFIED', 'CLOSED'].includes(String(w.status || '').toUpperCase())
+    );
+    const completedWorkOrders = workOrders.filter(
+      (w: any) => typeof w.downtimeMinutes === 'number' && w.downtimeMinutes >= 0
+    );
+    const avgDowntimeMins =
+      completedWorkOrders.length > 0
+        ? completedWorkOrders.reduce((acc: number, w: any) => acc + Number(w.downtimeMinutes || 0), 0) /
+          completedWorkOrders.length
+        : 0;
+
+    const criticalUptimePercent =
+      totalAssetsCount === 0
+        ? 0
+        : Math.round(((totalAssetsCount - breakdownCount) / totalAssetsCount) * 1000) / 10;
 
     return {
       totalAssetsCount,
@@ -189,25 +226,56 @@ export class AssetBiomedicalRepository {
       underMaintenanceCount,
       breakdownCount,
       condemnedCount,
-      criticalUptimePercent: 98.6,
-      overduePpmCount: 1,
-      pendingCalibrationCount: 3,
-      openWorkOrdersCount: 4,
-      meanTimeToRepairHours: 3.2
+      criticalUptimePercent,
+      overduePpmCount,
+      pendingCalibrationCount,
+      openWorkOrdersCount: openWorkOrders.length,
+      meanTimeToRepairHours: Math.round((avgDowntimeMins / 60) * 10) / 10
     };
   }
 
-  async getDowntimeAnalytics(_tenantId: string) {
+  async getDowntimeAnalytics(tenantId: string, dbClient = getDatabase()) {
+    const [assets, workOrders] = await Promise.all([
+      this.getAssets(tenantId, dbClient),
+      this.getWorkOrders(tenantId, dbClient)
+    ]);
+
+    const breakdownByDept = new Map<string, number>();
+    let totalDowntimeMinutes = 0;
+    let completedCount = 0;
+
+    for (const w of workOrders as any[]) {
+      const mins = Number(w.downtimeMinutes || 0);
+      if (mins > 0) {
+        totalDowntimeMinutes += mins;
+        completedCount += 1;
+      }
+      const asset = assets.find((a: any) => a.id === w.assetId) as any;
+      const dept = String(w.department || asset?.department || asset?.departmentName || 'General').trim();
+      breakdownByDept.set(dept, (breakdownByDept.get(dept) || 0) + 1);
+    }
+
+    const totalAssetsCount = assets.length;
+    const breakdownAssets = assets.filter((a: any) => a.status === 'BREAKDOWN').length;
+    const averageUptimePercentage =
+      totalAssetsCount === 0
+        ? 0
+        : Math.round(((totalAssetsCount - breakdownAssets) / totalAssetsCount) * 1000) / 10;
+    const meanTimeToRepairMinutes = completedCount > 0 ? Math.round(totalDowntimeMinutes / completedCount) : 0;
+    const meanTimeBetweenFailuresDays =
+      totalAssetsCount === 0 || workOrders.length === 0
+        ? 0
+        : Math.round((30 / Math.max(1, workOrders.length / Math.max(1, totalAssetsCount))) * 10) / 10;
+
     return {
-      averageUptimePercentage: 98.8,
-      meanTimeToRepairMinutes: 192,
-      meanTimeBetweenFailuresDays: 45.2,
-      totalDowntimeHoursThisMonth: 18.5,
-      breakdownsByDepartment: [
-        { department: 'ICU', count: 3 },
-        { department: 'OT Complex', count: 2 },
-        { department: 'Radiology', count: 1 }
-      ]
+      averageUptimePercentage,
+      meanTimeToRepairMinutes,
+      meanTimeBetweenFailuresDays,
+      totalDowntimeHoursThisMonth: Math.round((totalDowntimeMinutes / 60) * 10) / 10,
+      breakdownsByDepartment: Array.from(breakdownByDept.entries()).map(([department, count]) => ({
+        department,
+        count
+      }))
     };
   }
 

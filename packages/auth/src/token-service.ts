@@ -55,8 +55,9 @@ export function signJwt<T extends Record<string, unknown> & { sub: string }>(
     typ: 'JWT'
   };
 
-  const explicitJti = ((payload as any).jti || (payload as any).sessionId || randomBytes(16).toString('hex')) as string;
-  const explicitSessionId = ((payload as any).sessionId || (payload as any).jti || explicitJti) as string;
+  const extPayload = payload as unknown as Record<string, unknown>;
+  const explicitJti = (extPayload['jti'] || extPayload['sessionId'] || randomBytes(16).toString('hex')) as string;
+  const explicitSessionId = (extPayload['sessionId'] || extPayload['jti'] || explicitJti) as string;
 
   const claims = {
     ...payload,

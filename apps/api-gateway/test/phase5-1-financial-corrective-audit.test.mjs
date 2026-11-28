@@ -680,7 +680,8 @@ describe('Phase 5.1: Financial Corrective Audit & Tax-Rule Remediation Suite', (
       const fakeFastify = {
         addHook: () => {},
         get: () => {},
-        post: (path, handler) => {
+        post: (path, optsOrHandler, maybeHandler) => {
+          const handler = typeof optsOrHandler === 'function' ? optsOrHandler : maybeHandler;
           if (path.includes('generate-monthly-ledger')) registeredHandler = handler;
         },
         log: { warn: () => {} }

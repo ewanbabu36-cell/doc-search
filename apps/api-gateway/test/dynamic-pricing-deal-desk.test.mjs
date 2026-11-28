@@ -21,7 +21,7 @@ describe('Authoritative Dynamic Pricing & Deal Desk Negotiation Suite', () => {
     const claims = {
       sub: crypto.randomUUID(),
       email: 'admin@docsearch.company',
-      tenantId: '00000000-0000-4000-8000-000000000001',
+      tenantId: '00000000-0000-4000-8000-000000000000',
       roles: ['SUPER_ADMIN'],
       permissions: ['subscriptions:create', 'subscriptions:read', 'subscriptions:update', 'products:create', 'products:read'],
       iss: ISSUER,
@@ -80,8 +80,8 @@ describe('Authoritative Dynamic Pricing & Deal Desk Negotiation Suite', () => {
     const year = body.data.find((t) => t.code === 'YEARLY');
     const five = body.data.find((t) => t.code === 'FIVE_YEARS');
     assert.equal(half.defaultDiscountPercent, 0);
-    assert.equal(year.defaultDiscountPercent, 10);
-    assert.equal(five.defaultDiscountPercent, 40);
+    assert.equal(year.defaultDiscountPercent, 0);
+    assert.equal(five.defaultDiscountPercent, 20);
   });
 
   it('Test 2: Authorizes negotiated contract with tenure discount and custom percent off', async () => {
@@ -173,6 +173,6 @@ describe('Authoritative Dynamic Pricing & Deal Desk Negotiation Suite', () => {
     assert.equal(tenures[0].tenureCode, 'HALF_YEARLY');
     assert.equal(tenures[1].tenureCode, 'YEARLY');
     assert.equal(tenures[4].tenureCode, 'FIVE_YEARS');
-    assert.ok(tenures[4].defaultDiscountPercent >= 40);
+    assert.ok(tenures[4].defaultDiscountPercent >= 20);
   });
 });

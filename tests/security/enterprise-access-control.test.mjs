@@ -46,9 +46,14 @@ const {
   investigationOrders,
   billingInvoices,
   auditEvents,
+  partnerProfiles,
+  plans,
+  subscriptions,
+  licenses,
   eq,
   and
 } = await import('../../packages/database/dist/index.js');
+const { licenseService } = await import('../../apps/api-gateway/dist/services/company/LicenseService.js');
 
 console.log('================================================================================');
 console.log('STARTING DOC SEARCH FINAL ENTERPRISE ACCESS CONTROL & AUDIT CERTIFICATION');
@@ -527,11 +532,89 @@ try {
   // =========================================================================
 
   await runTest('Onboarding Baseline: Newly registered partner without commercial license row is granted 365-day access', async () => {
+    // 1. Bare unapproved tenant without commercial license must FAIL CLOSED (403)
+    const bareTenantId = crypto.randomUUID();
+    await db.insert(tenants).values({
+      id: bareTenantId,
+      name: 'Unapproved Unlicensed Tenant',
+      slug: `unapproved-${bareTenantId.slice(0, 8)}`
+    });
+    const bareToken = makeToken({
+      tenantId: bareTenantId,
+      roles: ['CLINIC_ADMIN'],
+      permissions: ['clinical:encounters:read', 'clinical:consultations:read']
+    });
+    const blockedRes = await app.inject({
+      method: 'GET',
+      url: '/api/v1/partner/clinical/queues',
+      headers: { authorization: `Bearer ${bareToken}` }
+    });
+    assert.equal(blockedRes.statusCode, 403, 'Bare tenant without commercial license must fail closed');
+
+    // 2. Freshly approved onboarding facility with baseline 365-day license gets operational access + headers
     const onboardingTenantId = crypto.randomUUID();
+    const onboardingPartnerId = crypto.randomUUID();
+    const onboardingSubId = crypto.randomUUID();
+    const onboardingLicId = crypto.randomUUID();
+    const onboardingLicKey = `LIC-ONB-${onboardingTenantId.slice(0, 8).toUpperCase()}`;
+    const now = new Date();
+    const expiryDate = new Date(now.getTime() + 365 * 86400000);
+    const graceEnd = new Date(expiryDate.getTime() + 30 * 86400000);
+
     await db.insert(tenants).values({
       id: onboardingTenantId,
       name: 'Freshly Approved Wellness Clinic',
-      slug: 'fresh-wellness'
+      slug: `fresh-wellness-${onboardingTenantId.slice(0, 8)}`
+    });
+    await db.insert(partnerProfiles).values({
+      id: onboardingPartnerId,
+      tenantId: onboardingTenantId,
+      legalName: 'Freshly Approved Wellness Clinic',
+      tradeName: 'Wellness Clinic',
+      primaryContactName: 'Dr. Onboarding Admin',
+      primaryContactEmail: `admin-${onboardingTenantId.slice(0, 6)}@wellness.test`,
+      verificationStatus: 'VERIFIED',
+      lifecycleStatus: 'ACTIVE'
+    });
+    await db.insert(subscriptions).values({
+      id: onboardingSubId,
+      partnerId: onboardingPartnerId,
+      productId: TEST_SEEDS.PRODUCT_ID,
+      planId: TEST_SEEDS.PLAN_STARTER_ID,
+      planVersion: '1.0.0',
+      status: 'ACTIVE',
+      billingCycle: 'ANNUAL',
+      startDate: now,
+      renewalDate: expiryDate,
+      endDate: expiryDate
+    });
+    const signature = licenseService.signLicensePayload({
+      licenseKey: onboardingLicKey,
+      partnerId: onboardingPartnerId,
+      tenantId: onboardingTenantId,
+      subscriptionId: onboardingSubId,
+      planId: TEST_SEEDS.PLAN_STARTER_ID,
+      expiryDate: expiryDate.toISOString()
+    });
+    await db.insert(licenses).values({
+      id: onboardingLicId,
+      licenseKey: onboardingLicKey,
+      partnerId: onboardingPartnerId,
+      tenantId: onboardingTenantId,
+      subscriptionId: onboardingSubId,
+      planId: TEST_SEEDS.PLAN_STARTER_ID,
+      licenseType: 'FREE_YEAR_1',
+      status: 'FREE_ACTIVE',
+      activationStatus: 'ACTIVATED',
+      maxConcurrentUsers: 10,
+      maxDoctors: 5,
+      maxBranches: 1,
+      issuedAt: now,
+      startDate: now,
+      expiryDate,
+      gracePeriodEnd: graceEnd,
+      signature,
+      metadata: { isOnboardingBaseline: true }
     });
 
     const clinicToken = makeToken({
@@ -548,7 +631,6 @@ try {
       }
     });
 
-    // Should NOT return 403 "No commercial license found"
     assert.equal(res.statusCode, 200);
     assert.equal(res.headers['x-commercial-onboarding'], 'true');
     assert.equal(res.headers['x-commercial-days-remaining'], '365');

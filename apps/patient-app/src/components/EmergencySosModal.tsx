@@ -6,6 +6,24 @@ interface Props {
   onClose: () => void;
 }
 
+const SOS_TITLE: Record<Language, string> = {
+  en: 'Emergency Help (SOS)',
+  hi: 'आपातकालीन सहायता (SOS)',
+  mr: 'आपत्कालीन मदत (SOS)',
+  bn: 'জরুরি সাহায্য (SOS)',
+  ta: 'அவசர உதவி (SOS)',
+  te: 'అత్యవసర సహాయం (SOS)'
+};
+
+const SOS_BODY: Record<Language, string> = {
+  en: 'If the patient has severe chest pain, breathing difficulty, or trauma, call immediately:',
+  hi: 'अगर मरीज़ को गंभीर सीने में दर्द, सांस लेने में तकलीफ, या बेहोशी है, तो तुरंत नीचे दिए गए नंबर पर कॉल करें:',
+  mr: 'रुग्णाला तीव्र छातीत दुखणे, श्वास घेण्यास त्रास किंवा गंभीर दुखापत असल्यास तात्काळ खालील क्रमांकावर कॉल करा:',
+  bn: 'রোগীর তীব্র বুকে ব্যথা, শ্বাসকষ্ট বা অজ্ঞান হওয়ার লক্ষণ থাকলে অবিলম্বে নিচের নম্বরে কল করুন:',
+  ta: 'நோயாளிக்கு கடுமையான நெஞ்சு வலி, மூச்சுத் திணறல் அல்லது மயக்கம் இருந்தால் உடனடியாக அழைக்கவும்:',
+  te: 'రోగికి తీవ్రమైన ఛాతీ నొప్పி, శ్వాస ఇబ్బంది లేదా గాయం ఉంటే వెంటనే క్రింది నంబర్‌కు కాల్ చేయండి:'
+};
+
 export const EmergencySosModal: React.FC<Props> = ({ language, onClose }) => {
   return (
     <div
@@ -40,7 +58,7 @@ export const EmergencySosModal: React.FC<Props> = ({ language, onClose }) => {
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <span style={{ fontSize: '1.75rem' }}>🚨</span>
             <div style={{ fontSize: '1.25rem', fontWeight: 900, color: '#EF4444' }}>
-              {language === 'hi' ? 'आपातकालीन सहायता (SOS)' : 'Emergency Help (SOS)'}
+              {SOS_TITLE[language] || SOS_TITLE.en}
             </div>
           </div>
           <button
@@ -62,9 +80,7 @@ export const EmergencySosModal: React.FC<Props> = ({ language, onClose }) => {
         </div>
 
         <p style={{ fontSize: '0.875rem', color: '#CBD5E1', marginBottom: '20px', lineHeight: 1.4 }}>
-          {language === 'hi'
-            ? 'अगर मरीज़ को गंभीर सीने में दर्द, सांस लेने में तकलीफ, या बेहोशी है, तो तुरंत नीचे दिए गए नंबर पर कॉल करें:'
-            : 'If the patient has severe chest pain, breathing difficulty, or trauma, call immediately:'}
+          {SOS_BODY[language] || SOS_BODY.en}
         </p>
 
         {/* 1-Tap Hospital Casualty Hotline */}

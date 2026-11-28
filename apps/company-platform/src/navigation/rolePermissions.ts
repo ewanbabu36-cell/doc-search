@@ -17,7 +17,8 @@ export const ROLE_DOMAIN_PERMISSIONS: Record<string, string[]> = {
     'compliance-data-governance',
     'compliance-regulatory-legal',
     'company-admin-governance',
-    'central-supply-chain'
+    'central-supply-chain',
+    'risk-management-hq'
   ],
   COMPLIANCE_OFFICER: [
     'compliance-data-governance',
@@ -42,18 +43,21 @@ export const ROLE_DOMAIN_PERMISSIONS: Record<string, string[]> = {
   ],
   FINANCE_CONTROLLER: [
     'subscription-billing-finance',
+    'risk-management-hq',
     'growth-engine',
     'analytics-bi-intelligence',
     'company-admin-governance'
   ],
   FINANCE_MANAGER: [
     'subscription-billing-finance',
+    'risk-management-hq',
     'analytics-bi-intelligence',
     'crm-partner-lifecycle',
     'company-admin-governance'
   ],
   FINANCE_BILLING_LEAD: [
     'subscription-billing-finance',
+    'risk-management-hq',
     'analytics-bi-intelligence',
     'company-admin-governance'
   ],

@@ -264,9 +264,10 @@ export class StaffAdministrationRepository {
               docDeptId = firstDept?.id || null;
             } catch {}
 
-            await dbClient
-              .insert(operationalStaff)
-              .values({
+            if (docDeptId) {
+              await dbClient
+                .insert(operationalStaff)
+                .values({
                 id: docStaffId,
                 tenantId,
                 partnerId,
@@ -318,6 +319,7 @@ export class StaffAdministrationRepository {
                 }
               })
               .onConflictDoNothing();
+            }
           }
         } catch {}
       }

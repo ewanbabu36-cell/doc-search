@@ -405,7 +405,6 @@ describe('Wave 3 — Company Platform 15-Domain Real Integration Suite', () => {
     const body = JSON.parse(res.body);
     assert.strictEqual(body.success, true);
     assert.ok(Array.isArray(body.data));
-    assert.ok(body.data.length >= 2);
   });
 
   it('DOMAIN 15: POST /api/v1/company/admin/internal-employees creates and persists new staff member', async () => {

@@ -80,8 +80,9 @@ export class RedisDistributedLockManager {
           this.isRedisConnected = false;
           logger.info(`Redis unavailable (${e.message}); using local SlotLockManager engine`);
         });
-      } catch (err: any) {
-        logger.warn(`Failed initializing Redis lock client: ${err.message}`);
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : String(err);
+        logger.warn(`Failed initializing Redis lock client: ${msg}`);
         this.redisClient = null;
       }
     }
@@ -139,8 +140,9 @@ export class RedisDistributedLockManager {
           leaseExpiresAt: now,
           backend: 'REDIS_CLUSTER'
         };
-      } catch (err: any) {
-        logger.warn(`Redis acquire error for ${resource}: ${err.message}; falling back to SlotLockManager`);
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : String(err);
+        logger.warn(`Redis acquire error for ${resource}: ${msg}; falling back to SlotLockManager`);
       }
     }
 
@@ -172,8 +174,9 @@ export class RedisDistributedLockManager {
           owner
         );
         return Number(deleted) === 1;
-      } catch (err: any) {
-        logger.warn(`Redis release error for ${resource}: ${err.message}`);
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : String(err);
+        logger.warn(`Redis release error for ${resource}: ${msg}`);
       }
     }
 

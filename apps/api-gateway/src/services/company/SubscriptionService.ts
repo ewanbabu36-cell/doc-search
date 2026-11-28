@@ -5,6 +5,7 @@ import { licenseService } from './LicenseService.js';
 import { entitlementService } from './EntitlementService.js';
 import { sessionRevocationService } from '../core/SessionRevocationService.js';
 import { auditRepository } from '../../repositories/core/AuditRepository.js';
+import { companyRiskEconomicsService } from './CompanyRiskEconomicsService.js';
 import { type SessionContext } from '@docsearch/auth';
 import {
   withSecurityContext,
@@ -125,6 +126,15 @@ export class SubscriptionService {
   getTenureOptions() {
     return [
       {
+        code: 'HALF_YEARLY',
+        label: 'Half-Yearly (6 Months)',
+        months: 6,
+        durationDays: 180,
+        defaultDiscountPercent: 0,
+        badge: 'Flexible',
+        description: 'Optional 6-month flexibility (0% discount)'
+      },
+      {
         code: 'YEARLY',
         label: '1 Year (12 Months)',
         months: 12,
@@ -159,15 +169,6 @@ export class SubscriptionService {
         defaultDiscountPercent: 20,
         badge: '👑 5-Year Institutional',
         description: 'Approved 5-year plan with 20% discount'
-      },
-      {
-        code: 'HALF_YEARLY',
-        label: 'Half-Yearly (6 Months)',
-        months: 6,
-        durationDays: 180,
-        defaultDiscountPercent: 0,
-        badge: 'Flexible',
-        description: 'Optional 6-month flexibility (0% discount)'
       }
     ];
   }
@@ -237,6 +238,7 @@ export class SubscriptionService {
       agreedLumpSum?: number | undefined;
       paymentTerms?: string | undefined;
       negotiationNotes?: string | undefined;
+      cfoOverrideApproved?: boolean | undefined;
     },
     session: SessionContext
   ) {
@@ -271,6 +273,13 @@ export class SubscriptionService {
         finalPayable = Math.max(0, subtotalAfterTenureDiscount - customTotalDiscount);
         totalDiscountAmount = defaultTenureDiscountAmount + customTotalDiscount;
       }
+
+      await companyRiskEconomicsService.enforceDealDiscountGuardrail({
+        totalGrossInr: totalGross,
+        finalPayableInr: finalPayable,
+        cfoOverrideApproved: input.cfoOverrideApproved,
+        session
+      });
 
       const monthlyEffectivePrice = Math.round(finalPayable / tenure.months);
       const { startDate, endDate, renewalDate } = this.calculateSubscriptionDates(

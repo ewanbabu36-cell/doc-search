@@ -738,7 +738,13 @@ export const commercialRoutes: FastifyPluginAsync = async (fastify) => {
       const body = PlanCreateSchema.parse(request.body);
       const db = getDatabase();
 
-      const [prod] = await db.select().from(products).where(eq(products.code, 'DOCSEARCH_HEALTHCARE_OS')).limit(1);
+      let [prod] = await db.select().from(products).where(eq(products.code, 'DOCSEARCH_HEALTHCARE_OS')).limit(1);
+      if (!prod?.id) {
+        [prod] = await db.select().from(products).where(eq(products.code, 'PROD_HEALTHCARE_SUITE')).limit(1);
+      }
+      if (!prod?.id) {
+        [prod] = await db.select().from(products).limit(1);
+      }
       if (!prod?.id) throw new Error('Base DOCSEARCH_HEALTHCARE_OS product not initialized');
       const productId = prod.id;
 

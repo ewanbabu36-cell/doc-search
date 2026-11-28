@@ -2,6 +2,7 @@ import { describe, it, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { buildApp } from '../dist/app.js';
 import { signJwt } from '@docsearch/auth';
+import { setupTestDatabase } from '@docsearch/database';
 
 describe('Operation Theatre & Surgery Vertical Slice: Booking -> PAC -> Intra-Op -> PACU -> Post-Op Transfer -> History', () => {
   let app;
@@ -40,15 +41,19 @@ describe('Operation Theatre & Surgery Vertical Slice: Booking -> PAC -> Intra-Op
   let testOTRoomId;
   let testScheduleId;
 
+  let testDb;
+
   before(async () => {
     process.env['JWT_SECRET'] = MASTER_SECRET;
     process.env['NODE_ENV'] = 'development';
+    testDb = await setupTestDatabase({ seedBaseline: true, seedDemoFixtures: true });
     app = await buildApp();
     await app.ready();
   });
 
   after(async () => {
     if (app) await app.close();
+    if (testDb) await testDb.cleanup();
   });
 
   // STEP 1: Create Patient Baseline

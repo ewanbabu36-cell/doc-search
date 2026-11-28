@@ -16,6 +16,8 @@
 // @ts-ignore
 import pg from 'pg';
 import crypto from 'node:crypto';
+import fs from 'node:fs';
+import path from 'node:path';
 import { createLogger } from '@docsearch/shared-core';
 
 const logger = createLogger('synthetic-dr-drill');
@@ -49,21 +51,51 @@ export interface SyntheticRestoreDrillResult {
 }
 
 export class SyntheticDatabaseRestoreDrill {
-  private readonly rootConnString: string;
+  private readonly explicitConnString: string | undefined;
 
   constructor(connectionString?: string) {
-    const raw = connectionString || process.env['DATABASE_URL'] || 'postgresql://postgres:password@127.0.0.1:5432/docsearch';
+    this.explicitConnString = connectionString;
+  }
+
+  private resolveMigrationEnvUrl(): string | undefined {
+    if (process.env['MIGRATION_DATABASE_URL']) {
+      return process.env['MIGRATION_DATABASE_URL'];
+    }
+    try {
+      const candidates = [
+        path.resolve(process.cwd(), '.env'),
+        path.resolve(process.cwd(), '../../.env'),
+        path.resolve('D:/DOC SEARCH/.env')
+      ];
+      for (const envPath of candidates) {
+        if (fs.existsSync(envPath)) {
+          const match = fs.readFileSync(envPath, 'utf8').match(/^MIGRATION_DATABASE_URL=(.+)$/m);
+          if (match?.[1]?.trim()) {
+            return match[1].trim();
+          }
+        }
+      }
+    } catch {}
+    return undefined;
+  }
+
+  private resolveRootConnString(): string {
+    const raw =
+      this.explicitConnString ||
+      this.resolveMigrationEnvUrl() ||
+      process.env['DATABASE_URL'] ||
+      'postgresql://postgres:password@127.0.0.1:5432/docsearch';
     try {
       const url = new URL(raw);
       url.pathname = '/postgres';
-      this.rootConnString = url.toString();
+      return url.toString();
     } catch {
-      this.rootConnString = 'postgresql://postgres:password@127.0.0.1:5432/postgres';
+      return 'postgresql://postgres:password@127.0.0.1:5432/postgres';
     }
   }
 
-  private buildDatabaseUrl(dbName: string): string {
-    const url = new URL(this.rootConnString);
+  private buildDatabaseUrl(dbName: string, rootConn: string): string {
+    const url = new URL(rootConn);
     url.pathname = `/${dbName}`;
     return url.toString();
   }
@@ -80,7 +112,8 @@ export class SyntheticDatabaseRestoreDrill {
     };
 
     log('Initiating synthetic disaster recovery restore drill...');
-    const rootClient = new pg.Client({ connectionString: this.rootConnString });
+    const rootConnString = this.resolveRootConnString();
+    const rootClient = new pg.Client({ connectionString: rootConnString });
     await rootClient.connect();
 
     const drillDbName = `docsearch_drill_source_${Date.now().toString(36)}`;
@@ -89,9 +122,9 @@ export class SyntheticDatabaseRestoreDrill {
     try {
       // 1. Create synthetic source database
       log(`Creating synthetic sandbox source database: "${drillDbName}"`);
-      await rootClient.query(`CREATE DATABASE "${drillDbName}" WITH ENCODING = 'UTF8' LC_COLLATE = 'C' LC_CTYPE = 'C';`);
+      await rootClient.query(`CREATE DATABASE "${drillDbName}" WITH ENCODING = 'UTF8' TEMPLATE = template0 LC_COLLATE = 'C' LC_CTYPE = 'C';`);
 
-      const sourceConnString = this.buildDatabaseUrl(drillDbName);
+      const sourceConnString = this.buildDatabaseUrl(drillDbName, rootConnString);
       const sourceClient = new pg.Client({ connectionString: sourceConnString });
       await sourceClient.connect();
 
@@ -246,8 +279,8 @@ export class SyntheticDatabaseRestoreDrill {
       log(`Initiating restoration into clean target sandbox: "${restoreDbName}"`);
       const restoreStartHr = performance.now();
 
-      await rootClient.query(`CREATE DATABASE "${restoreDbName}" WITH ENCODING = 'UTF8' LC_COLLATE = 'C' LC_CTYPE = 'C';`);
-      const targetConnString = this.buildDatabaseUrl(restoreDbName);
+      await rootClient.query(`CREATE DATABASE "${restoreDbName}" WITH ENCODING = 'UTF8' TEMPLATE = template0 LC_COLLATE = 'C' LC_CTYPE = 'C';`);
+      const targetConnString = this.buildDatabaseUrl(restoreDbName, rootConnString);
       const targetClient = new pg.Client({ connectionString: targetConnString });
       await targetClient.connect();
 

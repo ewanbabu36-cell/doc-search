@@ -293,7 +293,8 @@ export class QualityInfectionRepository {
   async getIncidents(tenantId: string, dbClient = getDatabase(), limit = 25, offset = 0) {
     if (dbClient) {
       try {
-        return await dbClient.select().from(hospitalIncidentReports).where(eq(hospitalIncidentReports.tenantId, tenantId)).orderBy(desc(hospitalIncidentReports.createdAt)).limit(limit).offset(offset);
+        const rows = await dbClient.select().from(hospitalIncidentReports).where(eq(hospitalIncidentReports.tenantId, tenantId)).orderBy(desc(hospitalIncidentReports.createdAt)).limit(limit).offset(offset);
+        return rows.map((r: any) => ({ ...r }));
       } catch {}
     }
     return this.incidentsStore.filter(i => i.tenantId === tenantId).slice(offset, offset + limit);
@@ -493,12 +494,25 @@ export class QualityInfectionRepository {
         const whereClause = tenantId
           ? and(eq(qualityCapaActions.tenantId, tenantId), eq(qualityCapaActions.id, id))
           : eq(qualityCapaActions.id, id);
+        const dbUpdates: Record<string, unknown> = { updatedAt: new Date() };
+        if (updates.status !== undefined) dbUpdates['status'] = updates.status;
+        if (updates.verificationNotes !== undefined) dbUpdates['verificationMetric'] = updates.verificationNotes;
+        if (updates.actionDescription !== undefined) dbUpdates['actionDescription'] = updates.actionDescription;
         const [updated] = await dbClient
           .update(qualityCapaActions)
-          .set({ ...updates, updatedAt: new Date() } as unknown as Partial<typeof qualityCapaActions.$inferInsert>)
+          .set(dbUpdates as unknown as Partial<typeof qualityCapaActions.$inferInsert>)
           .where(whereClause)
           .returning();
-        if (updated) return updated;
+        if (updated) {
+          return {
+            ...updated,
+            isEffective:
+              updates.isEffective !== undefined
+                ? updates.isEffective
+                : updated.status === 'VERIFIED_EFFECTIVE',
+            verificationNotes: updates.verificationNotes ?? updated.verificationMetric
+          };
+        }
       } catch (err) {
         if (err instanceof AppError) throw err;
         throw new AppError({
@@ -564,7 +578,14 @@ export class QualityInfectionRepository {
     if (dbClient) {
       try {
         const [inserted] = await dbClient.insert(haiSurveillanceRecords).values(insertPayload as any).returning();
-        if (inserted) return inserted as unknown as HaiSurveillanceRecord;
+        if (inserted) {
+          return {
+            ...inserted,
+            caseCode: inserted.surveillanceCode,
+            wardName: inserted.departmentName,
+            organismIdentified: inserted.pathogenIsolated
+          } as unknown as HaiSurveillanceRecord;
+        }
       } catch {}
     }
     const record: HaiSurveillanceRecord = { ...data, ...insertPayload } as any;
@@ -613,7 +634,16 @@ export class QualityInfectionRepository {
     if (dbClient) {
       try {
         const [inserted] = await dbClient.insert(patientIsolationRecords).values(insertPayload as any).returning();
-        if (inserted) return inserted as unknown as PatientIsolationRecord;
+        if (inserted) {
+          return {
+            ...inserted,
+            wardName: inserted.departmentName,
+            bedNumber: inserted.roomBedNumber,
+            isolationCategory: inserted.precautionType,
+            organismName: inserted.indicatedReasonOrPathogen,
+            status: inserted.isActive ? 'ACTIVE' : 'DISCHARGED'
+          } as unknown as PatientIsolationRecord;
+        }
       } catch {}
     }
     const record: PatientIsolationRecord = { ...data, ...insertPayload } as any;
@@ -627,12 +657,28 @@ export class QualityInfectionRepository {
         const whereClause = tenantId
           ? and(eq(patientIsolationRecords.tenantId, tenantId), eq(patientIsolationRecords.id, id))
           : eq(patientIsolationRecords.id, id);
+        const dbUpdates: Record<string, unknown> = {};
+        if (updates.status !== undefined) {
+          dbUpdates['isActive'] = updates.status !== 'DISCHARGED';
+        }
+        if (updates.dischargedDate !== undefined) {
+          dbUpdates['endDate'] = new Date(updates.dischargedDate as any).toISOString().split('T')[0];
+        }
         const [updated] = await dbClient
           .update(patientIsolationRecords)
-          .set(updates as unknown as Partial<typeof patientIsolationRecords.$inferInsert>)
+          .set(dbUpdates as unknown as Partial<typeof patientIsolationRecords.$inferInsert>)
           .where(whereClause)
           .returning();
-        if (updated) return updated as unknown as PatientIsolationRecord;
+        if (updated) {
+          return {
+            ...updated,
+            wardName: updated.departmentName,
+            bedNumber: updated.roomBedNumber,
+            isolationCategory: updated.precautionType,
+            organismName: updated.indicatedReasonOrPathogen,
+            status: updates.status || (updated.isActive ? 'ACTIVE' : 'DISCHARGED')
+          } as unknown as PatientIsolationRecord;
+        }
       } catch (err) {
         if (err instanceof AppError) throw err;
         throw new AppError({
@@ -692,7 +738,15 @@ export class QualityInfectionRepository {
     if (dbClient) {
       try {
         const [inserted] = await dbClient.insert(handHygieneAudits).values(insertPayload as any).returning();
-        if (inserted) return inserted as unknown as HandHygieneRecord;
+        if (inserted) {
+          return {
+            ...inserted,
+            auditorName: inserted.auditedByOfficer,
+            opportunityCount: data.opportunityCount,
+            complianceCount: data.complianceCount,
+            compliancePercentage: data.compliancePercentage
+          } as unknown as HandHygieneRecord;
+        }
       } catch {}
     }
     const record: HandHygieneRecord = { ...data, ...insertPayload } as any;
@@ -741,7 +795,17 @@ export class QualityInfectionRepository {
     if (dbClient) {
       try {
         const [inserted] = await dbClient.insert(environmentalMicroSwabs).values(insertPayload as any).returning();
-        if (inserted) return inserted as unknown as EnvironmentalSwabRecord;
+        if (inserted) {
+          return {
+            ...inserted,
+            swabCode: inserted.sampleNumber,
+            sampleLocation: inserted.locationDescription,
+            colonyCount: inserted.cfuCountPerPlateOrMl,
+            pathogenIdentified: inserted.pathogensFound,
+            isCompliant: inserted.resultStatus === 'SATISFACTORY_PASS',
+            sampledBy: inserted.collectedBy
+          } as unknown as EnvironmentalSwabRecord;
+        }
       } catch {}
     }
     const record: EnvironmentalSwabRecord = { ...data, ...insertPayload } as any;
@@ -792,7 +856,15 @@ export class QualityInfectionRepository {
     if (dbClient) {
       try {
         const [inserted] = await dbClient.insert(needleStickOccupationalLogs).values(insertPayload as any).returning();
-        if (inserted) return inserted as unknown as NeedleStickLogRecord;
+        if (inserted) {
+          return {
+            ...inserted,
+            logCode: inserted.incidentCode,
+            staffName: inserted.exposedStaffName,
+            postExposureProphylaxisGiven: inserted.pepInitiatedWithinGoldenHour,
+            status: inserted.pepInitiatedWithinGoldenHour ? 'EVALUATED_PEP_INITIATED' : 'REPORTED'
+          } as unknown as NeedleStickLogRecord;
+        }
       } catch {}
     }
     const record: NeedleStickLogRecord = { ...data, ...insertPayload } as any;
@@ -840,7 +912,19 @@ export class QualityInfectionRepository {
     if (dbClient) {
       try {
         const [inserted] = await dbClient.insert(biomedicalWasteLogs).values(insertPayload as any).returning();
-        if (inserted) return inserted as unknown as BmwLogRecord;
+        if (inserted) {
+          return {
+            ...inserted,
+            logCode: inserted.pcbManifestBarcode,
+            yellowBagKg: Number(inserted.yellowBagWeightKg),
+            redBagKg: Number(inserted.redBagWeightKg),
+            whitePunctureProofKg: Number(inserted.whiteTranslucentWeightKg),
+            blueCardboardKg: Number(inserted.blueBagWeightKg),
+            totalWeightKg: Number(inserted.totalDailyWeightKg),
+            dispatchedToVendor: inserted.handedOverToVendorName,
+            verifiedByStaff: inserted.hospitalSupervisorName
+          } as unknown as BmwLogRecord;
+        }
       } catch {}
     }
     const record: BmwLogRecord = { ...data, ...insertPayload } as any;

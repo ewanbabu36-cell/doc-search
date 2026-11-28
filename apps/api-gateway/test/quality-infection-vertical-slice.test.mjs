@@ -2,6 +2,7 @@ import { describe, it, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { buildApp } from '../dist/app.js';
 import { signJwt } from '@docsearch/auth';
+import { setupTestDatabase } from '@docsearch/database';
 
 describe('Domain 2.20 — Hospital Quality, Incident & Infection Control (NABH / JCI) Vertical Slice Test Suite', () => {
   let app;
@@ -25,7 +26,30 @@ describe('Domain 2.20 — Hospital Quality, Incident & Infection Control (NABH /
         'clinical:quality:read',
         'clinical:quality:create',
         'clinical:quality:update',
-        'clinical:quality:delete'
+        'clinical:quality:delete',
+        'quality:incident:read',
+        'quality:incident:create',
+        'quality:incident:update',
+        'quality:standards:read',
+        'quality:rca:read',
+        'quality:rca:create',
+        'quality:capa:read',
+        'quality:capa:create',
+        'quality:capa:update',
+        'infection:hai:read',
+        'infection:hai:create',
+        'infection:isolation:read',
+        'infection:isolation:create',
+        'infection:isolation:update',
+        'infection:hygiene:read',
+        'infection:hygiene:create',
+        'infection:swab:read',
+        'infection:swab:create',
+        'infection:sharps:read',
+        'infection:sharps:create',
+        'infection:waste:read',
+        'infection:waste:create',
+        'quality:audit:read'
       ],
       iss: ISSUER,
       aud: AUDIENCE
@@ -41,7 +65,10 @@ describe('Domain 2.20 — Hospital Quality, Incident & Infection Control (NABH /
   let createdCapaId;
   let createdIsolationId;
 
+  let testDb;
+
   before(async () => {
+    testDb = await setupTestDatabase({ seedBaseline: true, seedDemoFixtures: true });
     app = await buildApp();
     await app.ready();
 
@@ -53,7 +80,8 @@ describe('Domain 2.20 — Hospital Quality, Incident & Infection Control (NABH /
   });
 
   after(async () => {
-    await app.close();
+    if (app) await app.close();
+    if (testDb) await testDb.cleanup();
   });
 
   it('TEST 01: GET /api/v1/partner/quality/overview returns NABH & JCI quality metrics', async () => {

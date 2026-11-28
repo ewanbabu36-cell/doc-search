@@ -1,6 +1,7 @@
 import { type SessionContext } from '@docsearch/auth';
 import {
   getDatabase,
+  withSecurityContext,
   partnerProfiles,
   operationalPartners,
   partnerOperationalSettings,
@@ -394,6 +395,7 @@ export class PartnerAccountService {
 
     const annualBase = Number(planRecord?.basePrice ?? (planRecord?.metadata as any)?.basePrice ?? (planRecord?.code?.includes('HOSPITAL') ? 20000 : 6000));
     const tenureConfigs = [
+      { code: 'HALF_YEARLY', label: 'Half-Yearly (6 Months)', years: 0.5, months: 6, discount: 0, badge: 'Flexible (6-Month)' },
       { code: 'YEARLY', label: '1 Year (12 Months)', years: 1, months: 12, discount: 0, badge: '⭐ Standard 1-Year' },
       { code: 'TWO_YEARS', label: '2 Years (24 Months)', years: 2, months: 24, discount: 2, badge: '🥈 2-Year Plan (2% Off)' },
       { code: 'THREE_YEARS', label: '3 Years (36 Months)', years: 3, months: 36, discount: 10, badge: '🥉 3-Year Plan (10% Off)' },
@@ -696,186 +698,201 @@ export class PartnerAccountService {
 
     const now = new Date().toISOString();
 
-    // 1. Fetch current partner profile
-    const existing = await db
-      .select()
-      .from(partnerProfiles)
-      .where(eq(partnerProfiles.tenantId, tenantId))
-      .limit(1);
+    // 1. Fetch & update partner profile under PostgreSQL RLS security context
+    const { currentPartner, currentMeta, updatedMeta, canonicalPartnerType } = await withSecurityContext(
+      db,
+      session,
+      async (tx) => {
+        const existing = await tx
+          .select()
+          .from(partnerProfiles)
+          .where(eq(partnerProfiles.tenantId, tenantId))
+          .limit(1);
 
-    const currentPartner = existing[0] || null;
-    const currentMeta = (currentPartner?.metadata as Record<string, any>) || {};
+        const curPartner = existing[0] || null;
+        const curMeta = (curPartner?.metadata as Record<string, any>) || {};
 
-    const requestedRawProfile = input.partnerType || input.facilityType || input.organizationType;
-    let canonicalPartnerType: string | undefined;
-    if (requestedRawProfile !== undefined) {
-      const normalized = normalizeFacilityProfile(requestedRawProfile);
-      if (normalized.isRestricted || String(normalized.workspace) === 'RESTRICTED') {
-        throw new AppError({
-          code: 'INVALID_PARTNER_PROFILE' as any,
-          message: `Cannot transition partner profile to an unrecognized or restricted facility type '${requestedRawProfile}'.`,
-          statusCode: 400
-        });
-      }
-      canonicalPartnerType =
-        String(normalized.crmType) === 'PHARMACY_WHOLESALE'
-          ? 'PHARMACY_WHOLESALE'
-          : normalized.workspace;
-    }
-
-    const updatedMeta: Record<string, any> = {
-      ...currentMeta,
-      isProfileCompleted: true,
-      profileCompletedAt: now,
-      ...(canonicalPartnerType
-        ? {
-            partnerType: canonicalPartnerType,
-            facilityType: canonicalPartnerType,
-            organizationType: canonicalPartnerType
+        const requestedRawProfile = input.partnerType || input.facilityType || input.organizationType;
+        let resolvedPartnerType: string | undefined;
+        if (requestedRawProfile !== undefined) {
+          const normalized = normalizeFacilityProfile(requestedRawProfile);
+          if (normalized.isRestricted || String(normalized.workspace) === 'RESTRICTED') {
+            throw new AppError({
+              code: 'INVALID_PARTNER_PROFILE' as any,
+              message: `Cannot transition partner profile to an unrecognized or restricted facility type '${requestedRawProfile}'.`,
+              statusCode: 400
+            });
           }
-        : {}),
-      statutory: {
-        ...((currentMeta['statutory'] as Record<string, any>) || {}),
-        ...(input.statutory || {})
-      },
-      address: {
-        ...((currentMeta['address'] as Record<string, any>) || {}),
-        ...(input.address || {})
-      },
-      certificates: (() => {
-        const inputCerts = { ...(input.certificates || {}) };
-        if (
-          inputCerts.doctorName &&
-          (inputCerts.doctorName.toLowerCase() === 'verified user' || inputCerts.doctorName.toLowerCase() === 'verified')
-        ) {
-          inputCerts.doctorName =
-            currentPartner?.primaryContactName ||
-            ((currentMeta['certificates'] as any)?.doctorName &&
-            (currentMeta['certificates'] as any)?.doctorName.toLowerCase() !== 'verified user'
-              ? (currentMeta['certificates'] as any).doctorName
-              : undefined);
+          resolvedPartnerType =
+            String(normalized.crmType) === 'PHARMACY_WHOLESALE'
+              ? 'PHARMACY_WHOLESALE'
+              : normalized.workspace;
         }
-        if (!inputCerts.doctorName && currentPartner?.primaryContactName) {
-          inputCerts.doctorName = currentPartner.primaryContactName;
-        }
-        const mergedCerts = {
-          ...((currentMeta['certificates'] as Record<string, any>) || {}),
-          ...inputCerts
+
+        const nextMeta: Record<string, any> = {
+          ...curMeta,
+          isProfileCompleted: true,
+          profileCompletedAt: now,
+          ...(resolvedPartnerType
+            ? {
+                partnerType: resolvedPartnerType,
+                facilityType: resolvedPartnerType,
+                organizationType: resolvedPartnerType
+              }
+            : {}),
+          statutory: {
+            ...((curMeta['statutory'] as Record<string, any>) || {}),
+            ...(input.statutory || {})
+          },
+          address: {
+            ...((curMeta['address'] as Record<string, any>) || {}),
+            ...(input.address || {})
+          },
+          certificates: (() => {
+            const inputCerts = { ...(input.certificates || {}) };
+            if (
+              inputCerts.doctorName &&
+              (inputCerts.doctorName.toLowerCase() === 'verified user' || inputCerts.doctorName.toLowerCase() === 'verified')
+            ) {
+              inputCerts.doctorName =
+                curPartner?.primaryContactName ||
+                ((curMeta['certificates'] as any)?.doctorName &&
+                (curMeta['certificates'] as any)?.doctorName.toLowerCase() !== 'verified user'
+                  ? (curMeta['certificates'] as any).doctorName
+                  : undefined);
+            }
+            if (!inputCerts.doctorName && curPartner?.primaryContactName) {
+              inputCerts.doctorName = curPartner.primaryContactName;
+            }
+            const mergedCerts = {
+              ...((curMeta['certificates'] as Record<string, any>) || {}),
+              ...inputCerts
+            };
+            if (
+              mergedCerts.doctorName &&
+              (mergedCerts.doctorName.toLowerCase() === 'verified user' || mergedCerts.doctorName.toLowerCase() === 'verified')
+            ) {
+              mergedCerts.doctorName = curPartner?.primaryContactName || 'Lead Clinician';
+            }
+            return mergedCerts;
+          })(),
+          bank: {
+            ...((curMeta['bank'] as Record<string, any>) || {}),
+            ...(input.bank || {})
+          },
+          clinical: {
+            ...((curMeta['clinical'] as Record<string, any>) || {}),
+            ...(input.clinical || {})
+          },
+          branding: {
+            ...((curMeta['branding'] as Record<string, any>) || {}),
+            ...(input.branding || {})
+          },
+          branches: input.branches !== undefined ? input.branches : (curMeta['branches'] || []),
+          preferences: {
+            ...((curMeta['preferences'] as Record<string, any>) || {}),
+            ...(input.preferences || {})
+          }
         };
-        if (
-          mergedCerts.doctorName &&
-          (mergedCerts.doctorName.toLowerCase() === 'verified user' || mergedCerts.doctorName.toLowerCase() === 'verified')
-        ) {
-          mergedCerts.doctorName = currentPartner?.primaryContactName || 'Lead Clinician';
+
+        if (curPartner) {
+          await tx
+            .update(partnerProfiles)
+            .set({
+              legalName: input.legalName || curPartner.legalName,
+              tradeName: input.tradeName || input.legalName || curPartner.tradeName,
+              primaryContactPhone: input.phone || curPartner.primaryContactPhone,
+              metadata: nextMeta,
+              updatedAt: new Date()
+            })
+            .where(eq(partnerProfiles.id, curPartner.id));
+
+          if (resolvedPartnerType) {
+            await tx
+              .update(tenants)
+              .set({
+                type: resolvedPartnerType,
+                updatedAt: new Date()
+              })
+              .where(eq(tenants.id, tenantId));
+          }
+        } else {
+          const facilityName = input.legalName || input.tradeName || 'Healthcare Facility';
+          const slug =
+            facilityName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') +
+            '-' +
+            tenantId.substring(0, 4);
+          await tx
+            .insert(tenants)
+            .values({
+              id: tenantId,
+              name: facilityName,
+              slug,
+              type: resolvedPartnerType || 'HOSPITAL',
+              status: 'ACTIVE',
+              metadata: { autoHydrated: true, email: session.actorEmail || '' }
+            })
+            .onConflictDoNothing();
+
+          await tx
+            .insert(partnerProfiles)
+            .values({
+              tenantId,
+              legalName: facilityName,
+              tradeName: input.tradeName || facilityName,
+              primaryContactName: session.actorEmail || 'Admin',
+              primaryContactEmail: session.actorEmail || 'admin@docsearch.health',
+              primaryContactPhone: input.phone || null,
+              metadata: nextMeta
+            });
         }
-        return mergedCerts;
-      })(),
-      bank: {
-        ...((currentMeta['bank'] as Record<string, any>) || {}),
-        ...(input.bank || {})
-      },
-      clinical: {
-        ...((currentMeta['clinical'] as Record<string, any>) || {}),
-        ...(input.clinical || {})
-      },
-      branding: {
-        ...((currentMeta['branding'] as Record<string, any>) || {}),
-        ...(input.branding || {})
-      },
-      branches: input.branches !== undefined ? input.branches : (currentMeta['branches'] || []),
-      preferences: {
-        ...((currentMeta['preferences'] as Record<string, any>) || {}),
-        ...(input.preferences || {})
+
+        return {
+          currentPartner: curPartner,
+          currentMeta: curMeta,
+          updatedMeta: nextMeta,
+          canonicalPartnerType: resolvedPartnerType
+        };
       }
-    };
-
-    if (currentPartner) {
-      await db
-        .update(partnerProfiles)
-        .set({
-          legalName: input.legalName || currentPartner.legalName,
-          tradeName: input.tradeName || input.legalName || currentPartner.tradeName,
-          primaryContactPhone: input.phone || currentPartner.primaryContactPhone,
-          metadata: updatedMeta,
-          updatedAt: new Date()
-        })
-        .where(eq(partnerProfiles.id, currentPartner.id));
-
-      if (canonicalPartnerType) {
-        await db
-          .update(tenants)
-          .set({
-            type: canonicalPartnerType,
-            updatedAt: new Date()
-          })
-          .where(eq(tenants.id, tenantId));
-      }
-    } else {
-      const facilityName = input.legalName || input.tradeName || 'Healthcare Facility';
-      const slug =
-        facilityName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') +
-        '-' +
-        tenantId.substring(0, 4);
-      await db
-        .insert(tenants)
-        .values({
-          id: tenantId,
-          name: facilityName,
-          slug,
-          type: canonicalPartnerType || 'HOSPITAL',
-          status: 'ACTIVE',
-          metadata: { autoHydrated: true, email: session.actorEmail || '' }
-        })
-        .onConflictDoNothing();
-
-      await db
-        .insert(partnerProfiles)
-        .values({
-          tenantId,
-          legalName: facilityName,
-          tradeName: input.tradeName || facilityName,
-          primaryContactName: session.actorEmail || 'Admin',
-          primaryContactEmail: session.actorEmail || 'admin@docsearch.health',
-          primaryContactPhone: input.phone || null,
-          metadata: updatedMeta
-        });
-    }
+    );
 
     // 2. Also synchronize operationalPartners in clinical schema if present
     try {
-      const opList = await db
-        .select()
-        .from(operationalPartners)
-        .where(eq(operationalPartners.tenantId, tenantId))
-        .limit(1);
+      await withSecurityContext(db, session, async (tx) => {
+        const opList = await tx
+          .select()
+          .from(operationalPartners)
+          .where(eq(operationalPartners.tenantId, tenantId))
+          .limit(1);
 
-      if (opList[0]) {
-        const opMeta = (opList[0].metadata as Record<string, any>) || {};
-        await db
-          .update(operationalPartners)
-          .set({
-            legalBusinessName: input.legalName || opList[0].legalBusinessName,
-            contactPhone: input.phone || opList[0].contactPhone,
-            ...(canonicalPartnerType ? { type: canonicalPartnerType } : {}),
-            metadata: {
-              ...opMeta,
-              isProfileCompleted: true,
-              profileCompletedAt: now,
-              ...(canonicalPartnerType
-                ? {
-                    partnerType: canonicalPartnerType,
-                    facilityType: canonicalPartnerType
-                  }
-                : {}),
-              statutory: updatedMeta['statutory'],
-              address: updatedMeta['address']
-            },
-            updatedAt: new Date()
-          })
-          .where(eq(operationalPartners.id, opList[0].id));
-      }
+        if (opList[0]) {
+          const opMeta = (opList[0].metadata as Record<string, any>) || {};
+          await tx
+            .update(operationalPartners)
+            .set({
+              legalBusinessName: input.legalName || opList[0].legalBusinessName,
+              contactPhone: input.phone || opList[0].contactPhone,
+              ...(canonicalPartnerType ? { type: canonicalPartnerType } : {}),
+              metadata: {
+                ...opMeta,
+                isProfileCompleted: true,
+                profileCompletedAt: now,
+                ...(canonicalPartnerType
+                  ? {
+                      partnerType: canonicalPartnerType,
+                      facilityType: canonicalPartnerType
+                    }
+                  : {}),
+                statutory: updatedMeta['statutory'],
+                address: updatedMeta['address']
+              },
+              updatedAt: new Date()
+            })
+            .where(eq(operationalPartners.id, opList[0].id));
+        }
+      });
     } catch (opErr) {
-      // Graceful fallback if operationalPartners doesn't exist for this tenant yet
+      console.warn('Non-fatal operationalPartners profile sync warning:', opErr);
     }
 
     // CAP-06: If partner profile changed, atomically revalidate all existing staff
@@ -907,41 +924,43 @@ export class PartnerAccountService {
     }
 
     try {
-      // 1. Check partner_profiles metadata preferences
-      const rows = await db
-        .select({ metadata: partnerProfiles.metadata })
-        .from(partnerProfiles)
-        .where(eq(partnerProfiles.tenantId, tenantId))
-        .limit(1);
-
-      const meta = (rows[0]?.metadata as Record<string, any>) || {};
-      const partnerPrefs = (meta['preferences'] as Record<string, any>) || {};
-
-      // 2. Check user-level preferences if email present
-      const actorEmail = (session.actorEmail || '').toLowerCase().trim();
-      let userPrefs: Record<string, any> = {};
-      if (actorEmail) {
-        const { users } = await import('@docsearch/database');
-        const userRows = await db
-          .select({ metadata: users.metadata })
-          .from(users)
-          .where(eq(users.email, actorEmail))
+      return await withSecurityContext(db, session, async (tx) => {
+        // 1. Check partner_profiles metadata preferences
+        const rows = await tx
+          .select({ metadata: partnerProfiles.metadata })
+          .from(partnerProfiles)
+          .where(eq(partnerProfiles.tenantId, tenantId))
           .limit(1);
-        const userMeta = (userRows[0]?.metadata as Record<string, any>) || {};
-        userPrefs = (userMeta['preferences'] as Record<string, any>) || {};
-      }
 
-      const resolvedTheme =
-        (userPrefs['themePreference'] as string) ||
-        (partnerPrefs['themePreference'] as string) ||
-        (partnerPrefs['theme'] as string) ||
-        'theme-advance-pro';
+        const meta = (rows[0]?.metadata as Record<string, any>) || {};
+        const partnerPrefs = (meta['preferences'] as Record<string, any>) || {};
 
-      return {
-        themePreference: resolvedTheme,
-        ...partnerPrefs,
-        ...userPrefs
-      };
+        // 2. Check user-level preferences if email present
+        const actorEmail = (session.actorEmail || '').toLowerCase().trim();
+        let userPrefs: Record<string, any> = {};
+        if (actorEmail) {
+          const { users } = await import('@docsearch/database');
+          const userRows = await tx
+            .select({ metadata: users.metadata })
+            .from(users)
+            .where(eq(users.email, actorEmail))
+            .limit(1);
+          const userMeta = (userRows[0]?.metadata as Record<string, any>) || {};
+          userPrefs = (userMeta['preferences'] as Record<string, any>) || {};
+        }
+
+        const resolvedTheme =
+          (userPrefs['themePreference'] as string) ||
+          (partnerPrefs['themePreference'] as string) ||
+          (partnerPrefs['theme'] as string) ||
+          'theme-advance-pro';
+
+        return {
+          themePreference: resolvedTheme,
+          ...partnerPrefs,
+          ...userPrefs
+        };
+      });
     } catch (err) {
       return { themePreference: 'theme-advance-pro' };
     }
@@ -968,61 +987,65 @@ export class PartnerAccountService {
       updatedAt: new Date().toISOString()
     };
 
-    // Update partnerProfiles metadata
-    const existing = await db
-      .select()
-      .from(partnerProfiles)
-      .where(eq(partnerProfiles.tenantId, tenantId))
-      .limit(1);
+    await withSecurityContext(db, session, async (tx) => {
+      // Update partnerProfiles metadata
+      const existing = await tx
+        .select()
+        .from(partnerProfiles)
+        .where(eq(partnerProfiles.tenantId, tenantId))
+        .limit(1);
 
-    if (existing[0]) {
-      const currentMeta = (existing[0].metadata as Record<string, any>) || {};
-      const updatedMeta = {
-        ...currentMeta,
-        preferences: {
-          ...((currentMeta['preferences'] as Record<string, any>) || {}),
-          ...newPreferences
+      if (existing[0]) {
+        const currentMeta = (existing[0].metadata as Record<string, any>) || {};
+        const updatedMeta = {
+          ...currentMeta,
+          preferences: {
+            ...((currentMeta['preferences'] as Record<string, any>) || {}),
+            ...newPreferences
+          }
+        };
+        await tx
+          .update(partnerProfiles)
+          .set({
+            metadata: updatedMeta,
+            updatedAt: new Date()
+          })
+          .where(eq(partnerProfiles.id, existing[0].id));
+      }
+
+      // Also update users metadata if email is present
+      const actorEmail = (session.actorEmail || '').toLowerCase().trim();
+      if (actorEmail) {
+        try {
+          const { users } = await import('@docsearch/database');
+          const userRows = await tx
+            .select({ id: users.id, metadata: users.metadata })
+            .from(users)
+            .where(eq(users.email, actorEmail))
+            .limit(1);
+
+          if (userRows[0]) {
+            const userMeta = (userRows[0].metadata as Record<string, any>) || {};
+            const updatedUserMeta = {
+              ...userMeta,
+              preferences: {
+                ...((userMeta['preferences'] as Record<string, any>) || {}),
+                ...newPreferences
+              }
+            };
+            await tx
+              .update(users)
+              .set({
+                metadata: updatedUserMeta,
+                updatedAt: new Date()
+              })
+              .where(eq(users.id, userRows[0].id));
+          }
+        } catch (userPrefErr) {
+          console.warn('Non-fatal user preference mirror update warning:', userPrefErr);
         }
-      };
-      await db
-        .update(partnerProfiles)
-        .set({
-          metadata: updatedMeta,
-          updatedAt: new Date()
-        })
-        .where(eq(partnerProfiles.id, existing[0].id));
-    }
-
-    // Also update users metadata if email is present
-    const actorEmail = (session.actorEmail || '').toLowerCase().trim();
-    if (actorEmail) {
-      try {
-        const { users } = await import('@docsearch/database');
-        const userRows = await db
-          .select({ id: users.id, metadata: users.metadata })
-          .from(users)
-          .where(eq(users.email, actorEmail))
-          .limit(1);
-
-        if (userRows[0]) {
-          const userMeta = (userRows[0].metadata as Record<string, any>) || {};
-          const updatedUserMeta = {
-            ...userMeta,
-            preferences: {
-              ...((userMeta['preferences'] as Record<string, any>) || {}),
-              ...newPreferences
-            }
-          };
-          await db
-            .update(users)
-            .set({
-              metadata: updatedUserMeta,
-              updatedAt: new Date()
-            })
-            .where(eq(users.id, userRows[0].id));
-        }
-      } catch {}
-    }
+      }
+    });
 
     return newPreferences;
   }
@@ -1036,22 +1059,28 @@ export class PartnerAccountService {
       throw AppError.internal('Database connection unavailable');
     }
 
-    const rows = await db
-      .select()
-      .from(partnerOperationalSettings)
-      .where(eq(partnerOperationalSettings.tenantId, tenantId))
-      .limit(1);
+    const { rows, profileRows } = await withSecurityContext(db, session, async (tx) => {
+      const settingsRows = await tx
+        .select()
+        .from(partnerOperationalSettings)
+        .where(eq(partnerOperationalSettings.tenantId, tenantId))
+        .limit(1);
+
+      const profRows =
+        settingsRows.length > 0
+          ? []
+          : await tx
+              .select()
+              .from(partnerProfiles)
+              .where(eq(partnerProfiles.tenantId, tenantId))
+              .limit(1);
+
+      return { rows: settingsRows, profileRows: profRows };
+    });
 
     if (rows.length > 0) {
       return rows[0];
     }
-
-    // Hydrate default from partnerProfiles metadata
-    const profileRows = await db
-      .select()
-      .from(partnerProfiles)
-      .where(eq(partnerProfiles.tenantId, tenantId))
-      .limit(1);
 
     const prof = profileRows[0];
     const meta = (prof?.metadata as Record<string, any>) || {};
@@ -1124,94 +1153,100 @@ export class PartnerAccountService {
       throw AppError.internal('Database connection unavailable');
     }
 
-    const existing = await db
-      .select()
-      .from(partnerOperationalSettings)
-      .where(eq(partnerOperationalSettings.tenantId, tenantId))
-      .limit(1);
+    const updatePayload = await withSecurityContext(db, session, async (tx) => {
+      const existing = await tx
+        .select()
+        .from(partnerOperationalSettings)
+        .where(eq(partnerOperationalSettings.tenantId, tenantId))
+        .limit(1);
 
-    const now = new Date();
-    const updatePayload = {
-      partnerId: input.partnerId || existing[0]?.partnerId || undefined,
-      logoUrl: input.logoUrl !== undefined ? input.logoUrl : existing[0]?.logoUrl,
-      stampSealUrl: input.stampSealUrl !== undefined ? input.stampSealUrl : existing[0]?.stampSealUrl,
-      signatureUrl: input.signatureUrl !== undefined ? input.signatureUrl : existing[0]?.signatureUrl,
-      letterheadMode: input.letterheadMode || existing[0]?.letterheadMode || 'FULL_DIGITAL',
-      headerMargins: input.headerMargins || existing[0]?.headerMargins || { top: 20, bottom: 20, left: 15, right: 15 },
-      footerNotes: input.footerNotes !== undefined ? input.footerNotes : existing[0]?.footerNotes,
-      reportFooterDisclaimer: input.reportFooterDisclaimer !== undefined ? input.reportFooterDisclaimer : existing[0]?.reportFooterDisclaimer,
-      medicoLegalNotice: input.medicoLegalNotice !== undefined ? input.medicoLegalNotice : existing[0]?.medicoLegalNotice,
-      officialHelpline: input.officialHelpline !== undefined ? input.officialHelpline : existing[0]?.officialHelpline,
-      googleReviewUrl: input.googleReviewUrl !== undefined ? input.googleReviewUrl : existing[0]?.googleReviewUrl,
-      autoGoogleReviewEnabled: input.autoGoogleReviewEnabled !== undefined ? input.autoGoogleReviewEnabled : (existing[0]?.autoGoogleReviewEnabled ?? true),
-      audioCallLang: input.audioCallLang || existing[0]?.audioCallLang || 'HI',
-      referralCommissionPolicy: input.referralCommissionPolicy || existing[0]?.referralCommissionPolicy || {},
-      doctorHeader: input.doctorHeader || existing[0]?.doctorHeader || {},
-      technologistHeader: input.technologistHeader || existing[0]?.technologistHeader || {},
-      pathologistHeader: input.pathologistHeader || existing[0]?.pathologistHeader || {},
-      statutory: input.statutory || existing[0]?.statutory || {},
-      bank: input.bank || existing[0]?.bank || {},
-      clinicalCapacity: input.clinicalCapacity || existing[0]?.clinicalCapacity || {},
-      hardwareConfig: input.hardwareConfig || existing[0]?.hardwareConfig || {},
-      metadata: input.metadata || existing[0]?.metadata || {},
-      updatedAt: now
-    };
+      const now = new Date();
+      const nextPayload = {
+        partnerId: input.partnerId || existing[0]?.partnerId || undefined,
+        logoUrl: input.logoUrl !== undefined ? input.logoUrl : existing[0]?.logoUrl,
+        stampSealUrl: input.stampSealUrl !== undefined ? input.stampSealUrl : existing[0]?.stampSealUrl,
+        signatureUrl: input.signatureUrl !== undefined ? input.signatureUrl : existing[0]?.signatureUrl,
+        letterheadMode: input.letterheadMode || existing[0]?.letterheadMode || 'FULL_DIGITAL',
+        headerMargins: input.headerMargins || existing[0]?.headerMargins || { top: 20, bottom: 20, left: 15, right: 15 },
+        footerNotes: input.footerNotes !== undefined ? input.footerNotes : existing[0]?.footerNotes,
+        reportFooterDisclaimer: input.reportFooterDisclaimer !== undefined ? input.reportFooterDisclaimer : existing[0]?.reportFooterDisclaimer,
+        medicoLegalNotice: input.medicoLegalNotice !== undefined ? input.medicoLegalNotice : existing[0]?.medicoLegalNotice,
+        officialHelpline: input.officialHelpline !== undefined ? input.officialHelpline : existing[0]?.officialHelpline,
+        googleReviewUrl: input.googleReviewUrl !== undefined ? input.googleReviewUrl : existing[0]?.googleReviewUrl,
+        autoGoogleReviewEnabled: input.autoGoogleReviewEnabled !== undefined ? input.autoGoogleReviewEnabled : (existing[0]?.autoGoogleReviewEnabled ?? true),
+        audioCallLang: input.audioCallLang || existing[0]?.audioCallLang || 'HI',
+        referralCommissionPolicy: input.referralCommissionPolicy || existing[0]?.referralCommissionPolicy || {},
+        doctorHeader: input.doctorHeader || existing[0]?.doctorHeader || {},
+        technologistHeader: input.technologistHeader || existing[0]?.technologistHeader || {},
+        pathologistHeader: input.pathologistHeader || existing[0]?.pathologistHeader || {},
+        statutory: input.statutory || existing[0]?.statutory || {},
+        bank: input.bank || existing[0]?.bank || {},
+        clinicalCapacity: input.clinicalCapacity || existing[0]?.clinicalCapacity || {},
+        hardwareConfig: input.hardwareConfig || existing[0]?.hardwareConfig || {},
+        metadata: input.metadata || existing[0]?.metadata || {},
+        updatedAt: now
+      };
 
-    if (existing.length > 0) {
-      await db
-        .update(partnerOperationalSettings)
-        .set(updatePayload)
-        .where(eq(partnerOperationalSettings.tenantId, tenantId));
-    } else {
-      await db.insert(partnerOperationalSettings).values({
-        tenantId,
-        ...updatePayload,
-        createdAt: now
-      });
-    }
+      if (existing.length > 0) {
+        await tx
+          .update(partnerOperationalSettings)
+          .set(nextPayload)
+          .where(eq(partnerOperationalSettings.tenantId, tenantId));
+      } else {
+        await tx.insert(partnerOperationalSettings).values({
+          tenantId,
+          ...nextPayload,
+          createdAt: now
+        });
+      }
+
+      return nextPayload;
+    });
 
     // Mirror updates to partnerProfiles.metadata for unified legacy profile compatibility
     try {
-      const prof = await db
-        .select({ metadata: partnerProfiles.metadata })
-        .from(partnerProfiles)
-        .where(eq(partnerProfiles.tenantId, tenantId))
-        .limit(1);
+      await withSecurityContext(db, session, async (tx) => {
+        const prof = await tx
+          .select({ metadata: partnerProfiles.metadata })
+          .from(partnerProfiles)
+          .where(eq(partnerProfiles.tenantId, tenantId))
+          .limit(1);
 
-      if (prof.length > 0) {
-        const firstProf = prof[0];
-        const currentMeta = ((firstProf ? firstProf.metadata : null) as Record<string, any>) || {};
-        await db
-          .update(partnerProfiles)
-          .set({
-            metadata: {
-              ...currentMeta,
-              branding: {
-                ...(currentMeta['branding'] || {}),
-                logoUrl: updatePayload.logoUrl,
-                stampSealUrl: updatePayload.stampSealUrl,
-                signatureUrl: updatePayload.signatureUrl,
-                letterheadMode: updatePayload.letterheadMode,
-                headerMargins: updatePayload.headerMargins,
-                rxFooterDisclaimer: updatePayload.footerNotes,
-                reportFooterDisclaimer: updatePayload.reportFooterDisclaimer,
-                medicoLegalNotice: updatePayload.medicoLegalNotice
+        if (prof.length > 0) {
+          const firstProf = prof[0];
+          const currentMeta = ((firstProf ? firstProf.metadata : null) as Record<string, any>) || {};
+          await tx
+            .update(partnerProfiles)
+            .set({
+              metadata: {
+                ...currentMeta,
+                branding: {
+                  ...(currentMeta['branding'] || {}),
+                  logoUrl: updatePayload.logoUrl,
+                  stampSealUrl: updatePayload.stampSealUrl,
+                  signatureUrl: updatePayload.signatureUrl,
+                  letterheadMode: updatePayload.letterheadMode,
+                  headerMargins: updatePayload.headerMargins,
+                  rxFooterDisclaimer: updatePayload.footerNotes,
+                  reportFooterDisclaimer: updatePayload.reportFooterDisclaimer,
+                  medicoLegalNotice: updatePayload.medicoLegalNotice
+                },
+                certificates: {
+                  ...(currentMeta['certificates'] || {}),
+                  ...(updatePayload.doctorHeader?.doctorName ? { doctorName: updatePayload.doctorHeader.doctorName } : {}),
+                  ...(updatePayload.doctorHeader?.doctorRegNo ? { doctorRegNo: updatePayload.doctorHeader.doctorRegNo } : {}),
+                  ...(updatePayload.pathologistHeader?.pathologistName ? { pathologistName: updatePayload.pathologistHeader.pathologistName } : {}),
+                  ...(updatePayload.technologistHeader?.technologistName ? { technologistName: updatePayload.technologistHeader.technologistName } : {})
+                },
+                googleReviewUrl: updatePayload.googleReviewUrl,
+                autoGoogleReviewEnabled: updatePayload.autoGoogleReviewEnabled,
+                audioCallLang: updatePayload.audioCallLang
               },
-              certificates: {
-                ...(currentMeta['certificates'] || {}),
-                ...(updatePayload.doctorHeader?.doctorName ? { doctorName: updatePayload.doctorHeader.doctorName } : {}),
-                ...(updatePayload.doctorHeader?.doctorRegNo ? { doctorRegNo: updatePayload.doctorHeader.doctorRegNo } : {}),
-                ...(updatePayload.pathologistHeader?.pathologistName ? { pathologistName: updatePayload.pathologistHeader.pathologistName } : {}),
-                ...(updatePayload.technologistHeader?.technologistName ? { technologistName: updatePayload.technologistHeader.technologistName } : {})
-              },
-              googleReviewUrl: updatePayload.googleReviewUrl,
-              autoGoogleReviewEnabled: updatePayload.autoGoogleReviewEnabled,
-              audioCallLang: updatePayload.audioCallLang
-            },
-            updatedAt: now
-          })
-          .where(eq(partnerProfiles.tenantId, tenantId));
-      }
+              updatedAt: updatePayload.updatedAt
+            })
+            .where(eq(partnerProfiles.tenantId, tenantId));
+        }
+      });
     } catch (metaErr) {
       console.warn('Non-fatal metadata mirror sync warning:', metaErr);
     }

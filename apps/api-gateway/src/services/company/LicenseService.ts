@@ -69,7 +69,7 @@ export interface IssueLicenseInput {
   maxBranches?: number;
   startDate?: Date;
   expiryDate: Date;
-  gracePeriodEnd?: Date;
+  gracePeriodEnd?: Date | null | undefined;
   metadata?: Record<string, any>;
 }
 
@@ -233,8 +233,19 @@ export class LicenseService {
       };
     }
 
-    // 30 days before expiry: visible countdown
-    if (daysRemaining <= 30) {
+    const totalSpanDays = license.startDate
+      ? Math.max(0, Math.round((expiryTime - new Date(license.startDate).getTime()) / (1000 * 60 * 60 * 24)))
+      : 365;
+    const isShortCyclePlan = totalSpanDays >= 27 && totalSpanDays <= 35;
+    const expiringSoonThresholdDays = isShortCyclePlan
+      ? Math.min(7, Math.max(3, Math.floor(totalSpanDays / 4)))
+      : 30;
+    const renewalWindowThresholdDays = isShortCyclePlan
+      ? Math.min(10, Math.max(5, Math.floor(totalSpanDays / 3)))
+      : 60;
+
+    // Visible expiry countdown (30d for annual/multi-month plans; <= 7d for 30-day monthly plans)
+    if (daysRemaining <= expiringSoonThresholdDays) {
       return {
         status: 'EXPIRING_SOON',
         isAccessAllowed: true,
@@ -244,8 +255,8 @@ export class LicenseService {
       };
     }
 
-    // 60 days before expiry: begin renewal alerts
-    if (daysRemaining <= 60) {
+    // Renewal alert window (60d for annual plans; skipped/shortened for 30-day monthly plans)
+    if (!isShortCyclePlan && daysRemaining <= renewalWindowThresholdDays) {
       return {
         status: 'RENEWAL_WINDOW',
         isAccessAllowed: true,
@@ -268,7 +279,10 @@ export class LicenseService {
     const licenseKey = this.generateLicenseKey();
     const startDate = input.startDate || new Date();
     const expiryIso = input.expiryDate.toISOString();
-    const defaultGraceEnd = new Date(input.expiryDate.getTime() + 30 * 24 * 60 * 60 * 1000);
+    const defaultGraceEnd =
+      input.expiryDate.getTime() > Date.now()
+        ? new Date(input.expiryDate.getTime() + 30 * 24 * 60 * 60 * 1000)
+        : null;
 
     const signature = this.signLicensePayload({
       licenseKey,
@@ -295,7 +309,7 @@ export class LicenseService {
       issuedAt: new Date(),
       startDate,
       expiryDate: input.expiryDate,
-      gracePeriodEnd: input.gracePeriodEnd || defaultGraceEnd,
+      gracePeriodEnd: input.gracePeriodEnd !== undefined ? input.gracePeriodEnd : defaultGraceEnd,
       signature,
       metadata: input.metadata || {}
     };

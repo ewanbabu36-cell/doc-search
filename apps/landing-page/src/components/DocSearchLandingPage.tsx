@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Badge, useTheme, themes, DocSearchLogo } from '@docsearch/ui-kit';
 import { showToast } from '../utils/feedback';
+import { useLandingI18n } from '../i18n/LandingI18nContext.js';
 
 // Lazy-loaded heavy modals and full-page views to drastically reduce landing page bundle size
 const UnifiedHealthcareLoginModal = React.lazy(() => import('./UnifiedHealthcareLoginModal.js').then(m => ({ default: m.UnifiedHealthcareLoginModal })));
@@ -25,6 +26,7 @@ import {
 
 export const DocSearchLandingPage: React.FC = () => {
   const { theme } = useTheme();
+  const { language, setLanguage, t, supportedLanguages } = useLandingI18n();
   const [showDemoModal, setShowDemoModal] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [showMarketplaceModal, setShowMarketplaceModal] = useState(false);
@@ -821,14 +823,14 @@ export const DocSearchLandingPage: React.FC = () => {
 
         {/* Center Nav Links (Desktop Only - Clean Linear Style) */}
         <nav className="docsearch-desktop-nav" style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
-          <a href="#overview" style={{ color: '#E2E8F0', textDecoration: 'none', fontSize: '0.875rem', fontWeight: 600, transition: 'color 0.2s' }}>Overview</a>
+          <a href="#overview" style={{ color: '#E2E8F0', textDecoration: 'none', fontSize: '0.875rem', fontWeight: 600, transition: 'color 0.2s' }}>{t('nav.overview', 'Overview')}</a>
           <a href="#simulator" style={{ color: '#38BDF8', textDecoration: 'none', fontSize: '0.875rem', fontWeight: 800, transition: 'color 0.2s', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
             <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: '#10B981', boxShadow: '0 0 8px #10B981' }} />
-            🎮 10-Sec Live Demo
+            🎮 {t('nav.demo_live', '10-Sec Live Demo')}
           </a>
-          <a href="#emergency" style={{ color: '#F87171', textDecoration: 'none', fontSize: '0.875rem', fontWeight: 800, transition: 'color 0.2s', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>🚨 ICU Bed Radar</a>
-          <a href="#architecture" style={{ color: '#94A3B8', textDecoration: 'none', fontSize: '0.875rem', fontWeight: 600, transition: 'color 0.2s' }}>Architecture</a>
-          <a href="#security" style={{ color: '#94A3B8', textDecoration: 'none', fontSize: '0.875rem', fontWeight: 600, transition: 'color 0.2s' }}>Security</a>
+          <a href="#emergency" style={{ color: '#F87171', textDecoration: 'none', fontSize: '0.875rem', fontWeight: 800, transition: 'color 0.2s', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>🚨 {t('nav.icu_radar', 'ICU Bed Radar')}</a>
+          <a href="#architecture" style={{ color: '#94A3B8', textDecoration: 'none', fontSize: '0.875rem', fontWeight: 600, transition: 'color 0.2s' }}>{t('nav.architecture', 'Architecture')}</a>
+          <a href="#security" style={{ color: '#94A3B8', textDecoration: 'none', fontSize: '0.875rem', fontWeight: 600, transition: 'color 0.2s' }}>{t('nav.security', 'Security')}</a>
           <button
             type="button"
             onClick={() => setShowMarketplaceModal(true)}
@@ -849,7 +851,7 @@ export const DocSearchLandingPage: React.FC = () => {
             }}
           >
             <span>👨‍⚕️</span>
-            <span>Find Doctors (Merit)</span>
+            <span>{t('nav.find_doctors', 'Find Doctors (Merit)')}</span>
           </button>
           <button
             type="button"
@@ -870,12 +872,33 @@ export const DocSearchLandingPage: React.FC = () => {
             }}
           >
             <span>📱</span>
-            <span>Track OPD Token</span>
+            <span>{t('nav.track_token', 'Track OPD Token')}</span>
           </button>
         </nav>
 
-        {/* Right CTA Actions - Clean Linear/Apple-Style (Demo CTA + Sign In) */}
+        {/* Right CTA Actions - Clean Linear/Apple-Style (Lang + Demo CTA + Sign In) */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexShrink: 0 }}>
+          <select
+            aria-label="Select Language"
+            value={language}
+            onChange={(e) => setLanguage(e.target.value as typeof language)}
+            style={{
+              backgroundColor: 'rgba(15, 23, 42, 0.85)',
+              color: '#E2E8F0',
+              border: '1px solid rgba(56, 189, 248, 0.3)',
+              borderRadius: '8px',
+              padding: '7px 10px',
+              fontSize: '0.8125rem',
+              fontWeight: 700,
+              cursor: 'pointer'
+            }}
+          >
+            {supportedLanguages.map((lang) => (
+              <option key={lang.code} value={lang.code}>
+                {lang.shortLabel} • {lang.nativeLabel}
+              </option>
+            ))}
+          </select>
           {/* Live Product Demo CTA */}
           <button
             type="button"
@@ -898,7 +921,7 @@ export const DocSearchLandingPage: React.FC = () => {
             }}
           >
             <span>⚡</span>
-            <span>Live Product Demo</span>
+            <span>{t('cta.live_demo', 'Live Product Demo')}</span>
           </button>
 
           {/* Universal Multi-Industry ERP Onboarding CTA */}
@@ -923,7 +946,7 @@ export const DocSearchLandingPage: React.FC = () => {
             }}
           >
             <span>✨</span>
-            <span>Multi-Industry ERP</span>
+            <span>{t('cta.multi_erp', 'Multi-Industry ERP')}</span>
           </button>
 
           {/* Clean Sign In Button */}
@@ -946,7 +969,7 @@ export const DocSearchLandingPage: React.FC = () => {
               whiteSpace: 'nowrap'
             }}
           >
-            <span>Sign In ➔</span>
+            <span>{t('cta.sign_in', 'Sign In')} ➔</span>
           </button>
 
           {/* Mobile Menu Toggle Button */}

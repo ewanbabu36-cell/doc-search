@@ -1,5 +1,6 @@
 import {
   getDatabase,
+  withSecurityContext,
   partnerConfigurationVersions,
   partnerCapabilities,
   partnerGovernanceOverrides,
@@ -52,10 +53,11 @@ export class ConfigurationVersioningService {
       effectiveTo?: string | null;
       industry?: string | null;
       operatingModel?: string | null;
+      tenantId?: string | null;
     }
   ): Promise<any> {
     const db = getDatabase();
-    const pUuid = toDeterministicUuid(partnerId);
+    const pUuid = options?.tenantId ? toDeterministicUuid(options.tenantId) : toDeterministicUuid(partnerId);
     const lifecycleStatus = options?.lifecycleStatus || 'PUBLISHED';
     const effectiveFrom = options?.effectiveFrom || new Date().toISOString();
     const effectiveTo = options?.effectiveTo ?? null;
@@ -69,92 +71,102 @@ export class ConfigurationVersioningService {
     if (db) {
       try {
         await ensureTenantExists(pUuid, partnerId);
-        const history = await db
-          .select()
-          .from(partnerConfigurationVersions)
-          .where(eq(partnerConfigurationVersions.tenantId, pUuid))
-          .orderBy(desc(partnerConfigurationVersions.versionNumber));
+        return await withSecurityContext(
+          db,
+          {
+            userId: '00000000-0000-4000-8000-000000000001',
+            tenantId: pUuid,
+            isSuperAdmin: true
+          },
+          async (tx) => {
+            const history = await tx
+              .select()
+              .from(partnerConfigurationVersions)
+              .where(eq(partnerConfigurationVersions.tenantId, pUuid))
+              .orderBy(desc(partnerConfigurationVersions.versionNumber));
 
-        if (history.length > 0 && history[0]) {
-          currentVersion = history[0].versionNumber + 1;
-          if (lifecycleStatus === 'PUBLISHED') {
-            for (const prev of history) {
-              const prevSnap = (prev.snapshot as Record<string, any>) || {};
-              if (prevSnap['lifecycleStatus'] === 'PUBLISHED' || !prevSnap['lifecycleStatus']) {
-                await db
-                  .update(partnerConfigurationVersions)
-                  .set({
-                    snapshot: {
-                      ...prevSnap,
-                      lifecycleStatus: 'SUPERSEDED',
-                      effectiveTo: effectiveFrom
-                    }
-                  })
-                  .where(eq(partnerConfigurationVersions.id, prev.id));
+            if (history.length > 0 && history[0]) {
+              currentVersion = history[0].versionNumber + 1;
+              if (lifecycleStatus === 'PUBLISHED') {
+                for (const prev of history) {
+                  const prevSnap = (prev.snapshot as Record<string, any>) || {};
+                  if (prevSnap['lifecycleStatus'] === 'PUBLISHED' || !prevSnap['lifecycleStatus']) {
+                    await tx
+                      .update(partnerConfigurationVersions)
+                      .set({
+                        snapshot: {
+                          ...prevSnap,
+                          lifecycleStatus: 'SUPERSEDED',
+                          effectiveTo: effectiveFrom
+                        }
+                      })
+                      .where(eq(partnerConfigurationVersions.id, prev.id));
+                  }
+                }
               }
             }
+
+            const capRows = await tx
+              .select()
+              .from(partnerCapabilities)
+              .where(and(eq(partnerCapabilities.tenantId, pUuid), eq(partnerCapabilities.status, 'ACTIVE')));
+            caps = capRows.map((c) => c.capabilityCode);
+
+            const deptRows = await tx
+              .select()
+              .from(operationalDepartments)
+              .where(and(eq(operationalDepartments.tenantId, pUuid), eq(operationalDepartments.status, 'ACTIVE')));
+            depts = deptRows.map((d) => d.departmentName);
+
+            const roleRows = await tx.select().from(roles).where(eq(roles.tenantId, pUuid));
+            rList = roleRows.map((r) => r.name);
+
+            const [gov] = await tx
+              .select()
+              .from(partnerGovernanceOverrides)
+              .where(eq(partnerGovernanceOverrides.tenantId, pUuid));
+            if (gov) {
+              quotaSnapshot = {
+                maxBeds: gov.maxBeds,
+                maxDoctorSeats: gov.maxDoctorSeats,
+                storageQuotaGb: gov.storageQuotaGb,
+                monthlyWhatsAppCredits: gov.monthlyWhatsAppCredits,
+                globalFreeze: gov.globalFreeze,
+                billingFreeze: gov.billingFreeze
+              };
+            }
+
+            const snapshotData = {
+              lifecycleStatus,
+              effectiveFrom,
+              effectiveTo,
+              industry: options?.industry || null,
+              operatingModel: options?.operatingModel || null,
+              capabilities: caps,
+              departments: depts,
+              roles: rList,
+              quotas: quotaSnapshot
+            };
+
+            const [created] = await tx
+              .insert(partnerConfigurationVersions)
+              .values({
+                id: crypto.randomUUID(),
+                tenantId: pUuid,
+                partnerId,
+                versionNumber: currentVersion,
+                appliedTemplateId: appliedTemplateId || null,
+                appliedTemplateVersion: appliedTemplateVersion || null,
+                snapshot: snapshotData,
+                diffSummary: `Version ${currentVersion} [${lifecycleStatus}]: ${reason}`,
+                changeReason: reason,
+                changedBy: actor
+              })
+              .returning();
+
+            return created;
           }
-        }
-
-        const capRows = await db
-          .select()
-          .from(partnerCapabilities)
-          .where(and(eq(partnerCapabilities.tenantId, pUuid), eq(partnerCapabilities.status, 'ACTIVE')));
-        caps = capRows.map((c) => c.capabilityCode);
-
-        const deptRows = await db
-          .select()
-          .from(operationalDepartments)
-          .where(and(eq(operationalDepartments.tenantId, pUuid), eq(operationalDepartments.status, 'ACTIVE')));
-        depts = deptRows.map((d) => d.departmentName);
-
-        const roleRows = await db.select().from(roles).where(eq(roles.tenantId, pUuid));
-        rList = roleRows.map((r) => r.name);
-
-        const [gov] = await db
-          .select()
-          .from(partnerGovernanceOverrides)
-          .where(eq(partnerGovernanceOverrides.tenantId, pUuid));
-        if (gov) {
-          quotaSnapshot = {
-            maxBeds: gov.maxBeds,
-            maxDoctorSeats: gov.maxDoctorSeats,
-            storageQuotaGb: gov.storageQuotaGb,
-            monthlyWhatsAppCredits: gov.monthlyWhatsAppCredits,
-            globalFreeze: gov.globalFreeze,
-            billingFreeze: gov.billingFreeze
-          };
-        }
-
-        const snapshotData = {
-          lifecycleStatus,
-          effectiveFrom,
-          effectiveTo,
-          industry: options?.industry || null,
-          operatingModel: options?.operatingModel || null,
-          capabilities: caps,
-          departments: depts,
-          roles: rList,
-          quotas: quotaSnapshot
-        };
-
-        const [created] = await db
-          .insert(partnerConfigurationVersions)
-          .values({
-            id: crypto.randomUUID(),
-            tenantId: pUuid,
-            partnerId,
-            versionNumber: currentVersion,
-            appliedTemplateId: appliedTemplateId || null,
-            appliedTemplateVersion: appliedTemplateVersion || null,
-            snapshot: snapshotData,
-            diffSummary: `Version ${currentVersion} [${lifecycleStatus}]: ${reason}`,
-            changeReason: reason,
-            changedBy: actor
-          })
-          .returning();
-
-        return created;
+        );
       } catch (err) {
         logger.warn('Failed to capture configuration snapshot: ' + String(err));
       }

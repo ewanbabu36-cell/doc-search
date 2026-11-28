@@ -7,14 +7,14 @@ import { AppError } from '@docsearch/shared-core';
 export class DietaryService {
   // 1. Overview & Telemetry
   async getOverviewMetrics(session: SessionContext) {
-    return withSecurityContext(getDatabase(), session, async () => {
-      return dietaryRepository.getOverviewMetrics(session.tenantId);
+    return withSecurityContext(getDatabase(), session, async (tx) => {
+      return dietaryRepository.getOverviewMetrics(session.tenantId, tx);
     });
   }
 
   async getAnalytics(session: SessionContext) {
-    return withSecurityContext(getDatabase(), session, async () => {
-      return dietaryRepository.getAnalytics(session.tenantId);
+    return withSecurityContext(getDatabase(), session, async (tx) => {
+      return dietaryRepository.getAnalytics(session.tenantId, tx);
     });
   }
 

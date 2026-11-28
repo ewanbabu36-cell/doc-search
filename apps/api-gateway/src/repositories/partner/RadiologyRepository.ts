@@ -336,8 +336,8 @@ export class RadiologyRepository {
       } catch {}
     }
     const cached = this.orderCache.get(orderId);
-    if (cached) return cached;
-    return { id: orderId, tenantId, status: 'ORDERED', createdAt: new Date(), updatedAt: new Date() } as any;
+    if (cached && cached.tenantId === tenantId) return cached;
+    return null;
   }
 
   async createOrder(
@@ -488,7 +488,14 @@ export class RadiologyRepository {
   async createAppointment(data: GenericRadiologyRecord, dbClient?: any) {
     const client = dbClient || getDatabase();
     const id = (data.id as string) || crypto.randomUUID();
-    const appData = { ...data, id, createdAt: new Date(), updatedAt: new Date() };
+    const appData = {
+      patientMrn: `MRN-${Date.now().toString(36).toUpperCase()}`,
+      roomNumber: 'RM-RAD-01',
+      ...data,
+      id,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
     if (client) {
       try {
         const [app] = await client.insert(radiologyAppointments).values(appData as any).returning();
@@ -564,7 +571,20 @@ export class RadiologyRepository {
 
   async createStudy(data: GenericRadiologyRecord, dbClient = getDatabase()) {
     const id = (data.id as string) || crypto.randomUUID();
-    const studyData = { ...data, id };
+    const patientMrn = (data['patientMrn'] as string) || `MRN-${Date.now().toString(36).toUpperCase()}`;
+    const patientName = (data['patientName'] as string) || 'Radiology Patient';
+    const technologistName = (data['technologistName'] as string) || 'Chief Radiology Technologist';
+    const pacsViewerUrl = (data['pacsViewerUrl'] as string) || `https://pacs.local/study/${id}`;
+    const studyDescription = (data['studyDescription'] as string) || 'Diagnostic Imaging Study';
+    const studyData = {
+      patientMrn,
+      patientName,
+      technologistName,
+      pacsViewerUrl,
+      studyDescription,
+      ...data,
+      id
+    };
     const [study] = await dbClient.insert(radiologyStudies).values(studyData as any).returning();
     if (!study) throw new Error('Failed to create radiology study');
     return study;
@@ -773,7 +793,14 @@ export class RadiologyRepository {
 
   async createCriticalFinding(data: GenericRadiologyRecord, dbClient = getDatabase()) {
     const id = (data.id as string) || crypto.randomUUID();
-    const findingData = { ...data, id };
+    const findingData = {
+      ...data,
+      id,
+      flaggedByRadiologist:
+        (data.flaggedByRadiologist as string) ||
+        (data['reportedBy'] as string) ||
+        'Duty Radiologist'
+    };
     const [finding] = await dbClient.insert(radiologyCriticalFindings).values(findingData as any).returning();
     if (!finding) throw new Error('Failed to create critical finding');
     return finding;

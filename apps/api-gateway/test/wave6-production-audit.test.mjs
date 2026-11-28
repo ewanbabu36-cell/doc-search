@@ -1,19 +1,21 @@
 import { describe, it, before, after } from 'node:test';
 import assert from 'node:assert/strict';
+import crypto from 'node:crypto';
 import { buildApp } from '../dist/app.js';
 import { signJwt, buildSecurityAuditRecord, computeAuditHash } from '@docsearch/auth';
 import { validateSecretQuality } from '@docsearch/shared-core';
-import { setTestTransactionRunner } from '@docsearch/database';
+import { setupTestDatabase } from '@docsearch/database';
 
 describe('Wave 6 — Full Testing, Security, Reliability & Final Production Audit Suite', () => {
   let app;
+  let testDb;
   const MASTER_SECRET = 'docsearch_master_jwt_secret_dev_32char_key_only';
   const ISSUER = 'docsearch-api';
   const AUDIENCE = 'docsearch-platform';
 
   const tenantA = '11111111-1111-4111-8111-111111111111';
   const tenantB = '22222222-2222-4222-8222-222222222222';
-  const branchA1 = '33333333-3333-4333-8333-333333333331';
+  const branchA1 = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
 
   function createToken(overrides = {}) {
     const claims = {
@@ -81,17 +83,17 @@ describe('Wave 6 — Full Testing, Security, Reliability & Final Production Audi
     process.env.JWT_ISSUER = ISSUER;
     process.env.JWT_AUDIENCE = AUDIENCE;
     process.env.NODE_ENV = 'development';
-    process.env.DATABASE_URL = 'postgresql://postgres:postgres@localhost:5432/docsearch';
-    setTestTransactionRunner(async (_ctx, cb) => {
-      return await cb(null);
-    });
+    testDb = await setupTestDatabase({ seedBaseline: true, seedDemoFixtures: true });
     app = await buildApp();
+    await app.ready();
   });
 
   after(async () => {
-    setTestTransactionRunner(null);
     if (app) {
       await app.close();
+    }
+    if (testDb) {
+      await testDb.cleanup();
     }
   });
 

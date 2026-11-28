@@ -1125,7 +1125,7 @@ export class LabDiagnosticsRepository {
     ];
     if (NON_COLLECTABLE_STATUSES.includes(currentOrderStatus)) {
       throw new AppError({
-        message: `Cannot collect specimen for a laboratory order in '${currentOrderStatus}' status.`,
+        message: `Cannot collect specimen for a ${currentOrderStatus} laboratory order.`,
         code: ErrorCode.CONFLICT,
         statusCode: 409
       });

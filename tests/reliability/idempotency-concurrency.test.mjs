@@ -166,6 +166,7 @@ export async function runIdempotencyConcurrencyTest() {
     },
     payload: {
       patientId: crypto.randomUUID(),
+      encounterId: crypto.randomUUID(),
       items: [{ itemType: 'PHARMACY', description: 'Cross-tenant item', quantity: 1, unitPrice: 200, amount: 200 }],
       totalAmount: 200
     }

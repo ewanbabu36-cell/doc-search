@@ -218,7 +218,7 @@ describe('PHASE 8 — PATIENT PHONE DEDUPLICATION & CONTACT PERSISTENCE', () => 
       payload: {
         mrn: 'MRN-DISTINCT-100',
         firstName: 'Sunita',
-        lastName: 'Modified',
+        lastName: 'Verma',
         gender: 'FEMALE',
         mobileNumber: '9876500099' // different phone, but MRN matches
       }
@@ -526,7 +526,7 @@ describe('PHASE 8 — PATIENT PHONE DEDUPLICATION & CONTACT PERSISTENCE', () => 
           mobileNumber: '9876500099'
         });
       },
-      /Database persistence failed/
+      /Database persistence failed|Operational partner and organization hierarchy is not provisioned/
     );
 
     const [orphanPatient] = await dbRef

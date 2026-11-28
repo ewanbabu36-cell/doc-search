@@ -1,283 +1,186 @@
-import React, { useState } from 'react';
-import { Card, Badge, Button } from '@docsearch/ui-kit';
-import { showToast } from '../../utils/feedback.js';
-
-export interface GmvStreamItem {
-  streamName: string;
-  grossGmvInr: number;
-  transactionCount: number;
-  gatewayFeeInr: number;
-  platformTakeRateInr: number;
-  tdsSection194OInr: number;
-  netSettlementInr: number;
-}
+import React, { useState, useEffect } from 'react';
+import { Card, Badge, Button, TableContainer, Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@docsearch/ui-kit';
+import {
+  riskManagementService,
+  type RevenueWaterfallReportDto,
+  type TdsGstr1RecordDto
+} from '../../services/risk-management-service.js';
 
 export const GrossToNetRevenueWaterfallView: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'waterfall' | 'tds_ledger'>('waterfall');
+  const [report, setReport] = useState<RevenueWaterfallReportDto | null>(null);
+  const [tdsLedger, setTdsLedger] = useState<TdsGstr1RecordDto[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  const streams: GmvStreamItem[] = [
-    {
-      streamName: 'IPD Surgeries & Inpatient Admissions',
-      grossGmvInr: 4850000,
-      transactionCount: 312,
-      gatewayFeeInr: 87300,
-      platformTakeRateInr: 121250,
-      tdsSection194OInr: 48500,
-      netSettlementInr: 4592950
-    },
-    {
-      streamName: 'OPD Doctor Consultations & Tele-Health',
-      grossGmvInr: 1420000,
-      transactionCount: 2840,
-      gatewayFeeInr: 25560,
-      platformTakeRateInr: 35500,
-      tdsSection194OInr: 14200,
-      netSettlementInr: 1344740
-    },
-    {
-      streamName: 'In-House Pharmacy & D2D Smart Refills',
-      grossGmvInr: 1980000,
-      transactionCount: 3960,
-      gatewayFeeInr: 35640,
-      platformTakeRateInr: 49500,
-      tdsSection194OInr: 19800,
-      netSettlementInr: 1875060
-    },
-    {
-      streamName: 'Laboratory & Diagnostic Pathology',
-      grossGmvInr: 890000,
-      transactionCount: 1780,
-      gatewayFeeInr: 16020,
-      platformTakeRateInr: 22250,
-      tdsSection194OInr: 8900,
-      netSettlementInr: 842830
-    }
-  ];
+  useEffect(() => {
+    let active = true;
+    Promise.all([
+      riskManagementService.getRevenueWaterfall(),
+      riskManagementService.getTdsGstr1Ledger()
+    ])
+      .then(([wf, ledger]) => {
+        if (!active) return;
+        setReport(wf);
+        setTdsLedger(ledger);
+      })
+      .catch((err) => {
+        if (active) setErrorMsg(err instanceof Error ? err.message : 'Unable to load revenue waterfall.');
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
 
-  const totalGrossGmv = streams.reduce((sum, s) => sum + s.grossGmvInr, 0);
-  const totalGatewayFee = streams.reduce((sum, s) => sum + s.gatewayFeeInr, 0);
-  const totalTakeRate = streams.reduce((sum, s) => sum + s.platformTakeRateInr, 0);
-  const totalTds = streams.reduce((sum, s) => sum + s.tdsSection194OInr, 0);
-  const t0FactoringFee = 32500;
-  const netDisbursement = totalGrossGmv - totalGatewayFee - totalTakeRate - totalTds - t0FactoringFee;
-  const platformNetRevenue = totalTakeRate + t0FactoringFee;
+  if (loading) {
+    return (
+      <Card title="Gross-to-Net Revenue Waterfall & Section 194-O Ledger">
+        <div style={{ padding: '24px', color: 'var(--ds-color-text-muted)' }}>
+          Aggregating clinical billing &amp; Section 194-O ledgers from PostgreSQL...
+        </div>
+      </Card>
+    );
+  }
 
-  const tdsLedger = [
-    {
-      partnerId: 'PARTNER-DELHI-001',
-      legalName: 'Apex Heart & Multispeciality Institute LLP',
-      gstin: '07AAAAA0000A1Z5',
-      pan: 'AAAAA0000A',
-      grossVal: 3840000,
-      tds194O: 38400,
-      challan: 'IT-CH-2026-98210',
-      status: 'READY_FOR_FILING'
-    },
-    {
-      partnerId: 'PARTNER-BLR-002',
-      legalName: 'MediCare Life Sciences Healthcare Ltd',
-      gstin: '29BBBBB1111B1Z2',
-      pan: 'BBBBB1111B',
-      grossVal: 2950000,
-      tds194O: 29500,
-      challan: 'IT-CH-2026-98211',
-      status: 'READY_FOR_FILING'
-    },
-    {
-      partnerId: 'PARTNER-MUM-003',
-      legalName: 'Sanjeevani Clinic & Daycare Centers',
-      gstin: '27CCCCC2222C1Z8',
-      pan: 'CCCCC2222C',
-      grossVal: 2350000,
-      tds194O: 23500,
-      challan: 'IT-CH-2026-98212',
-      status: 'FILED_ACKNOWLEDGED'
-    }
-  ];
+  if (errorMsg || !report) {
+    return (
+      <Card title="Gross-to-Net Revenue Waterfall">
+        <div style={{ padding: '24px', color: '#EF4444', fontWeight: 700 }}>
+          {errorMsg || 'Revenue waterfall unavailable.'}
+        </div>
+      </Card>
+    );
+  }
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-      {/* Top Banner */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
         <div>
-          <h2 style={{ margin: 0, fontSize: '1.45rem', fontWeight: 800, color: 'var(--ds-color-text-primary)' }}>
-            Gross-to-Net Revenue Take-Rate Waterfall & Section 194O Ledger
+          <h2 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 800 }}>
+            Gross-to-Net Revenue Take-Rate Waterfall &amp; Section 194-O Ledger ({report.periodMonth})
           </h2>
           <div style={{ fontSize: '0.8rem', color: 'var(--ds-color-text-muted)', marginTop: '4px' }}>
-            Stripe Connect Architecture • Automatic Auto-Escrow Split • Income Tax Act § 194O Compliance
+            Live Clinical Invoice Streams • {report.complianceStatus}
           </div>
         </div>
-
         <div style={{ display: 'flex', gap: '8px' }}>
-          <Button
-            variant={activeTab === 'waterfall' ? 'primary' : 'secondary'}
-            onClick={() => setActiveTab('waterfall')}
-          >
-            📊 GMV Waterfall
+          <Button variant={activeTab === 'waterfall' ? 'primary' : 'secondary'} size="sm" onClick={() => setActiveTab('waterfall')}>
+            GMV Waterfall
           </Button>
-          <Button
-            variant={activeTab === 'tds_ledger' ? 'primary' : 'secondary'}
-            onClick={() => setActiveTab('tds_ledger')}
-          >
-            📋 Section 194O & GSTR-1
+          <Button variant={activeTab === 'tds_ledger' ? 'primary' : 'secondary'} size="sm" onClick={() => setActiveTab('tds_ledger')}>
+            Section 194-O &amp; GSTR-1 ({tdsLedger.length})
           </Button>
         </div>
       </div>
 
-      {/* KPI Cards Strip */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '14px' }}>
         <Card variant="elevated" style={{ padding: '16px', borderLeft: '4px solid #38BDF8' }}>
-          <div style={{ fontSize: '0.72rem', color: 'var(--ds-color-text-muted)', fontWeight: 700 }}>
-            GROSS NETWORK GMV
-          </div>
-          <div style={{ fontSize: '1.5rem', fontWeight: 900, color: '#38BDF8', marginTop: '4px' }}>
-            ₹{(totalGrossGmv / 100000).toFixed(2)} L
+          <div style={{ fontSize: '0.72rem', color: 'var(--ds-color-text-muted)', fontWeight: 700 }}>GROSS NETWORK GMV</div>
+          <div style={{ fontSize: '1.35rem', fontWeight: 900, color: '#38BDF8', marginTop: '4px' }}>
+            ₹{report.totalGrossGmvInr.toLocaleString('en-IN')}
           </div>
           <div style={{ fontSize: '0.7rem', color: 'var(--ds-color-text-muted)', marginTop: '2px' }}>
-            8,892 transactions processed
+            {report.totalTransactions} invoices aggregated
           </div>
         </Card>
-
         <Card variant="elevated" style={{ padding: '16px', borderLeft: '4px solid #10B981' }}>
-          <div style={{ fontSize: '0.72rem', color: 'var(--ds-color-text-muted)', fontWeight: 700 }}>
-            PLATFORM NET REVENUE (TAKE RATE)
-          </div>
-          <div style={{ fontSize: '1.5rem', fontWeight: 900, color: '#10B981', marginTop: '4px' }}>
-            ₹{(platformNetRevenue / 1000).toFixed(1)} K
-          </div>
-          <div style={{ fontSize: '0.7rem', color: '#10B981', marginTop: '2px' }}>
-            2.5% Take-Rate + T-0 Factoring
-          </div>
-        </Card>
-
-        <Card variant="elevated" style={{ padding: '16px', borderLeft: '4px solid #F59E0B' }}>
-          <div style={{ fontSize: '0.72rem', color: 'var(--ds-color-text-muted)', fontWeight: 700 }}>
-            SECTION 194O TDS DEDUCTED
-          </div>
-          <div style={{ fontSize: '1.5rem', fontWeight: 900, color: '#F59E0B', marginTop: '4px' }}>
-            ₹{(totalTds / 1000).toFixed(1)} K
+          <div style={{ fontSize: '0.72rem', color: 'var(--ds-color-text-muted)', fontWeight: 700 }}>PLATFORM TAKE-RATE &amp; FACTORING</div>
+          <div style={{ fontSize: '1.35rem', fontWeight: 900, color: '#10B981', marginTop: '4px' }}>
+            ₹{report.platformNetRevenueInr.toLocaleString('en-IN')}
           </div>
           <div style={{ fontSize: '0.7rem', color: 'var(--ds-color-text-muted)', marginTop: '2px' }}>
-            1% Marketplace e-Com Operator
+            GST Liability (18%): ₹{report.deductions.gstLiabilityOnTakeRateInr.toLocaleString('en-IN')}
           </div>
         </Card>
-
-        <Card variant="elevated" style={{ padding: '16px', borderLeft: '4px solid #8B5CF6' }}>
-          <div style={{ fontSize: '0.72rem', color: 'var(--ds-color-text-muted)', fontWeight: 700 }}>
-            NET PARTNER DISBURSEMENTS
+        <Card variant="elevated" style={{ padding: '16px', borderLeft: '4px solid #F59E0B' }}>
+          <div style={{ fontSize: '0.72rem', color: 'var(--ds-color-text-muted)', fontWeight: 700 }}>TDS WITHHELD (§194-O)</div>
+          <div style={{ fontSize: '1.35rem', fontWeight: 900, color: '#F59E0B', marginTop: '4px' }}>
+            ₹{report.deductions.tdsSection194OInr.toLocaleString('en-IN')}
           </div>
-          <div style={{ fontSize: '1.5rem', fontWeight: 900, color: '#8B5CF6', marginTop: '4px' }}>
-            ₹{(netDisbursement / 100000).toFixed(2)} L
-          </div>
-          <div style={{ fontSize: '0.7rem', color: '#10B981', marginTop: '2px' }}>
-            Auto-Escrow Daily Sweep (T+1)
+          <div style={{ fontSize: '0.7rem', color: 'var(--ds-color-text-muted)', marginTop: '2px' }}>
+            Net Partner Settlement: ₹{report.netPartnerDisbursementInr.toLocaleString('en-IN')}
           </div>
         </Card>
       </div>
 
       {activeTab === 'waterfall' ? (
-        <Card variant="elevated" style={{ padding: '20px' }}>
-          <h3 style={{ margin: '0 0 16px 0', fontSize: '1.1rem', fontWeight: 700, color: 'var(--ds-color-text-primary)' }}>
-            Gross-to-Net Revenue Streams & Deductions
-          </h3>
-          <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.85rem' }}>
-              <thead>
-                <tr style={{ borderBottom: '2px solid var(--ds-color-border, #334155)', color: 'var(--ds-color-text-muted)' }}>
-                  <th style={{ padding: '10px 12px' }}>GMV Stream</th>
-                  <th style={{ padding: '10px 12px', textAlign: 'right' }}>Gross GMV</th>
-                  <th style={{ padding: '10px 12px', textAlign: 'right' }}>Gateway (1.8%)</th>
-                  <th style={{ padding: '10px 12px', textAlign: 'right' }}>Take-Rate (2.5%)</th>
-                  <th style={{ padding: '10px 12px', textAlign: 'right' }}>TDS 194O (1%)</th>
-                  <th style={{ padding: '10px 12px', textAlign: 'right' }}>Net Disbursement</th>
-                </tr>
-              </thead>
-              <tbody>
-                {streams.map((s) => (
-                  <tr key={s.streamName} style={{ borderBottom: '1px solid var(--ds-color-border, #1E293B)' }}>
-                    <td style={{ padding: '12px', fontWeight: 600, color: 'var(--ds-color-text-primary)' }}>
-                      {s.streamName}
-                      <div style={{ fontSize: '0.72rem', color: 'var(--ds-color-text-muted)' }}>
-                        {s.transactionCount} transactions
-                      </div>
-                    </td>
-                    <td style={{ padding: '12px', textAlign: 'right', fontWeight: 700, color: '#38BDF8' }}>
-                      ₹{s.grossGmvInr.toLocaleString('en-IN')}
-                    </td>
-                    <td style={{ padding: '12px', textAlign: 'right', color: '#EF4444' }}>
-                      -₹{s.gatewayFeeInr.toLocaleString('en-IN')}
-                    </td>
-                    <td style={{ padding: '12px', textAlign: 'right', color: '#10B981', fontWeight: 600 }}>
-                      +₹{s.platformTakeRateInr.toLocaleString('en-IN')}
-                    </td>
-                    <td style={{ padding: '12px', textAlign: 'right', color: '#F59E0B' }}>
-                      -₹{s.tdsSection194OInr.toLocaleString('en-IN')}
-                    </td>
-                    <td style={{ padding: '12px', textAlign: 'right', fontWeight: 800, color: 'var(--ds-color-text-primary)' }}>
-                      ₹{s.netSettlementInr.toLocaleString('en-IN')}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+        report.streams.length === 0 ? (
+          <Card title="Revenue Streams">
+            <div style={{ padding: '24px', textAlign: 'center', color: 'var(--ds-color-text-muted)' }}>
+              Zero non-cancelled clinical invoices in PostgreSQL for GMV waterfall aggregation.
+            </div>
+          </Card>
+        ) : (
+          <Card title="Real-Time GMV Stream Breakdown" padding="none">
+            <TableContainer style={{ border: 'none', borderRadius: 0 }}>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Clinical Stream</TableHead>
+                    <TableHead>Invoices</TableHead>
+                    <TableHead>Gross GMV</TableHead>
+                    <TableHead>Gateway Fee</TableHead>
+                    <TableHead>Platform Take-Rate</TableHead>
+                    <TableHead>Sec 194-O TDS</TableHead>
+                    <TableHead style={{ textAlign: 'right' }}>Net Partner Settlement</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {report.streams.map((s) => (
+                    <TableRow key={s.streamName}>
+                      <TableCell style={{ fontWeight: 700 }}>{s.streamName}</TableCell>
+                      <TableCell>{s.transactionCount}</TableCell>
+                      <TableCell>₹{s.grossGmvInr.toLocaleString('en-IN')}</TableCell>
+                      <TableCell>₹{s.gatewayFeeInr.toLocaleString('en-IN')}</TableCell>
+                      <TableCell style={{ color: '#10B981', fontWeight: 700 }}>₹{s.platformTakeRateInr.toLocaleString('en-IN')}</TableCell>
+                      <TableCell>₹{s.tdsSection194OInr.toLocaleString('en-IN')}</TableCell>
+                      <TableCell style={{ textAlign: 'right', fontWeight: 800 }}>₹{s.netSettlementInr.toLocaleString('en-IN')}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          </Card>
+        )
+      ) : tdsLedger.length === 0 ? (
+        <Card title="Section 194-O Partner Ledger">
+          <div style={{ padding: '24px', textAlign: 'center', color: 'var(--ds-color-text-muted)' }}>
+            No partner GMV disbursements recorded yet in PostgreSQL.
           </div>
         </Card>
       ) : (
-        <Card variant="elevated" style={{ padding: '20px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-            <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 700, color: 'var(--ds-color-text-primary)' }}>
-              Section 194O TDS Deductions & Form 26Q Export
-            </h3>
-            <Button
-              size="sm"
-              variant="secondary"
-              onClick={() => showToast('📄 Form 26Q Electronic Text File Exported for NSDL e-Gov Portal', 'success')}
-            >
-              📥 Export Form 26Q (NSDL)
-            </Button>
-          </div>
-
-          <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.85rem' }}>
-              <thead>
-                <tr style={{ borderBottom: '2px solid var(--ds-color-border, #334155)', color: 'var(--ds-color-text-muted)' }}>
-                  <th style={{ padding: '10px 12px' }}>Partner Legal Name</th>
-                  <th style={{ padding: '10px 12px' }}>PAN / GSTIN</th>
-                  <th style={{ padding: '10px 12px', textAlign: 'right' }}>Gross E-Com Value</th>
-                  <th style={{ padding: '10px 12px', textAlign: 'right' }}>1% TDS Deducted</th>
-                  <th style={{ padding: '10px 12px' }}>IT Challan Ref</th>
-                  <th style={{ padding: '10px 12px' }}>GSTR-1 Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {tdsLedger.map((row) => (
-                  <tr key={row.partnerId} style={{ borderBottom: '1px solid var(--ds-color-border, #1E293B)' }}>
-                    <td style={{ padding: '12px', fontWeight: 600, color: 'var(--ds-color-text-primary)' }}>
-                      {row.legalName}
-                      <div style={{ fontSize: '0.72rem', color: 'var(--ds-color-text-muted)' }}>{row.partnerId}</div>
-                    </td>
-                    <td style={{ padding: '12px', color: 'var(--ds-color-text-secondary)', fontFamily: 'monospace' }}>
-                      {row.pan} / {row.gstin}
-                    </td>
-                    <td style={{ padding: '12px', textAlign: 'right', fontWeight: 700 }}>
-                      ₹{row.grossVal.toLocaleString('en-IN')}
-                    </td>
-                    <td style={{ padding: '12px', textAlign: 'right', color: '#F59E0B', fontWeight: 700 }}>
-                      ₹{row.tds194O.toLocaleString('en-IN')}
-                    </td>
-                    <td style={{ padding: '12px', fontFamily: 'monospace', fontSize: '0.78rem' }}>
-                      {row.challan}
-                    </td>
-                    <td style={{ padding: '12px' }}>
-                      <Badge variant={row.status === 'FILED_ACKNOWLEDGED' ? 'success' : 'warning'}>
-                        {row.status === 'FILED_ACKNOWLEDGED' ? 'Filed' : 'Ready'}
-                      </Badge>
-                    </td>
-                  </tr>
+        <Card title="Partner Section 194-O TDS & GSTR-1 Ledger" padding="none">
+          <TableContainer style={{ border: 'none', borderRadius: 0 }}>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Partner</TableHead>
+                  <TableHead>PAN / GSTIN</TableHead>
+                  <TableHead>Gross GMV</TableHead>
+                  <TableHead>TDS Deducted</TableHead>
+                  <TableHead>Challan Ref</TableHead>
+                  <TableHead style={{ textAlign: 'right' }}>Filing Status</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {tdsLedger.map((r) => (
+                  <TableRow key={r.partnerId}>
+                    <TableCell style={{ fontWeight: 700 }}>{r.partnerLegalName}</TableCell>
+                    <TableCell style={{ fontSize: '0.75rem' }}>{r.pan} / {r.gstin}</TableCell>
+                    <TableCell>₹{r.grossTransactionValueInr.toLocaleString('en-IN')}</TableCell>
+                    <TableCell style={{ fontWeight: 700 }}>₹{r.tdsDeductedInr.toLocaleString('en-IN')}</TableCell>
+                    <TableCell>{r.challanNumber}</TableCell>
+                    <TableCell style={{ textAlign: 'right' }}>
+                      <Badge variant="neutral">{r.gstr1FilingStatus}</Badge>
+                    </TableCell>
+                  </TableRow>
                 ))}
-              </tbody>
-            </table>
-          </div>
+              </TableBody>
+            </Table>
+          </TableContainer>
         </Card>
       )}
     </div>

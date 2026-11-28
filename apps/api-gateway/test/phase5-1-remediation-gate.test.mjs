@@ -162,16 +162,33 @@ test('DOC SEARCH — PHASE 5.1 REMEDIATION GATE TEST SUITE', async (suite) => {
       referringDoctorName: 'Dr Referrer'
     });
 
+    const modA1 = await radiologyRepository.createModality({
+      tenantId: TENANT_A,
+      partnerId: TEST_SEEDS.PARTNER_ID_A,
+      organizationId: TEST_SEEDS.ORG_ID_A,
+      branchId: BRANCH_A1,
+      modalityCode: `CT-SCOPE-${Date.now().toString(36)}`,
+      modalityName: 'CT Scanner A',
+      modalityType: 'CT',
+      roomNumber: 'CT-RM-1',
+      manufacturerAndModel: 'Siemens Somatom',
+      aetitle: `CT_SCOPE_${Date.now().toString(36).toUpperCase()}`,
+      ipAddress: '127.0.0.1',
+      status: 'OPERATIONAL'
+    });
+
     const aptA1 = await radiologyRepository.createAppointment({
       orderId: orderA1.id,
       patientId: orderA1.patientId,
       patientName: 'Scope Test Patient 1',
+      patientMrn: orderA1.patientMrn || 'MRN-SCOPE-1',
+      roomNumber: 'CT-RM-1',
       appointmentCode: `RAD-APT-${Date.now().toString(36)}`,
       tenantId: TENANT_A,
       partnerId: TEST_SEEDS.PARTNER_ID_A,
       organizationId: TEST_SEEDS.ORG_ID_A,
       branchId: BRANCH_A1,
-      modalityId: 'm1111111-1111-4111-8111-111111111101',
+      modalityId: modA1.id,
       modalityName: 'CT Scanner A',
       scheduledStart: new Date(Date.now() + 86400000),
       scheduledEnd: new Date(Date.now() + 86400000 + 1800000),
@@ -248,16 +265,33 @@ test('DOC SEARCH — PHASE 5.1 REMEDIATION GATE TEST SUITE', async (suite) => {
       referringDoctorName: 'Dr Referrer'
     });
 
+    const modA1 = await radiologyRepository.createModality({
+      tenantId: TENANT_A,
+      partnerId: TEST_SEEDS.PARTNER_ID_A,
+      organizationId: TEST_SEEDS.ORG_ID_A,
+      branchId: BRANCH_A1,
+      modalityCode: `MRI-SCOPE-${Date.now().toString(36)}`,
+      modalityName: 'MRI Scanner A',
+      modalityType: 'MRI',
+      roomNumber: 'MRI-RM-1',
+      manufacturerAndModel: 'GE Signa',
+      aetitle: `MRI_SCOPE_${Date.now().toString(36).toUpperCase()}`,
+      ipAddress: '127.0.0.1',
+      status: 'OPERATIONAL'
+    });
+
     const aptA1 = await radiologyRepository.createAppointment({
       orderId: orderA1.id,
       patientId: orderA1.patientId,
       patientName: 'Scope Test Patient 2',
+      patientMrn: orderA1.patientMrn || 'MRN-SCOPE-2',
+      roomNumber: 'MRI-RM-1',
       appointmentCode: `RAD-APT-${Date.now().toString(36)}`,
       tenantId: TENANT_A,
       partnerId: TEST_SEEDS.PARTNER_ID_A,
       organizationId: TEST_SEEDS.ORG_ID_A,
       branchId: BRANCH_A1,
-      modalityId: 'm1111111-1111-4111-8111-111111111101',
+      modalityId: modA1.id,
       modalityName: 'MRI Scanner A',
       scheduledStart: new Date(Date.now() + 86400000),
       scheduledEnd: new Date(Date.now() + 86400000 + 1800000),
@@ -400,6 +434,7 @@ test('DOC SEARCH — PHASE 5.1 REMEDIATION GATE TEST SUITE', async (suite) => {
     const studyA1 = await radiologyRepository.createStudy({
       orderId: orderA1.id,
       patientId: orderA1.patientId,
+      patientName: 'Scope Test Patient 4',
       accessionNumber: `RAD-ACC-${Date.now().toString(36)}`,
       studyInstanceUid: `1.2.840.113619.2.${Date.now()}`,
       modalityType: 'XR',
@@ -518,6 +553,7 @@ test('DOC SEARCH — PHASE 5.1 REMEDIATION GATE TEST SUITE', async (suite) => {
     const studyA1 = await radiologyRepository.createStudy({
       orderId: orderA1.id,
       patientId: orderA1.patientId,
+      patientName: 'Scope Test Patient 4',
       accessionNumber: `RAD-ACC-${Date.now().toString(36)}`,
       studyInstanceUid: `1.2.840.113619.2.${Date.now()}`,
       modalityType: 'CT',

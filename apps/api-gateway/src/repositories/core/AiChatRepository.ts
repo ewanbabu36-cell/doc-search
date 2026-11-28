@@ -1,6 +1,7 @@
 import crypto from 'node:crypto';
 import {
   getDatabase,
+  withSecurityContext,
   eq,
   and,
   desc,
@@ -58,6 +59,18 @@ export interface CreateMessageInput {
 }
 
 export class AiChatRepository {
+  private async runScoped<T>(
+    session: SessionContext,
+    dbClient: any,
+    fn: (tx: any) => Promise<T>
+  ): Promise<T> {
+    const rootDb = getDatabase();
+    if (dbClient && rootDb && dbClient === rootDb) {
+      return withSecurityContext(rootDb, session, fn);
+    }
+    return fn(dbClient);
+  }
+
   async createConversation(
     session: SessionContext,
     input: CreateConversationInput,
@@ -90,11 +103,13 @@ export class AiChatRepository {
     };
 
     try {
-      const [inserted] = await dbClient.insert(aiChatConversations).values(record).returning();
-      if (!inserted) {
-        throw new Error('Database insert succeeded but returned no row');
-      }
-      return inserted;
+      return await this.runScoped(session, dbClient, async (tx) => {
+        const [inserted] = await tx.insert(aiChatConversations).values(record).returning();
+        if (!inserted) {
+          throw new Error('Database insert succeeded but returned no row');
+        }
+        return inserted;
+      });
     } catch (err) {
       handleDbError('createConversation', err);
     }
@@ -110,25 +125,27 @@ export class AiChatRepository {
 
     const roleContext = resolveRoleContext(session);
     try {
-      const results = await dbClient
-        .select()
-        .from(aiChatConversations)
-        .where(
-          and(
-            eq(aiChatConversations.id, conversationId),
-            eq(aiChatConversations.tenantId, session.tenantId)
+      return await this.runScoped(session, dbClient, async (tx) => {
+        const results = await tx
+          .select()
+          .from(aiChatConversations)
+          .where(
+            and(
+              eq(aiChatConversations.id, conversationId),
+              eq(aiChatConversations.tenantId, session.tenantId)
+            )
           )
-        )
-        .limit(1);
+          .limit(1);
 
-      if (results.length > 0 && results[0]) {
-        const conv = results[0];
-        if (roleContext.patientMrn && conv.patientMrn && conv.patientMrn !== roleContext.patientMrn) {
-          return null;
+        if (results.length > 0 && results[0]) {
+          const conv = results[0];
+          if (roleContext.patientMrn && conv.patientMrn && conv.patientMrn !== roleContext.patientMrn) {
+            return null;
+          }
+          return conv;
         }
-        return conv;
-      }
-      return null;
+        return null;
+      });
     } catch (err) {
       handleDbError('getConversation', err);
     }
@@ -156,12 +173,14 @@ export class AiChatRepository {
         conditions.push(eq(aiChatConversations.patientMrn, roleContext.patientMrn));
       }
 
-      return await dbClient
-        .select()
-        .from(aiChatConversations)
-        .where(and(...conditions))
-        .orderBy(desc(aiChatConversations.updatedAt))
-        .limit(limit);
+      return await this.runScoped(session, dbClient, async (tx) =>
+        tx
+          .select()
+          .from(aiChatConversations)
+          .where(and(...conditions))
+          .orderBy(desc(aiChatConversations.updatedAt))
+          .limit(limit)
+      );
     } catch (err) {
       handleDbError('listConversations', err);
     }
@@ -175,22 +194,24 @@ export class AiChatRepository {
     if (!dbClient) handleDbError('archiveConversation', new Error('Database connection unavailable'));
     if (!isUuid(conversationId)) return null;
 
-    const conv = await this.getConversation(session, conversationId, dbClient);
-    if (!conv) return null;
-
     const now = new Date();
     try {
-      const [updated] = await dbClient
-        .update(aiChatConversations)
-        .set({ status: 'ARCHIVED', updatedAt: now })
-        .where(
-          and(
-            eq(aiChatConversations.id, conversationId),
-            eq(aiChatConversations.tenantId, session.tenantId)
+      return await this.runScoped(session, dbClient, async (tx) => {
+        const conv = await this.getConversation(session, conversationId, tx);
+        if (!conv) return null;
+
+        const [updated] = await tx
+          .update(aiChatConversations)
+          .set({ status: 'ARCHIVED', updatedAt: now })
+          .where(
+            and(
+              eq(aiChatConversations.id, conversationId),
+              eq(aiChatConversations.tenantId, session.tenantId)
+            )
           )
-        )
-        .returning();
-      return updated || null;
+          .returning();
+        return updated || null;
+      });
     } catch (err) {
       handleDbError('archiveConversation', err);
     }
@@ -233,16 +254,18 @@ export class AiChatRepository {
     };
 
     try {
-      const [inserted] = await dbClient.insert(aiChatMessages).values(record).returning();
-      await dbClient
-        .update(aiChatConversations)
-        .set({ updatedAt: now })
-        .where(eq(aiChatConversations.id, input.conversationId));
+      return await this.runScoped(session, dbClient, async (tx) => {
+        const [inserted] = await tx.insert(aiChatMessages).values(record).returning();
+        await tx
+          .update(aiChatConversations)
+          .set({ updatedAt: now })
+          .where(eq(aiChatConversations.id, input.conversationId));
 
-      if (!inserted) {
-        throw new Error('Database insert succeeded but returned no message row');
-      }
-      return inserted;
+        if (!inserted) {
+          throw new Error('Database insert succeeded but returned no message row');
+        }
+        return inserted;
+      });
     } catch (err) {
       handleDbError('createMessage', err);
     }
@@ -257,23 +280,25 @@ export class AiChatRepository {
     if (!dbClient) handleDbError('listMessages', new Error('Database connection unavailable'));
     if (!isUuid(conversationId)) return [];
 
-    const conv = await this.getConversation(session, conversationId, dbClient);
-    if (!conv) {
-      return [];
-    }
-
     try {
-      return await dbClient
-        .select()
-        .from(aiChatMessages)
-        .where(
-          and(
-            eq(aiChatMessages.conversationId, conversationId),
-            eq(aiChatMessages.tenantId, session.tenantId)
+      return await this.runScoped(session, dbClient, async (tx) => {
+        const conv = await this.getConversation(session, conversationId, tx);
+        if (!conv) {
+          return [];
+        }
+
+        return await tx
+          .select()
+          .from(aiChatMessages)
+          .where(
+            and(
+              eq(aiChatMessages.conversationId, conversationId),
+              eq(aiChatMessages.tenantId, session.tenantId)
+            )
           )
-        )
-        .orderBy(asc(aiChatMessages.createdAt))
-        .limit(limit);
+          .orderBy(asc(aiChatMessages.createdAt))
+          .limit(limit);
+      });
     } catch (err) {
       handleDbError('listMessages', err);
     }

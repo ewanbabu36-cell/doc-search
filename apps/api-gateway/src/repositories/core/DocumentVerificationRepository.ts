@@ -10,6 +10,7 @@ import type {
 } from '@docsearch/api-contracts';
 import {
   getDatabase,
+  withSecurityContext,
   documentTypes,
   entityDocuments,
   documentVerifications,
@@ -591,18 +592,21 @@ class DocumentVerificationRepository {
     }
   }
 
-  public async getRequirements(params: {
-    entityType?: string;
-    role?: string;
-    facilityType?: string;
-    professionalType?: string;
-    tenantId: string;
-    ownerEntityId: string;
-    specialization?: string;
-    nabhClaimed?: boolean;
-  }): Promise<RoleDocumentRequirementsResponse> {
+  public async getRequirements(
+    params: {
+      entityType?: string;
+      role?: string;
+      facilityType?: string;
+      professionalType?: string;
+      tenantId: string;
+      ownerEntityId: string;
+      specialization?: string;
+      nabhClaimed?: boolean;
+    },
+    dbClient: any = getDatabase()
+  ): Promise<RoleDocumentRequirementsResponse> {
     try {
-      const db = requireDb();
+      const db = requireDb(dbClient);
       await this.ensureMasterDocumentTypes(db);
 
       const role = (params.role || '').toUpperCase();
@@ -807,11 +811,20 @@ class DocumentVerificationRepository {
       }
 
       const tenantUuid = ensureUuid(tenantId);
-      const allTenantDocs = await db
-        .select()
-        .from(entityDocuments)
-        .where(eq(entityDocuments.tenantId, tenantUuid))
-        .orderBy(desc(entityDocuments.createdAt));
+      const allTenantDocs = await withSecurityContext(
+        db,
+        {
+          userId: '00000000-0000-4000-8000-000000000001',
+          tenantId: tenantUuid,
+          isSuperAdmin: false
+        },
+        (tx) =>
+          tx
+            .select()
+            .from(entityDocuments)
+            .where(eq(entityDocuments.tenantId, tenantUuid))
+            .orderBy(desc(entityDocuments.createdAt))
+      );
 
       if (!allTenantDocs || allTenantDocs.length === 0) {
         return { onHold: false };

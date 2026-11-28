@@ -90,7 +90,8 @@ describe('DOC SEARCH — HQ Master Control Plane Remediation & Production Enforc
 
     await testDb.pool.query(`
       UPDATE "company"."licenses"
-      SET "status" = 'ACTIVE',
+      SET "license_key" = 'LIC-2026-SEEDA-PRO1',
+          "status" = 'ACTIVE',
           "expiry_date" = '${expiryDate.toISOString()}',
           "signature" = '${sig}'
       WHERE "id" = '${activeLicenseId}';

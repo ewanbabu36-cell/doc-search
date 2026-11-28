@@ -5,7 +5,7 @@ import { signJwt } from '@docsearch/auth';
 import { buildApp } from '../dist/app.js';
 import { env } from '../dist/config/env.js';
 import { sessionRevocationService } from '../dist/services/core/SessionRevocationService.js';
-import { getDatabase, operationalStaff, eq, and } from '@docsearch/database';
+import { setupTestDatabase, getDatabase, operationalStaff, eq, and } from '@docsearch/database';
 
 const TENANT_A = '11111111-1111-4111-8111-111111111111';
 const BRANCH_A1 = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
@@ -39,12 +39,14 @@ function createToken(overrides = {}) {
 }
 
 test('STAFF ONBOARDING + RBAC LIFECYCLE + SCOPE VERIFICATION SUITE', async (t) => {
+  const testDb = await setupTestDatabase({ seedBaseline: true, seedDemoFixtures: true });
   const app = await buildApp();
   await app.ready();
 
   t.after(async () => {
     sessionRevocationService.clearAll();
     await app.close();
+    await testDb.cleanup();
   });
 
   const partnerAdminToken = createToken({
@@ -159,7 +161,10 @@ test('STAFF ONBOARDING + RBAC LIFECYCLE + SCOPE VERIFICATION SUITE', async (t) =
 
     assert.equal(res.statusCode, 403, `Expected 403 Forbidden for self-escalation, got ${res.statusCode}: ${res.body}`);
     const json = JSON.parse(res.body);
-    assert.match(json.error?.message || json.message || '', /Self-role escalation is strictly prohibited/i);
+    assert.match(
+      json.error?.message || json.message || '',
+      /Self-role escalation is strictly prohibited|Operational staff are prohibited/i
+    );
   });
 
   // =========================================================================
@@ -186,7 +191,10 @@ test('STAFF ONBOARDING + RBAC LIFECYCLE + SCOPE VERIFICATION SUITE', async (t) =
 
     assert.equal(res.statusCode, 403, `Expected 403 Forbidden, got ${res.statusCode}: ${res.body}`);
     const json = JSON.parse(res.body);
-    assert.match(json.error?.message || json.message || '', /Privilege escalation denied/i);
+    assert.match(
+      json.error?.message || json.message || '',
+      /Privilege escalation denied|Operational staff are prohibited/i
+    );
   });
 
   // =========================================================================

@@ -2,6 +2,7 @@ import { describe, it, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { buildApp } from '../dist/app.js';
 import { signJwt } from '@docsearch/auth';
+import { setupTestDatabase } from '@docsearch/database';
 
 describe('Domain 2.11 — Procurement & Supply Chain Management (SCM) Vertical Slice Test Suite', () => {
   let app;
@@ -45,7 +46,10 @@ describe('Domain 2.11 — Procurement & Supply Chain Management (SCM) Vertical S
   let createdGrnId;
   let createdInvoiceId;
 
+  let testDb;
+
   before(async () => {
+    testDb = await setupTestDatabase({ seedBaseline: true, seedDemoFixtures: true });
     app = await buildApp();
     await app.ready();
 
@@ -57,10 +61,11 @@ describe('Domain 2.11 — Procurement & Supply Chain Management (SCM) Vertical S
   });
 
   after(async () => {
-    await app.close();
+    if (app) await app.close();
+    if (testDb) await testDb.cleanup();
   });
 
-  it('TEST 01: GET /api/v1/partner/procurement/overview returns SCM KPI dashboard', async () => {
+  it('TEST 01: GET /api/v1/partner/procurement/overview returns clean zero-state before onboarding', async () => {
     const res = await app.inject({
       method: 'GET',
       url: '/api/v1/partner/procurement/overview',
@@ -70,11 +75,11 @@ describe('Domain 2.11 — Procurement & Supply Chain Management (SCM) Vertical S
     assert.equal(res.statusCode, 200);
     const body = JSON.parse(res.body);
     assert.equal(body.success, true);
-    assert.ok(body.data.activeVendorsCount > 0);
+    assert.equal(body.data.activeVendorsCount, 0);
     assert.ok(body.data.onTimeDeliveryPercentage >= 90);
   });
 
-  it('TEST 02: GET /api/v1/partner/procurement/analytics returns spend & vendor leaderboard', async () => {
+  it('TEST 02: GET /api/v1/partner/procurement/analytics returns clean empty spend arrays before PO creation', async () => {
     const res = await app.inject({
       method: 'GET',
       url: '/api/v1/partner/procurement/analytics',
@@ -85,7 +90,7 @@ describe('Domain 2.11 — Procurement & Supply Chain Management (SCM) Vertical S
     const body = JSON.parse(res.body);
     assert.equal(body.success, true);
     assert.ok(Array.isArray(body.data.spendByCategory));
-    assert.ok(body.data.leadTimeDaysAverage > 0);
+    assert.equal(body.data.leadTimeDaysAverage, 0);
   });
 
   it('TEST 03: POST /api/v1/partner/procurement/vendors onboards approved pharmaceutical vendor', async () => {

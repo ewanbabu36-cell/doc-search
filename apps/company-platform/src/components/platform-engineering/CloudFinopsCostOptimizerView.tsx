@@ -1,144 +1,130 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, Badge, Button, TableContainer, Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@docsearch/ui-kit';
-
-interface CostLineItem {
-  resource: string;
-  provider: string;
-  monthlyCost: string;
-  utilizationPct: number;
-  aiSavingRecommendation: string;
-  potentialMonthlySaving: string;
-}
-
-const COST_ITEMS: CostLineItem[] = [
-  {
-    resource: 'AWS EKS Primary Cluster (m6i.2xlarge Worker Nodes)',
-    provider: 'AWS ap-south-1 (Mumbai)',
-    monthlyCost: '₹1,84,000',
-    utilizationPct: 38,
-    aiSavingRecommendation: 'Switch non-critical worker node pools to AWS Graviton (c7g.2xlarge) + Spot instances.',
-    potentialMonthlySaving: '₹62,000 / mo'
-  },
-  {
-    resource: 'MongoDB Atlas Dedicated Cluster (M40 Multi-Region)',
-    provider: 'MongoDB Atlas Cloud',
-    monthlyCost: '₹95,000',
-    utilizationPct: 45,
-    aiSavingRecommendation: 'Enable auto-tiering archival for medical audit logs older than 90 days to S3 Glacier.',
-    potentialMonthlySaving: '₹34,000 / mo'
-  },
-  {
-    resource: 'Google Cloud Vertex AI (Med-PaLM 2 Inference)',
-    provider: 'GCP asia-south1',
-    monthlyCost: '₹1,12,000',
-    utilizationPct: 82,
-    aiSavingRecommendation: 'Purchase 1-Year Committed Use Discount (CUD) for baseline 500k daily clinical queries.',
-    potentialMonthlySaving: '₹38,000 / mo'
-  },
-  {
-    resource: 'AWS S3 & Cloudflare CDN (DICOM & PACS Image Cache)',
-    provider: 'Cloudflare / AWS S3',
-    monthlyCost: '₹42,000',
-    utilizationPct: 65,
-    aiSavingRecommendation: 'Configure aggressive WebP/AVIF compression on static asset headers.',
-    potentialMonthlySaving: '₹14,000 / mo'
-  }
-];
+import {
+  riskManagementService,
+  type CostLedgerEntryDto,
+  type CompanyRiskOverviewDto
+} from '../../services/risk-management-service.js';
 
 export const CloudFinopsCostOptimizerView: React.FC = () => {
-  const [items] = useState<CostLineItem[]>(COST_ITEMS);
-  const [appliedSavings, setAppliedSavings] = useState(false);
+  const [overview, setOverview] = useState<CompanyRiskOverviewDto | null>(null);
+  const [infraEntries, setInfraEntries] = useState<CostLedgerEntryDto[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  const loadCosts = async () => {
+    setLoading(true);
+    setErrorMsg(null);
+    try {
+      const [ov, cloud, ai] = await Promise.all([
+        riskManagementService.getOverview(),
+        riskManagementService.listCosts({ category: 'CLOUD_INFRA' }),
+        riskManagementService.listCosts({ category: 'AI_INFERENCE' })
+      ]);
+      setOverview(ov);
+      setInfraEntries([...cloud, ...ai]);
+    } catch (err) {
+      setErrorMsg(err instanceof Error ? err.message : 'Failed to load infrastructure & AI costs.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadCosts();
+  }, []);
+
+  if (loading) {
+    return (
+      <Card title="Infrastructure & AI COGS Optimizer">
+        <div style={{ padding: '20px', color: 'var(--ds-color-text-muted)' }}>
+          Querying PostgreSQL cost ledger...
+        </div>
+      </Card>
+    );
+  }
+
+  const cloudTotal = overview?.costBreakdown.find((c) => c.category === 'CLOUD_INFRA')?.amountInr || 0;
+  const aiTotal = overview?.costBreakdown.find((c) => c.category === 'AI_INFERENCE')?.amountInr || 0;
+  const freeTierCap = Number(overview?.activePolicy.freeTierMonthlyCogsCapInr || 0);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-      {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
         <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <h2 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 800, color: 'var(--ds-color-text-primary)' }}>
-              ☁️ Cloud FinOps Multi-Cloud Cost Optimizer
-            </h2>
-            <Badge variant="warning">Monthly Run-Rate: ₹4,33,000</Badge>
-          </div>
+          <h2 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 800 }}>
+            Infrastructure &amp; AI Inference Cost Ledger (FinOps)
+          </h2>
           <p style={{ margin: '4px 0 0', fontSize: '0.8125rem', color: 'var(--ds-color-text-muted)' }}>
-            Automated multi-cloud cost intelligence, over-provisioned node rightsizing, and committed use discounts
+            Live PostgreSQL COGS spend across compute/storage, PostgreSQL 18.4 replicas &amp; AI inference metering (zero hardcoded cloud spend estimates).
           </p>
         </div>
-
-        <Button
-          variant="primary"
-          size="sm"
-          onClick={() => setAppliedSavings(true)}
-          style={{ backgroundColor: '#10B981', color: '#070C16', fontWeight: 900 }}
-        >
-          {appliedSavings ? '✓ FinOps Optimizations Queued' : '⚡ Apply All AI Cost Optimizations (-₹1,48,000/mo)'}
+        <Button size="sm" variant="secondary" onClick={loadCosts}>
+          Refresh Ledger
         </Button>
       </div>
 
-      {appliedSavings && (
-        <div style={{ backgroundColor: 'rgba(16, 185, 129, 0.15)', border: '1px solid #10B981', borderRadius: '10px', padding: '12px 16px', color: '#A7F3D0', fontSize: '0.875rem', fontWeight: 700 }}>
-          ✓ Terraform & CloudFormation PR created to downsize idle node pools and apply Graviton spot instances (Expected annual saving: ₹17.76 Lakhs)!
+      {errorMsg && (
+        <div style={{ padding: '10px 14px', borderRadius: '8px', border: '1px solid #EF4444', color: '#EF4444', fontWeight: 700 }}>
+          {errorMsg}
         </div>
       )}
 
-      {/* Cost Cards */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '12px' }}>
         <div style={{ backgroundColor: '#0F172A', border: '1px solid #334155', borderRadius: '12px', padding: '16px' }}>
-          <span style={{ fontSize: '0.6875rem', color: '#94A3B8', fontWeight: 800, textTransform: 'uppercase' }}>CURRENT MONTHLY SPEND</span>
-          <div style={{ fontSize: '1.5rem', fontWeight: 900, color: '#F8FAFC', marginTop: '2px' }}>₹4,33,000 / mo</div>
-          <span style={{ fontSize: '0.75rem', color: '#CBD5E1', marginTop: '4px', display: 'block' }}>AWS, GCP, Mongo & Cloudflare</span>
+          <span style={{ fontSize: '0.6875rem', color: '#94A3B8', fontWeight: 800 }}>RECORDED CLOUD INFRA</span>
+          <div style={{ fontSize: '1.5rem', fontWeight: 900, color: '#F8FAFC', marginTop: '4px' }}>
+            ₹{cloudTotal.toLocaleString('en-IN')}
+          </div>
         </div>
-
-        <div style={{ backgroundColor: '#0F172A', border: '1.5px solid #10B981', borderRadius: '12px', padding: '16px' }}>
-          <span style={{ fontSize: '0.6875rem', color: '#86EFAC', fontWeight: 800, textTransform: 'uppercase' }}>POTENTIAL AI SAVINGS</span>
-          <div style={{ fontSize: '1.5rem', fontWeight: 900, color: '#10B981', marginTop: '2px' }}>-₹1,48,000 / mo</div>
-          <span style={{ fontSize: '0.75rem', color: '#A7F3D0', marginTop: '4px', display: 'block' }}>34.1% Cost reduction</span>
-        </div>
-
         <div style={{ backgroundColor: '#0F172A', border: '1px solid #334155', borderRadius: '12px', padding: '16px' }}>
-          <span style={{ fontSize: '0.6875rem', color: '#94A3B8', fontWeight: 800, textTransform: 'uppercase' }}>COST PER PATIENT CONSULT</span>
-          <div style={{ fontSize: '1.5rem', fontWeight: 900, color: '#38BDF8', marginTop: '2px' }}>₹0.42 / Visit</div>
-          <span style={{ fontSize: '0.75rem', color: '#10B981', marginTop: '4px', display: 'block' }}>Industry benchmark: ₹2.80</span>
+          <span style={{ fontSize: '0.6875rem', color: '#94A3B8', fontWeight: 800 }}>RECORDED AI INFERENCE</span>
+          <div style={{ fontSize: '1.5rem', fontWeight: 900, color: '#38BDF8', marginTop: '4px' }}>
+            ₹{aiTotal.toLocaleString('en-IN')}
+          </div>
+        </div>
+        <div style={{ backgroundColor: '#0F172A', border: '1px solid #334155', borderRadius: '12px', padding: '16px' }}>
+          <span style={{ fontSize: '0.6875rem', color: '#86EFAC', fontWeight: 800 }}>FREE-TIER COGS GUARDRAIL CAP</span>
+          <div style={{ fontSize: '1.5rem', fontWeight: 900, color: '#10B981', marginTop: '4px' }}>
+            ₹{freeTierCap.toLocaleString('en-IN')} / mo
+          </div>
         </div>
       </div>
 
-      {/* Breakdown Table */}
-      <Card title="📜 Cloud Resource Cost Breakdown & Actionable Directives" padding="none">
-        <TableContainer style={{ border: 'none', borderRadius: '0' }}>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Cloud Resource</TableHead>
-                <TableHead>Provider</TableHead>
-                <TableHead>Monthly Cost</TableHead>
-                <TableHead>AI Rightsizing Directive</TableHead>
-                <TableHead style={{ textAlign: 'right' }}>Est. Savings</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {items.map((it) => (
-                <TableRow key={it.resource}>
-                  <TableCell>
-                    <strong style={{ color: 'var(--ds-color-text-primary)' }}>{it.resource}</strong>
-                  </TableCell>
-                  <TableCell style={{ fontSize: '0.8125rem' }}>
-                    {it.provider}
-                  </TableCell>
-                  <TableCell style={{ fontFamily: 'monospace', fontWeight: 700 }}>
-                    {it.monthlyCost}
-                  </TableCell>
-                  <TableCell style={{ fontSize: '0.75rem', color: '#CBD5E1', maxWidth: '300px' }}>
-                    {it.aiSavingRecommendation}
-                  </TableCell>
-                  <TableCell style={{ textAlign: 'right', color: '#10B981', fontWeight: 800, fontFamily: 'monospace' }}>
-                    {it.potentialMonthlySaving}
-                  </TableCell>
+      {infraEntries.length === 0 ? (
+        <Card title="Cloud & AI Cost Entries">
+          <div style={{ padding: '24px', textAlign: 'center', color: 'var(--ds-color-text-muted)' }}>
+            No <code>CLOUD_INFRA</code> or <code>AI_INFERENCE</code> entries recorded yet in <code>company.company_cost_ledger</code>.
+          </div>
+        </Card>
+      ) : (
+        <Card title={`Recorded Infrastructure & AI Spend (${infraEntries.length})`} padding="none">
+          <TableContainer style={{ border: 'none', borderRadius: 0 }}>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Category</TableHead>
+                  <TableHead>Period</TableHead>
+                  <TableHead>Description</TableHead>
+                  <TableHead>Source</TableHead>
+                  <TableHead style={{ textAlign: 'right' }}>Amount (INR)</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
-      </Card>
+              </TableHeader>
+              <TableBody>
+                {infraEntries.map((row) => (
+                  <TableRow key={row.id}>
+                    <TableCell><Badge variant="warning">{row.category}</Badge></TableCell>
+                    <TableCell>{row.billingPeriod}</TableCell>
+                    <TableCell>{row.description || '-'}</TableCell>
+                    <TableCell style={{ fontSize: '0.75rem', color: 'var(--ds-color-text-muted)' }}>{row.source}</TableCell>
+                    <TableCell style={{ textAlign: 'right', fontWeight: 800 }}>₹{Number(row.amountInr).toLocaleString('en-IN')}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        </Card>
+      )}
     </div>
   );
 };

@@ -51,7 +51,7 @@ const StaffAdministrationDomainManager = React.lazy(() => import('./StaffAdminis
 const DoctorRosterDomainManager = React.lazy(() => import('./DoctorRosterDomainManager.js').then(m => ({ default: m.DoctorRosterDomainManager })));
 const PatientRegistrationDomainManager = React.lazy(() => import('./PatientRegistrationDomainManager.js').then(m => ({ default: m.PatientRegistrationDomainManager })));
 const EncounterDomainManager = React.lazy(() => import('./EncounterDomainManager.js').then(m => ({ default: m.EncounterDomainManager })));
-import { ClinicalConsultationDomainManager } from './ClinicalConsultationDomainManager.js';
+const ClinicalConsultationDomainManager = React.lazy(() => import('./ClinicalConsultationDomainManager.js').then(m => ({ default: m.ClinicalConsultationDomainManager })));
 const NurseVitalsTriageStationView = React.lazy(() => import('./views/NurseVitalsTriageStationView.js').then(m => ({ default: m.NurseVitalsTriageStationView })));
 const ClinicalInvestigationDomainManager = React.lazy(() => import('./ClinicalInvestigationDomainManager.js').then(m => ({ default: m.ClinicalInvestigationDomainManager })));
 const PharmacyDomainManager = React.lazy(() => import('./PharmacyDomainManager.js').then(m => ({ default: m.PharmacyDomainManager })));
@@ -87,7 +87,7 @@ const HospitalInHouseClosedLoopView = React.lazy(() => import('./views/HospitalI
 const LegacyDataMigrationWizardView = React.lazy(() => import('./views/LegacyDataMigrationWizardView.js').then(m => ({ default: m.LegacyDataMigrationWizardView })));
 const EwanSuperBrainCommandView = React.lazy(() => import('./views/EwanSuperBrainCommandView.js').then(m => ({ default: m.EwanSuperBrainCommandView })));
 import { isPartnerModuleAllowed, isModuleAllowedForPartnerProfile, isWorkspaceAllowedForPartnerProfile, isDestructiveActionAllowed, isHospitalExecutive, getRoleDefaultPerspective, getRoleDefaultHomeModule, isVoiceScribeAllowed, isClinicianRole } from '../utils/partnerRolePermissions.js';
-import { FrontDeskWorkstationView } from './views/FrontDeskWorkstationView.js';
+const FrontDeskWorkstationView = React.lazy(() => import('./views/FrontDeskWorkstationView.js').then(m => ({ default: m.FrontDeskWorkstationView })));
 const StaffOperationalRoleDashboard = React.lazy(() => import('./dashboard/StaffOperationalRoleDashboard.js').then(m => ({ default: m.StaffOperationalRoleDashboard })));
 const RoleTailoredSmartDeskView = React.lazy(() => import('./views/RoleTailoredSmartDeskView.js').then(m => ({ default: m.RoleTailoredSmartDeskView })));
 const GlobalFounderApprovalsModal = React.lazy(() => import('./common/GlobalFounderApprovalsModal.js').then(m => ({ default: m.GlobalFounderApprovalsModal })));

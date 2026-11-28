@@ -9,6 +9,10 @@ import {
   TEST_SEEDS,
   getDatabase,
   withSecurityContext,
+  tenants,
+  operationalPartners,
+  operationalOrganizations,
+  operationalFacilities,
   documentTypes,
   entityDocuments,
   documentVerifications,
@@ -60,6 +64,7 @@ describe('DOC SEARCH — P0 & P1 Controlled Remediation & Independent Verificati
     userId = crypto.randomUUID(),
     email = 'admin@partner.in',
     facilityType = 'PATHOLOGY',
+    branchId,
     permissions = ['*']
   }) =>
     signJwt(
@@ -69,7 +74,7 @@ describe('DOC SEARCH — P0 & P1 Controlled Remediation & Independent Verificati
         email,
         actorEmail: email,
         tenantId,
-        branchId: TEST_SEEDS.BRANCH_A,
+        branchId: branchId || tenantId,
         facilityType,
         organizationType: facilityType,
         roles: [role],
@@ -83,6 +88,63 @@ describe('DOC SEARCH — P0 & P1 Controlled Remediation & Independent Verificati
     );
 
   async function seedActiveLicense(tenantId, planSlug, productSlug, facilityType, maxDoctors = 5, includedModules = []) {
+    const db = getDatabase();
+    if (db) {
+      await db
+        .insert(tenants)
+        .values({
+          id: tenantId,
+          name: `Test ${facilityType} Tenant`,
+          slug: `test-${tenantId.slice(0, 8)}`,
+          status: 'ACTIVE'
+        })
+        .onConflictDoNothing();
+      await db
+        .insert(operationalPartners)
+        .values({
+          id: tenantId,
+          tenantId,
+          partnerCode: `PRT-${tenantId.slice(0, 6).toUpperCase()}`,
+          legalBusinessName: `Test ${facilityType} Partner`,
+          partnerType: facilityType,
+          contactEmail: `admin-${tenantId.slice(0, 6)}@partner.in`,
+          status: 'ACTIVE'
+        })
+        .onConflictDoNothing();
+      await db
+        .insert(operationalOrganizations)
+        .values({
+          id: tenantId,
+          tenantId,
+          partnerId: tenantId,
+          organizationCode: `ORG-${tenantId.slice(0, 6).toUpperCase()}`,
+          organizationName: `Test ${facilityType} Org`,
+          contactEmail: `org-${tenantId.slice(0, 6)}@partner.in`,
+          status: 'ACTIVE'
+        })
+        .onConflictDoNothing();
+      await db
+        .insert(operationalFacilities)
+        .values({
+          id: tenantId,
+          tenantId,
+          partnerId: tenantId,
+          organizationId: tenantId,
+          facilityCode: `FAC-${tenantId.slice(0, 6).toUpperCase()}`,
+          facilityName: `Test ${facilityType} Branch`,
+          facilityType: facilityType === 'CLINIC' ? 'CLINIC' : 'DIAGNOSTIC',
+          addressStreet: '10 Test Road',
+          addressCity: 'Patna',
+          addressState: 'Bihar',
+          addressPostalCode: '800001',
+          addressCountry: 'IN',
+          contactEmail: `admin-${tenantId.slice(0, 6)}@partner.in`,
+          contactPhone: '+91-9000000000',
+          status: 'ACTIVE'
+        })
+        .onConflictDoNothing();
+    }
+
     const planId = toDeterministicUuid(planSlug);
     const productId = toDeterministicUuid(productSlug);
     const now = new Date();
@@ -1967,7 +2029,7 @@ describe('DOC SEARCH — P0 & P1 Controlled Remediation & Independent Verificati
         partnerId: malformedPlanTenantId,
         tenantId: malformedPlanTenantId,
         subscriptionId: crypto.randomUUID(),
-        planId: ';;;MALFORMED_HEALTHCARE_HOSPITAL_CLINIC_HINT***',
+        planId: toDeterministicUuid('malformed-healthcare-hospital-clinic-hint'),
         maxConcurrentUsers: 10,
         maxDoctors: 5,
         maxBranches: 1,
@@ -2429,7 +2491,7 @@ describe('DOC SEARCH — P0 & P1 Controlled Remediation & Independent Verificati
           email: 'nurse.temporal@clinic.in',
           actorEmail: 'nurse.temporal@clinic.in',
           tenantId: tenantClinicId,
-          branchId: TEST_SEEDS.BRANCH_A,
+          branchId: tenantClinicId,
           roles: ['NURSE'],
           permissions: ['clinical:patients:read', 'clinical:patients', 'clinical:read'],
           dataScope: 'tenant',
@@ -2469,7 +2531,7 @@ describe('DOC SEARCH — P0 & P1 Controlled Remediation & Independent Verificati
           email: 'nurse.temporal@clinic.in',
           actorEmail: 'nurse.temporal@clinic.in',
           tenantId: tenantClinicId,
-          branchId: TEST_SEEDS.BRANCH_A,
+          branchId: tenantClinicId,
           roles: ['NURSE', 'BILLING_EXECUTIVE'],
           permissions: ['clinical:patients:read', 'clinical:patients', 'clinical:read', 'billing:read'],
           dataScope: 'tenant',
@@ -2571,7 +2633,7 @@ describe('DOC SEARCH — P0 & P1 Controlled Remediation & Independent Verificati
           email: 'patient.user@gmail.com',
           actorEmail: 'patient.user@gmail.com',
           tenantId: tenantClinicId,
-          branchId: TEST_SEEDS.BRANCH_A,
+          branchId: tenantClinicId,
           roles: ['PATIENT'],
           permissions: ['patient:portal:read'],
           dataScope: 'own',
@@ -2613,7 +2675,7 @@ describe('DOC SEARCH — P0 & P1 Controlled Remediation & Independent Verificati
           email: 'superadmin.noclinical@docsearch.in',
           actorEmail: 'superadmin.noclinical@docsearch.in',
           tenantId: tenantClinicId,
-          branchId: TEST_SEEDS.BRANCH_A,
+          branchId: tenantClinicId,
           roles: ['SUPER_ADMIN'],
           permissions: ['*'],
           dataScope: 'global',
@@ -2644,7 +2706,7 @@ describe('DOC SEARCH — P0 & P1 Controlled Remediation & Independent Verificati
           email: 'duty.officer@clinic.in',
           actorEmail: 'duty.officer@clinic.in',
           tenantId: tenantClinicId,
-          branchId: TEST_SEEDS.BRANCH_A,
+          branchId: tenantClinicId,
           roles: ['BILLING_EXECUTIVE'],
           permissions: ['billing:read'],
           dataScope: 'tenant',

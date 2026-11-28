@@ -12,8 +12,8 @@ export const revenueWaterfallRoutes: FastifyPluginAsync = async (fastify) => {
     {
       preHandler: [authenticate, requireRoles('SUPER_ADMIN', 'COMPANY_ADMIN', 'FINANCE_MANAGER')]
     },
-    async () => {
-      const report = platformRevenueWaterfallService.getRevenueWaterfall();
+    async (request) => {
+      const report = await platformRevenueWaterfallService.getLiveRevenueWaterfall(request.session);
       return {
         success: true,
         data: report
@@ -30,8 +30,8 @@ export const revenueWaterfallRoutes: FastifyPluginAsync = async (fastify) => {
     {
       preHandler: [authenticate, requireRoles('SUPER_ADMIN', 'COMPANY_ADMIN', 'FINANCE_MANAGER')]
     },
-    async () => {
-      const records = platformRevenueWaterfallService.getTdsGstr1Ledger();
+    async (request) => {
+      const records = await platformRevenueWaterfallService.getLiveTdsGstr1Ledger(request.session);
       return {
         success: true,
         data: records

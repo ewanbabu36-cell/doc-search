@@ -78,7 +78,7 @@ async function runCheckpoint25Harness() {
       role: 'DOCTOR',
       tenantId: '00000000-0000-4000-8000-000000000001',
       ownerEntityId: 'user-outage-01'
-    });
+    }, null);
     assert.fail('Expected 503 on document verification during outage');
   } catch (err) {
     assert.strictEqual(err.statusCode || err.status, 503, 'Expected 503 SERVICE_UNAVAILABLE');

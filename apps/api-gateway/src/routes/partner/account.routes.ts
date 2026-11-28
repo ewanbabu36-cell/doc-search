@@ -57,10 +57,23 @@ export const partnerAccountRoutes: FastifyPluginAsync = async (fastify) => {
    * PUT /api/v1/partner/profile
    * Updates partner profile statutory fields, address, and marks profile as completed.
    */
+  const PROFILE_UPDATE_ROLES = [
+    'SUPER_ADMIN',
+    'COMPANY_ADMIN',
+    'PARTNER_ADMIN',
+    'OWNER',
+    'HOSPITAL_ADMIN',
+    'CLINIC_ADMIN',
+    'PATHOLOGY_ADMIN',
+    'PHARMACY_ADMIN',
+    'DIAGNOSTIC_ADMIN',
+    'BRANCH_MANAGER'
+  ] as const;
+
   fastify.put(
     '/api/v1/partner/account/profile',
     {
-      preHandler: [authenticate, requireRoles('SUPER_ADMIN', 'COMPANY_ADMIN', 'HOSPITAL_ADMIN', 'CLINIC_ADMIN', 'BRANCH_MANAGER')]
+      preHandler: [authenticate, requireRoles(...PROFILE_UPDATE_ROLES)]
     },
     async (request) => {
       const data = await partnerAccountService.updateProfile(request.session, request.body as any);
@@ -71,7 +84,7 @@ export const partnerAccountRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.put(
     '/api/v1/partner/profile',
     {
-      preHandler: [authenticate, requireRoles('SUPER_ADMIN', 'COMPANY_ADMIN', 'HOSPITAL_ADMIN', 'CLINIC_ADMIN', 'BRANCH_MANAGER')]
+      preHandler: [authenticate, requireRoles(...PROFILE_UPDATE_ROLES)]
     },
     async (request) => {
       const data = await partnerAccountService.updateProfile(request.session, request.body as any);
@@ -82,7 +95,7 @@ export const partnerAccountRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.patch(
     '/api/v1/partner/account/profile',
     {
-      preHandler: [authenticate, requireRoles('SUPER_ADMIN', 'COMPANY_ADMIN', 'HOSPITAL_ADMIN', 'CLINIC_ADMIN', 'BRANCH_MANAGER')]
+      preHandler: [authenticate, requireRoles(...PROFILE_UPDATE_ROLES)]
     },
     async (request) => {
       const data = await partnerAccountService.updateProfile(request.session, request.body as any);
@@ -93,7 +106,7 @@ export const partnerAccountRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.patch(
     '/api/v1/partner/profile',
     {
-      preHandler: [authenticate, requireRoles('SUPER_ADMIN', 'COMPANY_ADMIN', 'HOSPITAL_ADMIN', 'CLINIC_ADMIN', 'BRANCH_MANAGER')]
+      preHandler: [authenticate, requireRoles(...PROFILE_UPDATE_ROLES)]
     },
     async (request) => {
       const data = await partnerAccountService.updateProfile(request.session, request.body as any);

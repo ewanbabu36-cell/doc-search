@@ -2,6 +2,7 @@ import { describe, it, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { buildApp } from '../dist/app.js';
 import { signJwt } from '@docsearch/auth';
+import { setupTestDatabase } from '@docsearch/database';
 
 describe('Domain 2.17 — Radiology / PACS / Medical Imaging Vertical Slice Test Suite', () => {
   let app;
@@ -45,7 +46,10 @@ describe('Domain 2.17 — Radiology / PACS / Medical Imaging Vertical Slice Test
   let createdReportId;
   let createdFindingId;
 
+  let testDb;
+
   before(async () => {
+    testDb = await setupTestDatabase({ seedBaseline: true, seedDemoFixtures: true });
     app = await buildApp();
     await app.ready();
 
@@ -61,7 +65,8 @@ describe('Domain 2.17 — Radiology / PACS / Medical Imaging Vertical Slice Test
   });
 
   after(async () => {
-    await app.close();
+    if (app) await app.close();
+    if (testDb) await testDb.cleanup();
   });
 
   it('TEST 01: GET /api/v1/partner/radiology/overview returns live metrics with valid JWT', async () => {
@@ -72,7 +77,8 @@ describe('Domain 2.17 — Radiology / PACS / Medical Imaging Vertical Slice Test
     });
 
     assert.equal(res.statusCode, 200);
-    const body = JSON.parse(res.payload);
+    const rawBody = JSON.parse(res.payload);
+    const body = rawBody.data || rawBody;
     assert.ok(body.totalOrdersCount !== undefined);
     assert.ok(body.pendingOrdersCount !== undefined);
   });
@@ -125,7 +131,8 @@ describe('Domain 2.17 — Radiology / PACS / Medical Imaging Vertical Slice Test
       headers: { authorization: `Bearer ${validToken}` }
     });
     assert.equal(resMod.statusCode, 200);
-    const modalities = JSON.parse(resMod.payload);
+    const rawMod = JSON.parse(resMod.payload);
+    const modalities = Array.isArray(rawMod) ? rawMod : rawMod.data;
     assert.ok(Array.isArray(modalities));
     assert.ok(modalities.length >= 1);
 
@@ -135,7 +142,8 @@ describe('Domain 2.17 — Radiology / PACS / Medical Imaging Vertical Slice Test
       headers: { authorization: `Bearer ${validToken}` }
     });
     assert.equal(resProc.statusCode, 200);
-    const procedures = JSON.parse(resProc.payload);
+    const rawProc = JSON.parse(resProc.payload);
+    const procedures = Array.isArray(rawProc) ? rawProc : rawProc.data;
     assert.ok(Array.isArray(procedures));
   });
 

@@ -4417,5 +4417,7 @@ export const facilityBrandingVault = companySchema.table(
 export type FacilityBrandingVaultEntry = typeof facilityBrandingVault.$inferSelect;
 export type NewFacilityBrandingVaultEntry = typeof facilityBrandingVault.$inferInsert;
 
+export * from './risk-management.js';
+
 
 

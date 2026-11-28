@@ -1,99 +1,77 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, Badge, Button, TableContainer, Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@docsearch/ui-kit';
 import { useGlobalLocale } from '../common/GlobalCurrencyLocaleContext.js';
+import {
+  riskManagementService,
+  type RevenueWaterfallReportDto
+} from '../../services/risk-management-service.js';
 
 export interface RevenueStreamItem {
   id: string;
   streamName: string;
-  category: 'OPD' | 'LIMS' | 'IPD' | 'PHARMACY';
-  icon: string;
-  monthlyVolume: string;
+  category: string;
+  transactionCount: number;
   monthlyGmvInr: number;
   takeRatePercent: number;
   netRevenueInr: number;
-  momGrowth: string;
   accentColor: string;
-  description: string;
 }
 
-export const REVENUE_STREAMS: RevenueStreamItem[] = [
-  {
-    id: 'STREAM-OPD',
-    streamName: 'Doctor OPD Consultations',
-    category: 'OPD',
-    icon: '🩺',
-    monthlyVolume: '42,800 Completed Consults (15,160/hr peak)',
-    monthlyGmvInr: 34240000,
-    takeRatePercent: 15.0,
-    netRevenueInr: 5136000,
-    momGrowth: '+ 22.4% MoM',
-    accentColor: '#06B6D4',
-    description: 'Digital token queue, specialist consult fees & video tele-consultations'
-  },
-  {
-    id: 'STREAM-LIMS',
-    streamName: 'Pathology Diagnostics (LIMS)',
-    category: 'LIMS',
-    icon: '🧪',
-    monthlyVolume: '28,500 Lab Investigation Orders / Day',
-    monthlyGmvInr: 39900000,
-    takeRatePercent: 18.0,
-    netRevenueInr: 7182000,
-    momGrowth: '+ 31.8% MoM',
-    accentColor: '#10B981',
-    description: 'Automated CBC, LFT, KFT analyzers & downloadable vector PDF reports'
-  },
-  {
-    id: 'STREAM-IPD',
-    streamName: 'Inpatient (IPD) Bed Occupancy',
-    category: 'IPD',
-    icon: '🛏️',
-    monthlyVolume: '3,120 Hospital Admissions (14,280 Bed-Days)',
-    monthlyGmvInr: 62400000,
-    takeRatePercent: 10.0,
-    netRevenueInr: 6240000,
-    momGrowth: '+ 18.6% MoM',
-    accentColor: '#F59E0B',
-    description: 'ICU, Deluxe & General ward daily bed allocation ledger auto-sync'
-  },
-  {
-    id: 'STREAM-PHARMACY',
-    streamName: 'Pharmacy E-Prescription Sales',
-    category: 'PHARMACY',
-    icon: '💊',
-    monthlyVolume: '51,400 Prescriptions Dispensed (99.4% Stock)',
-    monthlyGmvInr: 41120000,
-    takeRatePercent: 12.0,
-    netRevenueInr: 4934400,
-    momGrowth: '+ 26.2% MoM',
-    accentColor: '#A78BFA',
-    description: 'Doctor digital prescription auto-sync, barcode batch stock decrement'
-  }
-];
+const ACCENT_PALETTE = ['#06B6D4', '#10B981', '#F59E0B', '#A78BFA', '#38BDF8'];
 
 export const RealtimeFourWayRevenueStreamsView: React.FC = () => {
   const { formatMoney } = useGlobalLocale();
   const [timeHorizon, setTimeHorizon] = useState<'MONTHLY' | 'QUARTERLY' | 'ANNUAL'>('MONTHLY');
+  const [report, setReport] = useState<RevenueWaterfallReportDto | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [exportNotice, setExportNotice] = useState<string | null>(null);
 
+  useEffect(() => {
+    let active = true;
+    riskManagementService
+      .getRevenueWaterfall()
+      .then((res) => {
+        if (active) setReport(res);
+      })
+      .catch((err) => {
+        if (active) setErrorMsg(err instanceof Error ? err.message : 'Unable to load revenue streams.');
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const streams: RevenueStreamItem[] = (report?.streams || []).map((s, idx) => ({
+    id: `STREAM-${idx}-${s.streamName}`,
+    streamName: s.streamName,
+    category: s.streamName.toUpperCase().replace(/[^A-Z0-9]+/g, '_').slice(0, 18),
+    transactionCount: s.transactionCount,
+    monthlyGmvInr: s.grossGmvInr,
+    takeRatePercent: s.grossGmvInr > 0 ? Number(((s.platformTakeRateInr / s.grossGmvInr) * 100).toFixed(2)) : 0,
+    netRevenueInr: s.platformTakeRateInr,
+    accentColor: ACCENT_PALETTE[idx % ACCENT_PALETTE.length]!
+  }));
+
   const multiplier = timeHorizon === 'MONTHLY' ? 1 : timeHorizon === 'QUARTERLY' ? 3 : 12;
-  const horizonLabel = timeHorizon === 'MONTHLY' ? 'Monthly' : timeHorizon === 'QUARTERLY' ? 'Quarterly (Q3)' : 'Annualized ARR';
+  const horizonLabel = timeHorizon === 'MONTHLY' ? 'Monthly' : timeHorizon === 'QUARTERLY' ? 'Quarterly (3M)' : 'Annualized ARR';
 
-  const totalGmv = REVENUE_STREAMS.reduce((acc, s) => acc + s.monthlyGmvInr * multiplier, 0);
-  const totalNetRevenue = REVENUE_STREAMS.reduce((acc, s) => acc + s.netRevenueInr * multiplier, 0);
-  const blendedTakeRate = ((totalNetRevenue / totalGmv) * 100).toFixed(1);
+  const totalGmv = streams.reduce((acc, s) => acc + s.monthlyGmvInr * multiplier, 0);
+  const totalNetRevenue = streams.reduce((acc, s) => acc + s.netRevenueInr * multiplier, 0);
+  const blendedTakeRate = totalGmv > 0 ? ((totalNetRevenue / totalGmv) * 100).toFixed(1) : '0.0';
+  const topStream = [...streams].sort((a, b) => b.monthlyGmvInr - a.monthlyGmvInr)[0];
 
-  // 1-Click Export Financial Matrix CSV
   const handleExportCsv = () => {
-    const headers = ['Revenue Stream', 'Category', 'Volume Throughput', 'Gross GMV (INR)', 'Take-Rate (%)', 'Net Revenue (INR)', 'MoM Growth'];
-    const rows = REVENUE_STREAMS.map((s) => [
+    const headers = ['Revenue Stream', 'Invoices', 'Gross GMV (INR)', 'Take-Rate (%)', 'Net Platform Revenue (INR)'];
+    const rows = streams.map((s) => [
       `"${s.streamName}"`,
-      s.category,
-      `"${s.monthlyVolume}"`,
-      s.monthlyGmvInr * multiplier,
+      String(s.transactionCount),
+      String(s.monthlyGmvInr * multiplier),
       `${s.takeRatePercent}%`,
-      s.netRevenueInr * multiplier,
-      `"${s.momGrowth}"`
+      String(s.netRevenueInr * multiplier)
     ]);
 
     const csvContent = [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
@@ -101,95 +79,64 @@ export const RealtimeFourWayRevenueStreamsView: React.FC = () => {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `DocSearch-4Way-Revenue-Matrix-${timeHorizon}-${Date.now()}.csv`;
+    a.download = `DocSearch-Revenue-Matrix-${timeHorizon}-${Date.now()}.csv`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
 
-    setExportNotice(`✓ Successfully exported 4-Way Consolidated Revenue Matrix (${horizonLabel}) to CSV!`);
-    setTimeout(() => setExportNotice(null), 4000);
+    setExportNotice(`Exported Consolidated Revenue Matrix (${horizonLabel}) CSV.`);
   };
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-      {/* Header & Time Switcher */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <h2 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 800, color: 'var(--ds-color-text-primary)' }}>
-              💰 Consolidated 4-Way Real-Time Revenue Matrix
+              Consolidated Real-Time Revenue Matrix
             </h2>
-            <Badge variant="success">● Live Financial Ledger Sync</Badge>
+            <Badge variant="success">Live PostgreSQL Ledger</Badge>
           </div>
           <p style={{ margin: '4px 0 0', fontSize: '0.8125rem', color: 'var(--ds-color-text-muted)' }}>
-            Real-time cashflow realization across OPD Consultations, LIMS Pathology, IPD Bed Occupancy, and Pharmacy Dispensation
+            Live realization across OPD, LIMS Pathology, IPD, and Pharmacy billing streams ({report?.periodMonth || 'Current Month'})
           </p>
         </div>
 
         <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
-          {/* Time Horizon Filter */}
           <div style={{ display: 'flex', gap: '4px', backgroundColor: '#0F172A', padding: '4px', borderRadius: '8px', border: '1px solid #334155' }}>
-            <button
-              type="button"
-              onClick={() => setTimeHorizon('MONTHLY')}
-              style={{
-                backgroundColor: timeHorizon === 'MONTHLY' ? '#06B6D4' : 'transparent',
-                color: timeHorizon === 'MONTHLY' ? '#070C16' : '#94A3B8',
-                fontWeight: 800,
-                fontSize: '0.75rem',
-                padding: '6px 12px',
-                borderRadius: '6px',
-                border: 'none',
-                cursor: 'pointer'
-              }}
-            >
-              📅 Monthly
-            </button>
-            <button
-              type="button"
-              onClick={() => setTimeHorizon('QUARTERLY')}
-              style={{
-                backgroundColor: timeHorizon === 'QUARTERLY' ? '#06B6D4' : 'transparent',
-                color: timeHorizon === 'QUARTERLY' ? '#070C16' : '#94A3B8',
-                fontWeight: 800,
-                fontSize: '0.75rem',
-                padding: '6px 12px',
-                borderRadius: '6px',
-                border: 'none',
-                cursor: 'pointer'
-              }}
-            >
-              📊 Quarterly (Q3)
-            </button>
-            <button
-              type="button"
-              onClick={() => setTimeHorizon('ANNUAL')}
-              style={{
-                backgroundColor: timeHorizon === 'ANNUAL' ? '#06B6D4' : 'transparent',
-                color: timeHorizon === 'ANNUAL' ? '#070C16' : '#94A3B8',
-                fontWeight: 800,
-                fontSize: '0.75rem',
-                padding: '6px 12px',
-                borderRadius: '6px',
-                border: 'none',
-                cursor: 'pointer'
-              }}
-            >
-              📈 Annualized ARR
-            </button>
+            {(['MONTHLY', 'QUARTERLY', 'ANNUAL'] as const).map((h) => (
+              <button
+                key={h}
+                type="button"
+                onClick={() => setTimeHorizon(h)}
+                style={{
+                  backgroundColor: timeHorizon === h ? '#06B6D4' : 'transparent',
+                  color: timeHorizon === h ? '#070C16' : '#94A3B8',
+                  fontWeight: 800,
+                  fontSize: '0.75rem',
+                  padding: '6px 12px',
+                  borderRadius: '6px',
+                  border: 'none',
+                  cursor: 'pointer'
+                }}
+              >
+                {h === 'MONTHLY' ? 'Monthly' : h === 'QUARTERLY' ? 'Quarterly' : 'Annualized'}
+              </button>
+            ))}
           </div>
 
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={handleExportCsv}
-            style={{ fontWeight: 700 }}
-          >
-            📥 Export CSV
+          <Button variant="secondary" size="sm" onClick={handleExportCsv} disabled={streams.length === 0}>
+            Export CSV
           </Button>
         </div>
       </div>
+
+      {errorMsg && (
+        <div style={{ backgroundColor: 'rgba(239, 68, 68, 0.12)', border: '1px solid #EF4444', borderRadius: '10px', padding: '12px 16px', color: '#FCA5A5', fontSize: '0.875rem', fontWeight: 700 }}>
+          {errorMsg}
+        </div>
+      )}
 
       {exportNotice && (
         <div style={{ backgroundColor: 'rgba(16, 185, 129, 0.15)', border: '1px solid #10B981', borderRadius: '10px', padding: '12px 16px', color: '#A7F3D0', fontSize: '0.875rem', fontWeight: 700 }}>
@@ -197,138 +144,121 @@ export const RealtimeFourWayRevenueStreamsView: React.FC = () => {
         </div>
       )}
 
-      {/* Top Total Summary Cards */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '12px' }}>
         <div style={{ backgroundColor: '#0F172A', border: '1.5px solid #10B981', borderRadius: '12px', padding: '16px' }}>
           <span style={{ fontSize: '0.6875rem', color: '#86EFAC', fontWeight: 800, textTransform: 'uppercase' }}>
             TOTAL GROSS NETWORK GMV ({horizonLabel.toUpperCase()})
           </span>
           <div style={{ fontSize: '1.5rem', fontWeight: 900, color: '#10B981', marginTop: '2px' }}>
-            {formatMoney(totalGmv)}
+            {loading ? '...' : formatMoney(totalGmv)}
           </div>
-          <span style={{ fontSize: '0.75rem', color: '#CBD5E1', marginTop: '4px', display: 'block' }}>Across all connected healthcare partners</span>
+          <span style={{ fontSize: '0.75rem', color: '#CBD5E1', marginTop: '4px', display: 'block' }}>
+            {report?.totalTransactions ?? 0} non-cancelled invoice(s)
+          </span>
         </div>
 
         <div style={{ backgroundColor: '#0F172A', border: '1.5px solid #06B6D4', borderRadius: '12px', padding: '16px' }}>
           <span style={{ fontSize: '0.6875rem', color: '#67E8F9', fontWeight: 800, textTransform: 'uppercase' }}>
-            DOCSEARCH NET COMMISSION ({horizonLabel.toUpperCase()})
+            NET PLATFORM TAKE-RATE ({horizonLabel.toUpperCase()})
           </span>
           <div style={{ fontSize: '1.5rem', fontWeight: 900, color: '#06B6D4', marginTop: '2px' }}>
-            {formatMoney(totalNetRevenue)}
+            {loading ? '...' : formatMoney(totalNetRevenue)}
           </div>
-          <span style={{ fontSize: '0.75rem', color: '#CBD5E1', marginTop: '4px', display: 'block' }}>Blended platform take-rate: {blendedTakeRate}%</span>
+          <span style={{ fontSize: '0.75rem', color: '#CBD5E1', marginTop: '4px', display: 'block' }}>
+            Blended platform take-rate: {blendedTakeRate}%
+          </span>
         </div>
 
         <div style={{ backgroundColor: '#0F172A', border: '1px solid #334155', borderRadius: '12px', padding: '16px' }}>
           <span style={{ fontSize: '0.6875rem', color: '#94A3B8', fontWeight: 800, textTransform: 'uppercase' }}>
-            FASTEST GROWING STREAM
+            LARGEST REVENUE STREAM
           </span>
-          <div style={{ fontSize: '1.5rem', fontWeight: 900, color: '#FCD34D', marginTop: '2px' }}>
-            🧪 Pathology LIMS
+          <div style={{ fontSize: '1.25rem', fontWeight: 900, color: '#FCD34D', marginTop: '4px' }}>
+            {topStream ? topStream.streamName : 'No active stream yet'}
           </div>
-          <span style={{ fontSize: '0.75rem', color: '#CBD5E1', marginTop: '4px', display: 'block' }}>+ 31.8% MoM surge in automated orders</span>
-        </div>
-      </div>
-
-      {/* Multi-Segment Colored Share Distribution Bar */}
-      <div style={{ backgroundColor: '#0F172A', border: '1px solid #334155', borderRadius: '14px', padding: '18px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-          <span style={{ fontSize: '0.875rem', fontWeight: 800, color: '#F8FAFC' }}>
-            📊 Revenue Share Distribution by Operational Domain
+          <span style={{ fontSize: '0.75rem', color: '#CBD5E1', marginTop: '4px', display: 'block' }}>
+            {topStream ? `${topStream.transactionCount} invoice(s)` : 'Awaiting live clinical transactions'}
           </span>
-          <span style={{ fontSize: '0.75rem', color: '#94A3B8' }}>100% Consolidated Healthcare GMV</span>
-        </div>
-
-        {/* Segmented Bar */}
-        <div style={{ width: '100%', height: '16px', borderRadius: '8px', overflow: 'hidden', display: 'flex' }}>
-          {REVENUE_STREAMS.map((stream) => {
-            const sharePercent = ((stream.monthlyGmvInr / (totalGmv / multiplier)) * 100).toFixed(1);
-            return (
-              <div
-                key={stream.id}
-                style={{
-                  width: `${sharePercent}%`,
-                  backgroundColor: stream.accentColor,
-                  height: '100%',
-                  transition: 'width 0.4s ease'
-                }}
-                title={`${stream.streamName}: ${sharePercent}% Share`}
-              />
-            );
-          })}
-        </div>
-
-        {/* Legend */}
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px', marginTop: '12px', fontSize: '0.75rem' }}>
-          {REVENUE_STREAMS.map((stream) => {
-            const sharePercent = ((stream.monthlyGmvInr / (totalGmv / multiplier)) * 100).toFixed(1);
-            return (
-              <div key={stream.id} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <span style={{ width: '10px', height: '10px', borderRadius: '50%', backgroundColor: stream.accentColor }} />
-                <span style={{ color: '#E2E8F0', fontWeight: 700 }}>{stream.icon} {stream.streamName}:</span>
-                <span style={{ color: stream.accentColor, fontWeight: 800 }}>{sharePercent}%</span>
-              </div>
-            );
-          })}
         </div>
       </div>
 
-      {/* Detailed Revenue Table */}
-      <Card title="📜 Operational Revenue Stream Breakdown" padding="none">
-        <TableContainer style={{ border: 'none', borderRadius: '0' }}>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Revenue Stream Domain</TableHead>
-                <TableHead>Volume Throughput ({horizonLabel})</TableHead>
-                <TableHead>Gross Merchandise Value (GMV)</TableHead>
-                <TableHead>Take-Rate %</TableHead>
-                <TableHead>Net Platform Revenue</TableHead>
-                <TableHead style={{ textAlign: 'right' }}>Growth Trajectory</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {REVENUE_STREAMS.map((s) => {
-                const gmv = s.monthlyGmvInr * multiplier;
-                const net = s.netRevenueInr * multiplier;
+      {streams.length === 0 ? (
+        <Card title="Operational Revenue Stream Breakdown">
+          <div style={{ padding: '24px', textAlign: 'center', color: 'var(--ds-color-text-muted)' }}>
+            {loading ? 'Querying PostgreSQL billing streams...' : 'Zero clinical billing invoices recorded in PostgreSQL yet.'}
+          </div>
+        </Card>
+      ) : (
+        <>
+          <div style={{ backgroundColor: '#0F172A', border: '1px solid #334155', borderRadius: '14px', padding: '18px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+              <span style={{ fontSize: '0.875rem', fontWeight: 800, color: '#F8FAFC' }}>
+                Revenue Share Distribution by Clinical Stream
+              </span>
+              <span style={{ fontSize: '0.75rem', color: '#94A3B8' }}>100% Consolidated Clinical GMV</span>
+            </div>
 
+            <div style={{ width: '100%', height: '16px', borderRadius: '8px', overflow: 'hidden', display: 'flex' }}>
+              {streams.map((stream) => {
+                const denom = totalGmv / multiplier;
+                const sharePercent = denom > 0 ? ((stream.monthlyGmvInr / denom) * 100).toFixed(1) : '0.0';
                 return (
-                  <TableRow key={s.id}>
-                    <TableCell>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <span style={{ fontSize: '1.25rem' }}>{s.icon}</span>
-                        <div>
-                          <strong style={{ color: 'var(--ds-color-text-primary)' }}>{s.streamName}</strong>
-                          <span style={{ fontSize: '0.6875rem', color: 'var(--ds-color-text-muted)', display: 'block' }}>
-                            {s.description}
-                          </span>
-                        </div>
-                      </div>
-                    </TableCell>
-                    <TableCell style={{ fontWeight: 700, color: 'var(--ds-color-text-primary)' }}>
-                      {s.monthlyVolume}
-                    </TableCell>
-                    <TableCell style={{ fontWeight: 800, color: '#10B981', fontSize: '0.9375rem' }}>
-                      {formatMoney(gmv)}
-                    </TableCell>
-                    <TableCell style={{ fontWeight: 700, color: '#38BDF8' }}>
-                      {s.takeRatePercent}% Net
-                    </TableCell>
-                    <TableCell style={{ fontWeight: 900, color: '#06B6D4', fontSize: '0.9375rem' }}>
-                      {formatMoney(net)}
-                    </TableCell>
-                    <TableCell style={{ textAlign: 'right' }}>
-                      <Badge variant="success">
-                        {s.momGrowth}
-                      </Badge>
-                    </TableCell>
-                  </TableRow>
+                  <div
+                    key={stream.id}
+                    style={{
+                      width: `${sharePercent}%`,
+                      backgroundColor: stream.accentColor,
+                      height: '100%'
+                    }}
+                    title={`${stream.streamName}: ${sharePercent}% Share`}
+                  />
                 );
               })}
-            </TableBody>
-          </Table>
-        </TableContainer>
-      </Card>
+            </div>
+
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px', marginTop: '12px', fontSize: '0.75rem' }}>
+              {streams.map((stream) => {
+                const denom = totalGmv / multiplier;
+                const sharePercent = denom > 0 ? ((stream.monthlyGmvInr / denom) * 100).toFixed(1) : '0.0';
+                return (
+                  <div key={stream.id} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <span style={{ width: '10px', height: '10px', borderRadius: '50%', backgroundColor: stream.accentColor }} />
+                    <span style={{ color: '#E2E8F0', fontWeight: 700 }}>{stream.streamName}:</span>
+                    <span style={{ color: stream.accentColor, fontWeight: 800 }}>{sharePercent}%</span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          <Card title="Operational Revenue Stream Breakdown" padding="none">
+            <TableContainer style={{ border: 'none', borderRadius: '0' }}>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Revenue Stream</TableHead>
+                    <TableHead>Invoices</TableHead>
+                    <TableHead>Gross GMV</TableHead>
+                    <TableHead>Take-Rate %</TableHead>
+                    <TableHead style={{ textAlign: 'right' }}>Net Platform Revenue</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {streams.map((s) => (
+                    <TableRow key={s.id}>
+                      <TableCell style={{ fontWeight: 700 }}>{s.streamName}</TableCell>
+                      <TableCell>{s.transactionCount}</TableCell>
+                      <TableCell style={{ fontWeight: 800, color: '#10B981' }}>{formatMoney(s.monthlyGmvInr * multiplier)}</TableCell>
+                      <TableCell style={{ fontWeight: 700, color: '#38BDF8' }}>{s.takeRatePercent}%</TableCell>
+                      <TableCell style={{ textAlign: 'right', fontWeight: 900, color: '#06B6D4' }}>{formatMoney(s.netRevenueInr * multiplier)}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          </Card>
+        </>
+      )}
     </div>
   );
 };

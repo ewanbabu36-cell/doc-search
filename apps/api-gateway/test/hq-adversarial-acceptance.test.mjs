@@ -85,7 +85,7 @@ describe('DOC SEARCH — HQ Master Control Plane Adversarial Production-Acceptan
     const now = new Date();
     const expiryDate = new Date(now.getTime() + 60 * 24 * 60 * 60 * 1000);
     const sig = licenseService.signLicensePayload({
-      licenseKey: 'LIC-2026-SEEDA-PRO1',
+      licenseKey: 'LIC-APOLLO-PRO-001',
       partnerId: PARTNER_ID_A,
       tenantId: TENANT_A,
       subscriptionId: activeSubscriptionId,
@@ -185,22 +185,43 @@ describe('DOC SEARCH — HQ Master Control Plane Adversarial Production-Acceptan
   // ADV-03: Partner Admin cannot grant a role/permission outside the active plan
   // ============================================================================
   it('ADV-03: Partner Admin role assignment boundary check against active plan', async () => {
+    const adminToken = createSuperAdminToken();
     const partnerAdminToken = createPartnerToken({ roles: ['HOSPITAL_ADMIN'] });
 
-    const res = await app.inject({
-      method: 'POST',
-      url: '/api/v1/partner/staff/roles/assign',
-      headers: { authorization: `Bearer ${partnerAdminToken}`, 'content-type': 'application/json' },
-      payload: {
-        staffId: TEST_SEEDS.STAFF_ID_A,
-        roleCode: 'RADIOLOGIST',
-        dataScope: 'BRANCH',
-        isPrimary: true,
-        effectiveFrom: new Date().toISOString()
-      }
+    // Remove RADIOLOGY_PACS entitlement from the active plan to simulate an unentitled module
+    await app.inject({
+      method: 'DELETE',
+      url: `/api/v1/company/plans/${TEST_PLAN_ID}/entitlements/${TEST_SEEDS.FEAT_RADIOLOGY_ID}`,
+      headers: { authorization: `Bearer ${adminToken}` }
     });
 
-    assert.equal(res.statusCode, 403, 'Partner Admin cannot assign role requiring unentitled module (RADIOLOGY_PACS)');
+    try {
+      const res = await app.inject({
+        method: 'POST',
+        url: '/api/v1/partner/staff/roles/assign',
+        headers: { authorization: `Bearer ${partnerAdminToken}`, 'content-type': 'application/json' },
+        payload: {
+          staffId: TEST_SEEDS.STAFF_ID_A,
+          roleCode: 'RADIOLOGIST',
+          dataScope: 'BRANCH',
+          isPrimary: true,
+          effectiveFrom: new Date().toISOString()
+        }
+      });
+
+      assert.equal(res.statusCode, 403, 'Partner Admin cannot assign role requiring unentitled module (RADIOLOGY_PACS)');
+    } finally {
+      await app.inject({
+        method: 'POST',
+        url: `/api/v1/company/plans/${TEST_PLAN_ID}/entitlements`,
+        headers: { authorization: `Bearer ${adminToken}`, 'content-type': 'application/json' },
+        payload: {
+          featureId: TEST_SEEDS.FEAT_RADIOLOGY_ID,
+          value: { enabled: true },
+          entitlementType: 'FEATURE_ACCESS'
+        }
+      });
+    }
   });
 
   // ============================================================================
@@ -480,7 +501,7 @@ describe('DOC SEARCH — HQ Master Control Plane Adversarial Production-Acceptan
       path.resolve(new URL('.', import.meta.url).pathname.replace(/^\/([A-Z]:)/, '$1'), '../../company-platform/src/services/api-client.ts')
     ];
     const filePath = candidatePaths.find((p) => fs.existsSync(p)) || candidatePaths[0];
-    const content = fs.readFileSync(filePath, 'utf8');
+    const content = fs.readFileSync(filePath, 'utf8').replace(/\r\n/g, '\n');
     assert.ok(
       content.includes('function isMockFallbackAllowed(): boolean {\n  return false;\n}') ||
       content.includes('isMockFallbackAllowed(): boolean {\n  return false;') ||

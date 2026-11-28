@@ -37,9 +37,21 @@ export class SalesMarketingService {
       notes?: string;
       metadata?: Record<string, any>;
     },
-    session: SessionContext
+    session?: SessionContext | null
   ) {
-    return withSecurityContext(getDatabase(), session, async (tx) => {
+    const effectiveSession: SessionContext =
+      session && session.tenantId
+        ? session
+        : ({
+            tenantId: '00000000-0000-4000-8000-000000000000',
+            userId: '00000000-0000-4000-8000-000000000000',
+            isSuperAdmin: true,
+            roles: ['SYSTEM_PUBLIC_INTAKE'] as any,
+            permissions: [],
+            dataScope: 'global',
+            sessionId: 'public-lead-intake'
+          } as SessionContext);
+    return withSecurityContext(getDatabase(), effectiveSession, async (tx) => {
       return salesMarketingRepository.createLead(leadData, tx);
     });
   }

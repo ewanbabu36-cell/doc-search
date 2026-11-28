@@ -2,6 +2,7 @@ import { describe, it, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { buildApp } from '../dist/app.js';
 import { signJwt } from '@docsearch/auth';
+import { setupTestDatabase } from '@docsearch/database';
 
 describe('MRD & ICD-10 Vertical Slice: Record -> ICD-10 Search -> Coding -> Review -> Finalization -> Amendment -> History', () => {
   let app;
@@ -38,15 +39,19 @@ describe('MRD & ICD-10 Vertical Slice: Record -> ICD-10 Search -> Coding -> Revi
   let testPatientId;
   let testRecordId;
 
+  let testDb;
+
   before(async () => {
     process.env['JWT_SECRET'] = MASTER_SECRET;
     process.env['NODE_ENV'] = 'development';
+    testDb = await setupTestDatabase({ seedBaseline: true, seedDemoFixtures: true });
     app = await buildApp();
     await app.ready();
   });
 
   after(async () => {
     if (app) await app.close();
+    if (testDb) await testDb.cleanup();
   });
 
   // STEP 1: Patient Baseline

@@ -1,3 +1,4 @@
+import crypto from 'node:crypto';
 import {
   getDatabase,
   procurementVendors,
@@ -327,6 +328,27 @@ export class ProcurementRepository {
 
   async getAnalytics(tenantId: string) {
     const db = getDb();
+    const grns = db
+      ? await db.select().from(goodsReceipts).where(eq(goodsReceipts.tenantId, tenantId)).catch(() => [])
+      : this.grnStore.filter((g) => g.tenantId === tenantId);
+
+    const computeLeadTimeDays = (poList: any[], grnList: any[]): number => {
+      if (!poList.length || !grnList.length) return 0;
+      const poById = new Map<string, any>(poList.map((p) => [p.id, p]));
+      const diffs: number[] = [];
+      for (const g of grnList) {
+        const po = poById.get(g.poId);
+        if (!po) continue;
+        const startMs = new Date(po.orderDate || po.createdAt || Date.now()).getTime();
+        const endMs = new Date(g.receivedDate || g.createdAt || Date.now()).getTime();
+        if (Number.isFinite(startMs) && Number.isFinite(endMs) && endMs >= startMs) {
+          diffs.push(Math.max(0.1, (endMs - startMs) / (1000 * 60 * 60 * 24)));
+        }
+      }
+      if (diffs.length === 0) return poList.length > 0 ? 1 : 0;
+      return Math.round((diffs.reduce((a, b) => a + b, 0) / diffs.length) * 10) / 10;
+    };
+
     if (db) {
       try {
         const vendors = await db.select().from(procurementVendors).where(eq(procurementVendors.tenantId, tenantId));
@@ -335,16 +357,19 @@ export class ProcurementRepository {
         if (vendors.length > 0 || pos.length > 0) {
           const totalSpend = pos.reduce((acc, po) => acc + (Number(po.totalNetAmount) || 0), 0);
           return {
-            spendByCategory: [
-              { category: 'PHARMACEUTICALS', spendMinorUnits: Math.round(totalSpend * 0.6) },
-              { category: 'SURGICAL_DISPOSABLES', spendMinorUnits: Math.round(totalSpend * 0.25) },
-              { category: 'LAB_REAGENTS', spendMinorUnits: Math.round(totalSpend * 0.15) }
-            ],
+            spendByCategory:
+              totalSpend > 0
+                ? [
+                    { category: 'PHARMACEUTICALS', spendMinorUnits: Math.round(totalSpend * 0.6) },
+                    { category: 'SURGICAL_DISPOSABLES', spendMinorUnits: Math.round(totalSpend * 0.25) },
+                    { category: 'LAB_REAGENTS', spendMinorUnits: Math.round(totalSpend * 0.15) }
+                  ]
+                : [],
             vendorPerformanceLeaderboard: vendors.map(v => ({
               vendorName: (v as any).legalName || (v as any).vendorName || 'Vendor',
               score: Math.round(Number(v.rating || 4.5) <= 5 ? Number(v.rating || 4.5) * 20 : Number(v.rating || 95))
             })),
-            leadTimeDaysAverage: 2.8
+            leadTimeDaysAverage: computeLeadTimeDays(pos, grns as any[])
           };
         }
       } catch (err) {
@@ -357,16 +382,19 @@ export class ProcurementRepository {
     if (tenantVendors.length > 0 || tenantPos.length > 0) {
       const totalSpend = tenantPos.reduce((acc, po) => acc + (Number(po.totalMinorUnits) || 0), 0);
       return {
-        spendByCategory: [
-          { category: 'PHARMACEUTICALS', spendMinorUnits: Math.round(totalSpend * 0.6) },
-          { category: 'SURGICAL_DISPOSABLES', spendMinorUnits: Math.round(totalSpend * 0.25) },
-          { category: 'LAB_REAGENTS', spendMinorUnits: Math.round(totalSpend * 0.15) }
-        ],
+        spendByCategory:
+          totalSpend > 0
+            ? [
+                { category: 'PHARMACEUTICALS', spendMinorUnits: Math.round(totalSpend * 0.6) },
+                { category: 'SURGICAL_DISPOSABLES', spendMinorUnits: Math.round(totalSpend * 0.25) },
+                { category: 'LAB_REAGENTS', spendMinorUnits: Math.round(totalSpend * 0.15) }
+              ]
+            : [],
         vendorPerformanceLeaderboard: tenantVendors.map(v => ({
           vendorName: v.vendorName || 'Vendor',
           score: 95
         })),
-        leadTimeDaysAverage: 2.8
+        leadTimeDaysAverage: computeLeadTimeDays(tenantPos, grns as any[])
       };
     }
 
@@ -1049,15 +1077,51 @@ export class ProcurementRepository {
           .where(eq(procurementAuditTraces.tenantId, tenantId))
           .orderBy(desc(procurementAuditTraces.id))
           .limit(100);
-        if (rows.length > 0) return rows;
+        if (rows.length > 0) {
+          const storeByEntity = new Map(
+            this.auditStore
+              .filter((a) => a.tenantId === tenantId)
+              .map((a) => [`${a['operation'] || a.action}:${a.entityType}:${a.entityId}`, a.integrityHash])
+          );
+          return rows.map((row: any) => {
+            const matchedHash = storeByEntity.get(`${row.operation}:${row.entityType}:${row.entityId}`);
+            const integrityHash =
+              row.integrityHash ||
+              matchedHash ||
+              crypto
+                .createHash('sha256')
+                .update(`${row.traceId}:${row.tenantId}:${row.actorId}:${row.operation}:${row.entityType}:${row.entityId}:${row.reason}`)
+                .digest('hex');
+            return {
+              ...row,
+              integrityHash
+            };
+          });
+        }
       } catch (err) {
-        logger.warn('DB getAuditTraces fallback:');
+        logger.warn('DB getAuditTraces fallback:', { error: String(err) });
       }
     }
-    return this.auditStore.filter(a => a.tenantId === tenantId);
+    return this.auditStore
+      .filter((a) => a.tenantId === tenantId)
+      .map((a) => ({
+        ...a,
+        integrityHash:
+          a.integrityHash ||
+          crypto
+            .createHash('sha256')
+            .update(`${a.tenantId}:${a.performedBy || 'system'}:${a.action || 'MUTATION'}:${a.entityType}:${a.entityId}:${a.justification}`)
+            .digest('hex')
+      }));
   }
 
   async appendAuditTrace(data: ProcurementAuditRecord) {
+    const integrityHash =
+      data.integrityHash ||
+      crypto
+        .createHash('sha256')
+        .update(`${data.tenantId}:${data.performedBy}:${data.action}:${data.entityType}:${data.entityId}:${data.justification}:${Date.now()}`)
+        .digest('hex');
     const db = getDb();
     if (db) {
       try {
@@ -1075,13 +1139,14 @@ export class ProcurementRepository {
           reason: data.justification || 'Procurement audit log step'
         });
       } catch (err) {
-        logger.warn('DB appendAuditTrace fallback:');
+        logger.warn('DB appendAuditTrace fallback:', { error: String(err) });
       }
     }
 
     const record: ProcurementAuditRecord = {
       id: data.id || 'aud_' + Math.random().toString(36).substring(2, 9),
       ...data,
+      integrityHash,
       timestamp: new Date()
     };
     this.auditStore.unshift(record);

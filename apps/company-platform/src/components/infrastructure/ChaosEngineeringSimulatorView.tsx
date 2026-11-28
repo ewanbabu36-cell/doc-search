@@ -1,149 +1,211 @@
-import React, { useState } from 'react';
-import { Card, Badge, TableContainer, Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@docsearch/ui-kit';
+import React, { useState, useEffect, useCallback } from 'react';
+import { Card, Badge, Button, TableContainer, Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@docsearch/ui-kit';
+import { apiRequest } from '../../services/api-client.js';
 
-interface ChaosScenario {
+interface DetailedHealthTelemetry {
+  status: string;
+  database: {
+    connected: boolean;
+    latencyMs: number;
+    pool?: Record<string, any>;
+  };
+  circuitBreakers: Record<string, { state: string; failureCount?: number; successCount?: number; lastFailureTime?: string }>;
+  cache?: Record<string, any>;
+  memory?: {
+    rssMb: number;
+    heapUsedMb: number;
+    heapTotalMb: number;
+  };
+  uptimeSeconds: number;
+  timestamp: string;
+}
+
+interface ReliabilityProbeCheck {
   id: string;
   name: string;
   targetComponent: string;
-  faultType: string;
-  expectedRto: string;
-  lastTested: string;
-  resiliencyStatus: 'SELF_HEALED_PASS' | 'READY_TO_TEST';
+  probeMethod: string;
+  targetSla: string;
+  endpoint: string;
 }
 
-const CHAOS_SCENARIOS: ChaosScenario[] = [
+const LIVE_PROBES: ReliabilityProbeCheck[] = [
   {
-    id: 'CHAOS-001',
-    name: 'Primary MongoDB Leader Pod Sudden Termination',
-    targetComponent: 'MongoDB Atlas Replica Set (Node-01)',
-    faultType: 'SIGKILL / Immediate Pod Crash',
-    expectedRto: '< 3.0 seconds',
-    lastTested: 'Today, 09:30 AM',
-    resiliencyStatus: 'SELF_HEALED_PASS'
+    id: 'PROBE-PG-HEALTH',
+    name: 'PostgreSQL 18.4 Connection & Query Latency Probe',
+    targetComponent: 'Primary PostgreSQL Database Pool',
+    probeMethod: 'Live SELECT 1 Round-Trip & Pool Saturation Inspection',
+    targetSla: '< 100 ms DB RTT',
+    endpoint: '/api/v1/health/detailed'
   },
   {
-    id: 'CHAOS-002',
-    name: 'FHIR API Gateway Ingress 400ms Network Packet Delay',
-    targetComponent: 'Istio Service Mesh Envoy Sidecar',
-    faultType: 'Network Jitter & Packet Latency Injection',
-    expectedRto: '< 1.5 seconds (Circuit Breaker Tripped)',
-    lastTested: 'Yesterday',
-    resiliencyStatus: 'SELF_HEALED_PASS'
+    id: 'PROBE-AUDIT-HASH',
+    name: 'Immutable SHA-256 Audit Ledger Chain Verification',
+    targetComponent: 'Audit Integrity Engine (audit_events)',
+    probeMethod: 'Cryptographic Hash Chain Continuity Check',
+    targetSla: '0 Broken Links',
+    endpoint: '/api/v1/company/reliability/audit/verify-ledger'
   },
   {
-    id: 'CHAOS-003',
-    name: 'Redis Sentinel Memory Exhaustion / OOM Kill',
-    targetComponent: 'Redis HA Session Cache Cluster',
-    faultType: 'Memory Pressure Fault Injection',
-    expectedRto: '< 2.0 seconds (Failover to Replica)',
-    lastTested: '3 days ago',
-    resiliencyStatus: 'SELF_HEALED_PASS'
+    id: 'PROBE-CIRCUITS',
+    name: 'Distributed Circuit Breakers & Cache Health Check',
+    targetComponent: 'API Gateway Circuit Breaker Registry & Cache',
+    probeMethod: 'Live Telemetry Inspection across Open/Half-Open Circuits',
+    targetSla: '0 OPEN Circuits',
+    endpoint: '/api/v1/health/detailed'
   }
 ];
 
 export const ChaosEngineeringSimulatorView: React.FC = () => {
-  const [scenarios] = useState<ChaosScenario[]>(CHAOS_SCENARIOS);
-  const [activeExperiment, setActiveExperiment] = useState<string | null>(null);
-  const [experimentLog, setExperimentLog] = useState<string | null>(null);
+  const [telemetry, setTelemetry] = useState<DetailedHealthTelemetry | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [activeProbe, setActiveProbe] = useState<string | null>(null);
+  const [probeLog, setProbeLog] = useState<string | null>(null);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  const handleRunChaos = (sc: ChaosScenario) => {
-    setActiveExperiment(sc.id);
-    setExperimentLog(`⚡ Injecting fault "${sc.faultType}" on ${sc.targetComponent}...`);
+  const loadTelemetry = useCallback(async () => {
+    setLoading(true);
+    setErrorMsg(null);
+    const res = await apiRequest<DetailedHealthTelemetry>('/api/v1/health/detailed');
+    if (res.success && res.data) {
+      setTelemetry(res.data);
+    } else if (res.data) {
+      setTelemetry(res.data);
+    } else {
+      setErrorMsg(res.error?.message || 'Unable to query /api/v1/health/detailed');
+    }
+    setLoading(false);
+  }, []);
 
-    setTimeout(() => {
-      setExperimentLog(`✓ Fault injected: Node terminated. Raft consensus election triggered in 140ms.`);
-      setTimeout(() => {
-        setExperimentLog(`✓ Replica promoted to Master. Cluster health 100% restored in 2.1 seconds (RTO PASSED)!`);
-        setTimeout(() => {
-          setActiveExperiment(null);
-        }, 2000);
-      }, 700);
-    }, 600);
+  useEffect(() => {
+    loadTelemetry();
+  }, [loadTelemetry]);
+
+  const handleRunProbe = async (probe: ReliabilityProbeCheck) => {
+    setActiveProbe(probe.id);
+    setProbeLog(null);
+    setErrorMsg(null);
+    try {
+      if (probe.id === 'PROBE-AUDIT-HASH') {
+        const res = await apiRequest<any>(probe.endpoint, { method: 'POST', body: JSON.stringify({}) });
+        if (res.success && res.data) {
+          setProbeLog(
+            `Audit Ledger Probe [${res.data.status || 'VERIFIED'}]: checked=${res.data.totalChecked ?? res.data.recordsVerified ?? 0}, invalid=${res.data.tamperedCount ?? res.data.brokenLinks ?? 0}.`
+          );
+        } else {
+          setErrorMsg(res.error?.message || 'Audit hash verification probe failed.');
+        }
+      } else {
+        const started = performance.now();
+        const res = await apiRequest<DetailedHealthTelemetry>(probe.endpoint);
+        const rttMs = Math.round(performance.now() - started);
+        if (res.success && res.data) {
+          setTelemetry(res.data);
+          setProbeLog(
+            `Live Probe "${probe.name}" completed in ${rttMs}ms (HTTP 200): status=${res.data.status}, dbConnected=${res.data.database.connected}, dbLatency=${res.data.database.latencyMs}ms.`
+          );
+        } else {
+          setErrorMsg(res.error?.message || `Probe failed with error`);
+        }
+      }
+    } finally {
+      setActiveProbe(null);
+    }
   };
+
+  const circuitEntries = Object.entries(telemetry?.circuitBreakers || {});
+  const openCircuits = circuitEntries.filter(([, c]) => c.state === 'OPEN').length;
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-      {/* Header */}
-      <div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <h2 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 800, color: 'var(--ds-color-text-primary)' }}>
-            🔥 Chaos Engineering & Resiliency Fault-Injection Simulator
-          </h2>
-          <Badge variant="danger">● Chaos Mesh / Simian Army Active</Badge>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
+        <div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <h2 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 800, color: 'var(--ds-color-text-primary)' }}>
+              Infrastructure Resiliency &amp; Live Diagnostics Console
+            </h2>
+            <Badge variant={telemetry?.status === 'HEALTHY' ? 'success' : 'warning'}>
+              {loading ? 'Probing...' : telemetry?.status || 'UNKNOWN'}
+            </Badge>
+          </div>
+          <p style={{ margin: '4px 0 0', fontSize: '0.8125rem', color: 'var(--ds-color-text-muted)' }}>
+            Real-time PostgreSQL 18.4 connectivity, circuit-breaker telemetry &amp; cryptographic audit chain verification. Full chaos fault-injection runs in the CI reliability suite.
+          </p>
         </div>
-        <p style={{ margin: '4px 0 0', fontSize: '0.8125rem', color: 'var(--ds-color-text-muted)' }}>
-          Automated chaos experiments validating autonomous self-healing, master failover election, and circuit breakers
-        </p>
+        <Button size="sm" variant="secondary" onClick={loadTelemetry} disabled={loading}>
+          Refresh Telemetry
+        </Button>
       </div>
 
-      {experimentLog && (
-        <div style={{ backgroundColor: '#020617', border: '1.5px solid #10B981', borderRadius: '10px', padding: '12px 16px', color: '#A7F3D0', fontFamily: 'monospace', fontSize: '0.8125rem', fontWeight: 700 }}>
-          {experimentLog}
+      {errorMsg && (
+        <div style={{ backgroundColor: 'rgba(239, 68, 68, 0.12)', border: '1px solid #EF4444', borderRadius: '10px', padding: '12px 16px', color: '#FCA5A5', fontSize: '0.875rem', fontWeight: 700 }}>
+          {errorMsg}
         </div>
       )}
 
-      {/* Resilience Benchmark Cards */}
+      {probeLog && (
+        <div style={{ backgroundColor: '#020617', border: '1.5px solid #10B981', borderRadius: '10px', padding: '12px 16px', color: '#A7F3D0', fontFamily: 'monospace', fontSize: '0.8125rem', fontWeight: 700 }}>
+          {probeLog}
+        </div>
+      )}
+
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '12px' }}>
         <div style={{ backgroundColor: '#0F172A', border: '1.5px solid #10B981', borderRadius: '12px', padding: '16px' }}>
-          <span style={{ fontSize: '0.6875rem', color: '#86EFAC', fontWeight: 800, textTransform: 'uppercase' }}>AVERAGE RECOVERY TIME (RTO)</span>
-          <div style={{ fontSize: '1.5rem', fontWeight: 900, color: '#10B981', marginTop: '2px' }}>2.18 Seconds</div>
-          <span style={{ fontSize: '0.75rem', color: '#CBD5E1', marginTop: '4px', display: 'block' }}>Target SLA: &lt; 30 seconds</span>
+          <span style={{ fontSize: '0.6875rem', color: '#86EFAC', fontWeight: 800, textTransform: 'uppercase' }}>POSTGRESQL DB LATENCY</span>
+          <div style={{ fontSize: '1.5rem', fontWeight: 900, color: telemetry?.database.connected ? '#10B981' : '#EF4444', marginTop: '2px' }}>
+            {telemetry ? `${telemetry.database.latencyMs} ms` : '—'}
+          </div>
+          <span style={{ fontSize: '0.75rem', color: '#CBD5E1', marginTop: '4px', display: 'block' }}>
+            Status: {telemetry?.database.connected ? 'CONNECTED' : 'UNREACHABLE'}
+          </span>
         </div>
 
         <div style={{ backgroundColor: '#0F172A', border: '1px solid #334155', borderRadius: '12px', padding: '16px' }}>
-          <span style={{ fontSize: '0.6875rem', color: '#94A3B8', fontWeight: 800, textTransform: 'uppercase' }}>SELF-HEALING SUCCESS RATE</span>
-          <div style={{ fontSize: '1.5rem', fontWeight: 900, color: '#38BDF8', marginTop: '2px' }}>100.0% Pass</div>
-          <span style={{ fontSize: '0.75rem', color: '#94A3B8', marginTop: '4px', display: 'block' }}>48/48 Chaos Drills Passed</span>
+          <span style={{ fontSize: '0.6875rem', color: '#94A3B8', fontWeight: 800, textTransform: 'uppercase' }}>CIRCUIT BREAKERS</span>
+          <div style={{ fontSize: '1.5rem', fontWeight: 900, color: openCircuits === 0 ? '#38BDF8' : '#EF4444', marginTop: '2px' }}>
+            {openCircuits} OPEN / {circuitEntries.length} TOTAL
+          </div>
+          <span style={{ fontSize: '0.75rem', color: '#94A3B8', marginTop: '4px', display: 'block' }}>
+            Gateway memory heap: {telemetry?.memory?.heapUsedMb ?? 0} MB
+          </span>
         </div>
 
         <div style={{ backgroundColor: '#0F172A', border: '1px solid #334155', borderRadius: '12px', padding: '16px' }}>
-          <span style={{ fontSize: '0.6875rem', color: '#94A3B8', fontWeight: 800, textTransform: 'uppercase' }}>DATA LOSS RATE (RPO)</span>
-          <div style={{ fontSize: '1.5rem', fontWeight: 900, color: '#FCD34D', marginTop: '2px' }}>0.00 Seconds</div>
-          <span style={{ fontSize: '0.75rem', color: '#CBD5E1', marginTop: '4px', display: 'block' }}>Synchronous Raft replication</span>
+          <span style={{ fontSize: '0.6875rem', color: '#94A3B8', fontWeight: 800, textTransform: 'uppercase' }}>API GATEWAY UPTIME</span>
+          <div style={{ fontSize: '1.5rem', fontWeight: 900, color: '#FCD34D', marginTop: '2px' }}>
+            {telemetry ? `${Math.round(telemetry.uptimeSeconds)}s` : '—'}
+          </div>
+          <span style={{ fontSize: '0.75rem', color: '#CBD5E1', marginTop: '4px', display: 'block' }}>
+            Last Sample: {telemetry?.timestamp ? new Date(telemetry.timestamp).toLocaleTimeString() : '—'}
+          </span>
         </div>
       </div>
 
-      {/* Scenarios Table */}
-      <Card title="📜 Chaos Resiliency Scenarios & Fault Injectors" padding="none">
+      <Card title="Live Verification &amp; Resiliency Probes" padding="none">
         <TableContainer style={{ border: 'none', borderRadius: '0' }}>
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Chaos Experiment</TableHead>
+                <TableHead>Diagnostic Probe</TableHead>
                 <TableHead>Target Component</TableHead>
-                <TableHead>Injected Fault</TableHead>
-                <TableHead>Expected RTO</TableHead>
-                <TableHead>Last Tested</TableHead>
-                <TableHead style={{ textAlign: 'right' }}>Execute Drill</TableHead>
+                <TableHead>Verification Method</TableHead>
+                <TableHead>Target SLA</TableHead>
+                <TableHead style={{ textAlign: 'right' }}>Run Live Check</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {scenarios.map((sc) => (
-                <TableRow key={sc.id}>
+              {LIVE_PROBES.map((probe) => (
+                <TableRow key={probe.id}>
                   <TableCell>
-                    <strong style={{ color: 'var(--ds-color-text-primary)' }}>{sc.name}</strong>
+                    <strong style={{ color: 'var(--ds-color-text-primary)' }}>{probe.name}</strong>
                   </TableCell>
-                  <TableCell style={{ fontSize: '0.8125rem' }}>
-                    {sc.targetComponent}
-                  </TableCell>
-                  <TableCell style={{ fontSize: '0.75rem', fontFamily: 'monospace', color: '#EF4444' }}>
-                    {sc.faultType}
-                  </TableCell>
-                  <TableCell style={{ color: '#10B981', fontWeight: 700 }}>
-                    {sc.expectedRto}
-                  </TableCell>
-                  <TableCell style={{ fontSize: '0.75rem', color: '#94A3B8' }}>
-                    {sc.lastTested}
-                  </TableCell>
+                  <TableCell style={{ fontSize: '0.8125rem' }}>{probe.targetComponent}</TableCell>
+                  <TableCell style={{ fontSize: '0.75rem', fontFamily: 'monospace', color: '#38BDF8' }}>{probe.probeMethod}</TableCell>
+                  <TableCell style={{ color: '#10B981', fontWeight: 700 }}>{probe.targetSla}</TableCell>
                   <TableCell style={{ textAlign: 'right' }}>
-                    <button
-                      type="button"
-                      disabled={activeExperiment === sc.id}
-                      onClick={() => handleRunChaos(sc)}
-                      style={{ backgroundColor: '#EF4444', color: '#FFF', border: 'none', borderRadius: '6px', padding: '4px 12px', fontSize: '0.75rem', fontWeight: 800, cursor: 'pointer', boxShadow: '0 2px 8px rgba(239, 68, 68, 0.3)' }}
-                    >
-                      {activeExperiment === sc.id ? '⚡ Injecting...' : '🔥 Run Chaos Test'}
-                    </button>
+                    <Button size="sm" variant="primary" disabled={activeProbe === probe.id} onClick={() => handleRunProbe(probe)}>
+                      {activeProbe === probe.id ? 'Running...' : 'Execute Probe'}
+                    </Button>
                   </TableCell>
                 </TableRow>
               ))}

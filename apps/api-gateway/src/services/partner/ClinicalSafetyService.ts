@@ -929,8 +929,6 @@ export class ClinicalSafetyService {
 
     // 1. Resolve Patient Context & History
     let patientDob = input.patientDob;
-    let patientGender = input.patientGender;
-    let patientMrn = input.patientMrn;
 
     let activeAllergies = input.activeAllergies || [];
 
@@ -943,8 +941,6 @@ export class ClinicalSafetyService {
           .limit(1);
         if (pat) {
           patientDob = patientDob || pat.dateOfBirth;
-          patientGender = patientGender || pat.gender;
-          patientMrn = patientMrn || pat.mrn;
 
           if (activeAllergies.length === 0) {
             const meta = (pat.metadata as Record<string, any>) || {};

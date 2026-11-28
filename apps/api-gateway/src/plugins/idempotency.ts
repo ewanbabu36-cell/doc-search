@@ -398,21 +398,22 @@ export async function enforceIdempotency(request: FastifyRequest, reply: Fastify
   const tenantId = (request as any).session?.tenantId || (request.headers['x-tenant-id'] as string) || '00000000-0000-4000-8000-000000000000';
   const userId = (request as any).session?.userId;
   const routePath = request.routeOptions?.url || request.url.split('?')[0] || '/';
+  const scopedKey = `${userId || 'anon'}:${request.method.toUpperCase()}:${routePath}:${rawKey}`;
 
   // Compute canonical SHA-256 hash of payload
   const requestHash = computeRequestHash(request.body);
-  request.idempotencyContext = { tenantId, key: rawKey, requestHash };
-  request.idempotencyCacheKey = `${tenantId}:${rawKey}`;
+  request.idempotencyContext = { tenantId, key: scopedKey, requestHash };
+  request.idempotencyCacheKey = `${tenantId}:${scopedKey}`;
 
   // 1. Check existing record
-  const existing = await getIdempotentResponse(tenantId, rawKey);
+  const existing = await getIdempotentResponse(tenantId, scopedKey);
 
   if (existing) {
     // Check for payload mismatch tampering (FIND-03)
     if (existing.requestHash && existing.requestHash !== requestHash) {
       logger.warn('Idempotency key reused with mismatched payload hash', {
         tenantId,
-        key: rawKey,
+        key: scopedKey,
         originalHash: existing.requestHash,
         incomingHash: requestHash
       });
@@ -447,7 +448,7 @@ export async function enforceIdempotency(request: FastifyRequest, reply: Fastify
   }
 
   // 2. Claim IN_FLIGHT state in PostgreSQL
-  const claim = await claimInFlightIdempotency(tenantId, rawKey, requestHash, request.method, routePath, userId);
+  const claim = await claimInFlightIdempotency(tenantId, scopedKey, requestHash, request.method, routePath, userId);
   if (!claim.claimed && claim.existingRecord) {
     if (claim.existingRecord.requestHash !== requestHash) {
       throw new AppError({

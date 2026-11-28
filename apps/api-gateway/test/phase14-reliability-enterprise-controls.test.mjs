@@ -4,6 +4,8 @@ import crypto from 'node:crypto';
 import { buildApp } from '../dist/app.js';
 import { signJwt } from '@docsearch/auth';
 import {
+  setupTestDatabase,
+  TEST_SEEDS,
   getDatabase,
   auditEvents,
   patients,
@@ -30,21 +32,27 @@ describe('PHASE 14 — Reliability & Enterprise Controls Production Verification
   const ISSUER = 'docsearch-api';
   const AUDIENCE = 'docsearch-platform';
 
-  const tenantA = '11111111-1111-4111-8111-111111111111';
-  const tenantB = '22222222-2222-4222-8222-222222222222';
-  const partnerId = '00000000-0000-4000-8000-000000000001';
-  const organizationId = '00000000-0000-4000-8000-000000000002';
-  const branchId = '00000000-0000-4000-8000-000000000003';
-  const departmentId = '00000000-0000-4000-8000-000000000004';
+  const tenantA = TEST_SEEDS.TENANT_A;
+  const tenantB = TEST_SEEDS.TENANT_B;
+  const partnerId = TEST_SEEDS.PARTNER_ID_A;
+  const organizationId = TEST_SEEDS.ORG_ID_A;
+  const branchId = TEST_SEEDS.FACILITY_ID_A;
+  const departmentId = TEST_SEEDS.DEPT_ID_A;
 
   function createPartnerToken(overrides = {}) {
     const email = overrides.email || 'chief.reliability@docsearch.health';
+    const resolvedTenant = overrides.tenantId !== undefined ? overrides.tenantId : tenantA;
     const claims = {
       sub: overrides.userId || 'usr-rel-001',
       email,
       actorEmail: email,
-      tenantId: overrides.tenantId !== undefined ? overrides.tenantId : tenantA,
-      branchId: overrides.branchId !== undefined ? overrides.branchId : branchId,
+      tenantId: resolvedTenant,
+      branchId:
+        overrides.branchId !== undefined
+          ? overrides.branchId
+          : resolvedTenant === tenantB
+          ? TEST_SEEDS.FACILITY_ID_B
+          : branchId,
       roles: overrides.roles || ['HOSPITAL_ADMIN', 'QUALITY_OFFICER'],
       permissions: overrides.permissions || [
         'reliability:read',
@@ -88,6 +96,9 @@ describe('PHASE 14 — Reliability & Enterprise Controls Production Verification
   let nonHqToken;
 
   before(async () => {
+    process.env['JWT_SECRET'] = MASTER_SECRET;
+    process.env['NODE_ENV'] = 'test';
+    await setupTestDatabase({ seedBaseline: true, seedDemoFixtures: true });
     app = await buildApp();
     await app.ready();
     db = getDatabase();

@@ -1,7 +1,9 @@
 import { describe, it, before, after } from 'node:test';
 import assert from 'node:assert/strict';
+import crypto from 'node:crypto';
 import { buildApp } from '../dist/app.js';
 import { signJwt } from '@docsearch/auth';
+import { setupTestDatabase, TEST_SEEDS, planEntitlements } from '@docsearch/database';
 
 describe('Domain 3.1 — Hospital Executive Command Center & MIS Vertical Slice Test Suite', () => {
   let app;
@@ -10,16 +12,22 @@ describe('Domain 3.1 — Hospital Executive Command Center & MIS Vertical Slice 
   const ISSUER = 'docsearch-api';
   const AUDIENCE = 'docsearch-platform';
 
-  const tenantA = '11111111-1111-4111-8111-111111111111';
-  const tenantB = '22222222-2222-4222-8222-222222222222';
-  const branchId = '11111111-1111-4111-8111-111111111111';
+  const tenantA = TEST_SEEDS.TENANT_A;
+  const tenantB = TEST_SEEDS.TENANT_B;
+  const branchId = TEST_SEEDS.BRANCH_A;
 
   function createTestToken(overrides = {}) {
+    const resolvedTenant = overrides.tenantId !== undefined ? overrides.tenantId : tenantA;
     const claims = {
       sub: overrides.userId || 'usr-cmo-01',
       email: overrides.email || 'cmo@docsearch.health',
-      tenantId: overrides.tenantId !== undefined ? overrides.tenantId : tenantA,
-      branchId: overrides.branchId !== undefined ? overrides.branchId : branchId,
+      tenantId: resolvedTenant,
+      branchId:
+        overrides.branchId !== undefined
+          ? overrides.branchId
+          : resolvedTenant === tenantB
+          ? TEST_SEEDS.FACILITY_ID_B
+          : branchId,
       roles: overrides.roles || ['EXECUTIVE_DIRECTOR', 'CHIEF_MEDICAL_OFFICER', 'CFO'],
       permissions: overrides.permissions || [
         'executive:dashboard:read',
@@ -40,6 +48,21 @@ describe('Domain 3.1 — Hospital Executive Command Center & MIS Vertical Slice 
   let tenantBToken;
 
   before(async () => {
+    process.env['JWT_SECRET'] = MASTER_SECRET;
+    process.env['NODE_ENV'] = 'test';
+    const { db } = await setupTestDatabase({ seedBaseline: true, seedDemoFixtures: true });
+    await db
+      .insert(planEntitlements)
+      .values({
+        id: crypto.randomUUID(),
+        planId: TEST_SEEDS.PLAN_STARTER_ID,
+        featureId: '44444444-4444-4444-8444-444444444009',
+        entitlementType: 'FEATURE_ACCESS',
+        value: { enabled: true },
+        status: 'ACTIVE'
+      })
+      .onConflictDoNothing();
+
     app = await buildApp();
     await app.ready();
 

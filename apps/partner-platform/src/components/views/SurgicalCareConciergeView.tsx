@@ -205,7 +205,7 @@ export const SurgicalCareConciergeView: React.FC = () => {
   };
 
   const handleCheckEmiEligibility = async () => {
-    if (!kycMobile || kycMobile.length < 10) {
+    if (!kycMobile || kycMobile.replace(/\D/g, '').length < 10) {
       showConciergeNotice('Please enter a valid 10-digit mobile number', 'error');
       return;
     }
@@ -217,28 +217,36 @@ export const SurgicalCareConciergeView: React.FC = () => {
           patientName: selectedCase?.patientName || 'Surgery Patient',
           patientPhone: kycMobile,
           procedureName: selectedCase?.procedureName || 'Elective Procedure',
-          packageAmount: calcPackageAmount,
-          cibilScoreBand: '750_EXCELLENT'
+          packageAmount: calcPackageAmount
         })
       });
-      if (res.success) {
-        setKycEligibilityStatus('APPROVED');
+      if (res.success && res.data?.preApprovalStatus) {
+        setKycEligibilityStatus(
+          res.data.preApprovalStatus === 'PRE_APPROVED_INSTANT' ? 'APPROVED' : 'PENDING_KYC'
+        );
       } else {
-        setKycEligibilityStatus('APPROVED');
+        setKycEligibilityStatus('FAILED');
+        showConciergeNotice(res.error?.message || 'Unable to verify EMI eligibility right now.', 'error');
       }
-    } catch {
-      setKycEligibilityStatus('APPROVED');
+    } catch (e: any) {
+      setKycEligibilityStatus('FAILED');
+      showConciergeNotice('Eligibility check failed: ' + (e?.message || 'Network error'), 'error');
     }
   };
 
   const handleApplyEmiLoan = async () => {
+    const cleanPhone = (kycMobile || selectedCase?.phone || '').trim();
+    if (!cleanPhone || cleanPhone.replace(/\D/g, '').length < 10) {
+      showConciergeNotice('Please enter the patient mobile number before submitting the loan application.', 'error');
+      return;
+    }
     setIsApplyingLoan(true);
     try {
       const res = await apiRequest<any>('/api/v1/partner/billing/surgery-financing/apply', {
         method: 'POST',
         body: JSON.stringify({
           patientName: selectedCase?.patientName || 'Surgery Patient',
-          patientPhone: kycMobile || '+91 98112 44551',
+          patientPhone: cleanPhone,
           procedureName: selectedCase?.procedureName || 'Laparoscopic Surgery',
           packageAmount: calcPackageAmount,
           downPayment: 0,
@@ -682,8 +690,34 @@ export const SurgicalCareConciergeView: React.FC = () => {
                   disabled={isApplyingLoan}
                   style={{ width: '100%', marginTop: '10px', padding: '10px', fontWeight: 800 }}
                 >
-                  {isApplyingLoan ? 'Submitting to NBFC...' : '🚀 Disburse Loan & Fund Hospital Settlement'}
+                  {isApplyingLoan ? 'Submitting to NBFC...' : '🚀 Submit Financing Application'}
                 </Button>
+              </div>
+            )}
+
+            {kycEligibilityStatus === 'PENDING_KYC' && (
+              <div style={{ backgroundColor: 'rgba(245, 158, 11, 0.16)', border: '1.5px solid #F59E0B', borderRadius: '12px', padding: '14px', textAlign: 'center', color: '#FDE68A' }}>
+                <div style={{ fontSize: '1.0rem', fontWeight: 900 }}>🕒 Estimated Plan Ready • Bureau KYC Pending</div>
+                <div style={{ fontSize: '0.78rem', color: '#FEF3C7', marginTop: '4px' }}>
+                  Live bureau consent & KYC verification required for {kycMobile} before final NBFC underwriting.
+                </div>
+                <Button
+                  variant="primary"
+                  onClick={handleApplyEmiLoan}
+                  disabled={isApplyingLoan}
+                  style={{ width: '100%', marginTop: '10px', padding: '10px', fontWeight: 800 }}
+                >
+                  {isApplyingLoan ? 'Submitting KYC Request...' : '📋 Submit Application for Bureau Underwriting'}
+                </Button>
+              </div>
+            )}
+
+            {kycEligibilityStatus === 'FAILED' && (
+              <div style={{ backgroundColor: 'rgba(239, 68, 68, 0.16)', border: '1.5px solid #EF4444', borderRadius: '12px', padding: '14px', textAlign: 'center', color: '#FCA5A5' }}>
+                <div style={{ fontSize: '0.95rem', fontWeight: 800 }}>⚠️ Eligibility Check Failed</div>
+                <div style={{ fontSize: '0.78rem', color: '#FECACA', marginTop: '4px' }}>
+                  Could not verify financing plan with the backend gateway. Please check inputs and retry.
+                </div>
               </div>
             )}
           </div>

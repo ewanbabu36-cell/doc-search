@@ -2,6 +2,7 @@ import { describe, it, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { buildApp } from '../dist/app.js';
 import { signJwt } from '@docsearch/auth';
+import { setupTestDatabase } from '@docsearch/database';
 
 describe('Domain 3.5 — Physical Barcode, RFID & Healthcare Hardware Bridge Vertical Slice Test Suite', () => {
   let app;
@@ -43,7 +44,10 @@ describe('Domain 3.5 — Physical Barcode, RFID & Healthcare Hardware Bridge Ver
   let createdRfidId;
   let createdPrintJobId;
 
+  let testDb;
+
   before(async () => {
+    testDb = await setupTestDatabase({ seedBaseline: true, seedDemoFixtures: true });
     app = await buildApp();
     await app.ready();
 
@@ -55,7 +59,8 @@ describe('Domain 3.5 — Physical Barcode, RFID & Healthcare Hardware Bridge Ver
   });
 
   after(async () => {
-    await app.close();
+    if (app) await app.close();
+    if (testDb) await testDb.cleanup();
   });
 
   it('TEST 01: GET /api/v1/partner/hardware/overview returns hardware connectivity metrics', async () => {

@@ -23,8 +23,20 @@ function getSessionOrThrow(request: FastifyRequest) {
 }
 
 export async function universalWorkflowRoutes(app: FastifyInstance): Promise<void> {
-  const WORKFLOW_ADMIN_ROLES = ['SUPER_ADMIN', 'COMPANY_ADMIN', 'HOSPITAL_ADMIN', 'CLINIC_ADMIN', 'CHIEF_MEDICAL_OFFICER'] as const;
-  const CLINICAL_WORKFLOW_STAFF_ROLES = ['SUPER_ADMIN', 'COMPANY_ADMIN', 'HOSPITAL_ADMIN', 'CLINIC_ADMIN', 'CHIEF_MEDICAL_OFFICER', 'DOCTOR', 'NURSE'] as const;
+  const WORKFLOW_ADMIN_ROLES = ['SUPER_ADMIN', 'COMPANY_ADMIN', 'HOSPITAL_ADMIN', 'CLINIC_ADMIN', 'CHIEF_MEDICAL_OFFICER', 'DOCTOR'] as const;
+  const CLINICAL_WORKFLOW_STAFF_ROLES = [
+    'SUPER_ADMIN',
+    'COMPANY_ADMIN',
+    'HOSPITAL_ADMIN',
+    'CLINIC_ADMIN',
+    'CHIEF_MEDICAL_OFFICER',
+    'DOCTOR',
+    'NURSE',
+    'PATHOLOGIST',
+    'LAB_TECHNICIAN',
+    'PHARMACIST',
+    'RADIOLOGIST'
+  ] as const;
 
   /**
    * 1. GET /api/v1/partner/workflows/adapters
@@ -142,7 +154,7 @@ export async function universalWorkflowRoutes(app: FastifyInstance): Promise<voi
     async (request, reply) => {
       const session = getSessionOrThrow(request);
       const params = request.params as { instanceId: string };
-      const instance = universalHealthcareWorkflowEngineService.getWorkflowInstance(
+      const instance = await universalHealthcareWorkflowEngineService.getWorkflowInstanceAsync(
         session,
         params.instanceId
       );

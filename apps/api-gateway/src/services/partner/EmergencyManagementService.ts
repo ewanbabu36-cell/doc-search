@@ -113,8 +113,8 @@ export class EmergencyManagementService {
   }
 
   async getPatientEmergencyHistory(session: SessionContext, patientId: string) {
-    return withSecurityContext(getDatabase(), session, async () => {
-      return emergencyManagementRepository.getPatientEmergencyHistory(session.tenantId, patientId);
+    return withSecurityContext(getDatabase(), session, async (tx) => {
+      return emergencyManagementRepository.getPatientEmergencyHistory(session.tenantId, patientId, tx);
     });
   }
 }

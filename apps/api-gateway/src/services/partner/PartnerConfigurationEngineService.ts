@@ -1,6 +1,7 @@
 import crypto from 'node:crypto';
 import {
   getDatabase,
+  withSecurityContext,
   branches,
   partnerProfiles,
   partnerCapabilities,
@@ -187,7 +188,7 @@ export class PartnerConfigurationEngineService {
   /**
    * Resolves the partner's canonical Industry, Operating Model, and Profile row.
    */
-  public async resolvePartnerClassificationContext(tenantId: string): Promise<{
+  public async resolvePartnerClassificationContext(tenantId: string, dbClient: any = getDatabase()): Promise<{
     profile: any | null;
     industry: CanonicalIndustryCode;
     operatingModel: CanonicalOperatingModelCode;
@@ -196,8 +197,7 @@ export class PartnerConfigurationEngineService {
     enabledCapabilityCodes: string[];
     foundationState: any;
   }> {
-    const db = getDatabase();
-    const [profile] = await db
+    const [profile] = await dbClient
       .select()
       .from(partnerProfiles)
       .where(eq(partnerProfiles.tenantId, tenantId))
@@ -260,7 +260,6 @@ export class PartnerConfigurationEngineService {
       source?: 'HQ_APPROVAL' | 'PARTNER_ADMIN' | 'SYSTEM_RECONCILE' | undefined;
     }
   ) {
-    const db = getDatabase();
     const tenantId = session.tenantId;
     const actorId = session.userId || 'SYSTEM';
     const source = options?.source || 'PARTNER_ADMIN';
@@ -268,143 +267,177 @@ export class PartnerConfigurationEngineService {
 
     // 1. Ensure Partner Profile & Commercial Account are initialized
     const accountData = await partnerAccountService.getPlanAndFeatures(session);
-    const ctx = await this.resolvePartnerClassificationContext(tenantId);
-    const partnerProfileId =
-      ctx.profile?.id ||
-      accountData.organizationProfile.partnerId ||
-      deterministicUuid(`profile:${tenantId}`);
 
-    // 2. Persist canonical industry & operatingModel into partnerProfiles column + metadata idempotently
-    if (ctx.profile) {
-      const currentMeta = (ctx.profile.metadata && typeof ctx.profile.metadata === 'object')
-        ? { ...(ctx.profile.metadata as Record<string, any>) }
-        : {};
-      currentMeta['industry'] = ctx.industry;
-      currentMeta['operatingModel'] = ctx.operatingModel;
-      currentMeta['configurationInitializedAt'] = new Date().toISOString();
-      await db
-        .update(partnerProfiles)
-        .set({
-          operatingModel: ctx.operatingModel,
-          metadata: currentMeta,
-          updatedAt: new Date()
-        })
-        .where(eq(partnerProfiles.id, ctx.profile.id));
-    }
+    const { partnerProfileId, ctx } = await withSecurityContext(
+      getDatabase(),
+      session,
+      async (tx) => {
+        const innerCtx = await this.resolvePartnerClassificationContext(tenantId, tx);
+        const resolvedProfileId =
+          innerCtx.profile?.id ||
+          accountData.organizationProfile.partnerId ||
+          deterministicUuid(`profile:${tenantId}`);
 
-    // 3. Ensure operational partner, organization, and primary location (facility + core.branches) exist idempotently
-    const { partnerId: opPartnerId, organizationId: opOrgId, branchId: primaryFacilityId } =
-      await staffAdministrationRepository.ensureDefaults(db, tenantId);
+        // 2. Persist canonical industry & operatingModel into partnerProfiles column + metadata idempotently
+        if (innerCtx.profile) {
+          const currentMeta = (innerCtx.profile.metadata && typeof innerCtx.profile.metadata === 'object')
+            ? { ...(innerCtx.profile.metadata as Record<string, any>) }
+            : {};
+          currentMeta['industry'] = innerCtx.industry;
+          currentMeta['operatingModel'] = innerCtx.operatingModel;
+          currentMeta['configurationInitializedAt'] = new Date().toISOString();
+          await tx
+            .update(partnerProfiles)
+            .set({
+              operatingModel: innerCtx.operatingModel,
+              metadata: currentMeta,
+              updatedAt: new Date()
+            })
+            .where(eq(partnerProfiles.id, innerCtx.profile.id));
+        }
 
-    await db
-      .update(operationalPartners)
-      .set({ operatingModel: ctx.operatingModel, updatedAt: new Date() })
-      .where(eq(operationalPartners.id, opPartnerId));
-    await db
-      .update(operationalOrganizations)
-      .set({ operatingModel: ctx.operatingModel, updatedAt: new Date() })
-      .where(eq(operationalOrganizations.id, opOrgId));
+        // 3. Ensure operational partner, organization, and primary location (facility + core.branches) exist idempotently
+        const { partnerId: opPartnerId, organizationId: opOrgId, branchId: resolvedFacilityId } =
+          await staffAdministrationRepository.ensureDefaults(tx, tenantId);
 
-    // Also ensure core.branches has the primary location synchronized
-    const primaryBranchCode = `LOC-${tenantId.substring(0, 8).toUpperCase()}-MAIN`;
-    const [existingCoreBranch] = await db
-      .select({ id: branches.id })
-      .from(branches)
-      .where(eq(branches.tenantId, tenantId))
-      .limit(1);
+        await tx
+          .update(operationalPartners)
+          .set({ operatingModel: innerCtx.operatingModel, updatedAt: new Date() })
+          .where(eq(operationalPartners.id, opPartnerId));
+        await tx
+          .update(operationalOrganizations)
+          .set({ operatingModel: innerCtx.operatingModel, updatedAt: new Date() })
+          .where(eq(operationalOrganizations.id, opOrgId));
 
-    if (!existingCoreBranch) {
-      await db
-        .insert(branches)
-        .values({
-          id: primaryFacilityId,
-          tenantId,
-          name: `${accountData.organizationProfile.legalName || 'Primary Facility'} - Main Location`,
-          code: primaryBranchCode
-        })
-        .onConflictDoNothing();
-    }
+        // Also ensure core.branches has the primary location synchronized
+        const primaryBranchCode = `LOC-${tenantId.substring(0, 8).toUpperCase()}-MAIN`;
+        const [existingCoreBranch] = await tx
+          .select({ id: branches.id })
+          .from(branches)
+          .where(eq(branches.tenantId, tenantId))
+          .limit(1);
 
-    // 4. Upsert baseline Partner Capabilities idempotently
-    for (const capCode of ctx.enabledCapabilityCodes) {
-      const capId = deterministicUuid(`cap:${tenantId}:${capCode}`);
-      const [existingCap] = await db
-        .select({ id: partnerCapabilities.id })
-        .from(partnerCapabilities)
-        .where(
-          and(
-            eq(partnerCapabilities.tenantId, tenantId),
-            eq(partnerCapabilities.capabilityCode, capCode)
-          )
-        )
-        .limit(1);
+        if (!existingCoreBranch) {
+          await tx
+            .insert(branches)
+            .values({
+              id: resolvedFacilityId,
+              tenantId,
+              name: `${accountData.organizationProfile.legalName || 'Primary Facility'} - Main Location`,
+              code: primaryBranchCode
+            })
+            .onConflictDoNothing();
+        }
 
-      if (!existingCap) {
-        await db
-          .insert(partnerCapabilities)
-          .values({
-            id: capId,
-            partnerId: partnerProfileId,
+        // 4. Upsert baseline Partner Capabilities idempotently
+        for (const capCode of innerCtx.enabledCapabilityCodes) {
+          const capId = deterministicUuid(`cap:${tenantId}:${capCode}`);
+          const [existingCap] = await tx
+            .select({ id: partnerCapabilities.id })
+            .from(partnerCapabilities)
+            .where(
+              and(
+                eq(partnerCapabilities.tenantId, tenantId),
+                eq(partnerCapabilities.capabilityCode, capCode)
+              )
+            )
+            .limit(1);
+
+          if (!existingCap) {
+            await tx
+              .insert(partnerCapabilities)
+              .values({
+                id: capId,
+                partnerId: resolvedProfileId,
+                tenantId,
+                capabilityCode: capCode,
+                status: 'ACTIVE',
+                isHqOverride: false
+              })
+              .onConflictDoNothing();
+          }
+        }
+
+        // 5. Deterministically derive and upsert ONLY Applicable Departments for (Industry ∩ OperatingModel ∩ EnabledCapabilities)
+        const applicableDepts = masterFoundationService.resolveEffectiveDepartments(
+          innerCtx.industry,
+          innerCtx.operatingModel,
+          innerCtx.enabledCapabilityCodes
+        );
+
+        const existingDeptRows = await tx
+          .select()
+          .from(operationalDepartments)
+          .where(eq(operationalDepartments.tenantId, tenantId));
+
+        const existingByCanonicalCode = new Map<string, any>();
+        for (const row of existingDeptRows) {
+          const meta = (row.metadata && typeof row.metadata === 'object') ? (row.metadata as Record<string, any>) : {};
+          const canonical = String(meta['canonicalDepartmentCode'] || row.departmentCode).toUpperCase();
+          existingByCanonicalCode.set(canonical, row);
+          existingByCanonicalCode.set(String(row.departmentCode).toUpperCase(), row);
+        }
+
+        for (const deptDef of applicableDepts) {
+          const scopedCode = `DEPT-${tenantId.substring(0, 8).toUpperCase()}-${deptDef.code}`;
+          const deterministicDeptId = deterministicUuid(`op-dept:${tenantId}:${deptDef.code}`);
+          const found = existingByCanonicalCode.get(deptDef.code) || existingByCanonicalCode.get(scopedCode);
+
+          if (!found) {
+            await tx
+              .insert(operationalDepartments)
+              .values({
+                id: deterministicDeptId,
+                tenantId,
+                partnerId: opPartnerId,
+                organizationId: opOrgId,
+                branchId: resolvedFacilityId,
+                departmentCode: scopedCode,
+                departmentName: deptDef.name,
+                costCenterCode: `CC-${deptDef.code.substring(0, 10)}`,
+                status: 'ACTIVE',
+                metadata: {
+                  canonicalDepartmentCode: deptDef.code,
+                  requiredCapabilities: deptDef.requiredCapabilities,
+                  industry: innerCtx.industry,
+                  operatingModel: innerCtx.operatingModel,
+                  initializedBy: source
+                }
+              })
+              .onConflictDoNothing();
+          }
+        }
+
+        await auditRepository.recordEvent(
+          {
+            eventType: 'PARTNER_CONFIGURATION_INITIALIZED',
+            resourceType: 'partner_configuration',
+            resourceId: String(resolvedProfileId),
             tenantId,
-            capabilityCode: capCode,
-            status: 'ACTIVE',
-            isHqOverride: false
-          })
-          .onConflictDoNothing();
-      }
-    }
+            branchId: resolvedFacilityId,
+            metadata: {
+              source,
+              reason,
+              industry: innerCtx.industry,
+              operatingModel: innerCtx.operatingModel,
+              primaryFacilityId: resolvedFacilityId,
+              applicableDepartments: applicableDepts.map((d) => d.code)
+            }
+          },
+          session,
+          tx
+        );
 
-    // 5. Deterministically derive and upsert ONLY Applicable Departments for (Industry ∩ OperatingModel ∩ EnabledCapabilities)
-    const activeApplicableDepts = masterFoundationService.resolveEffectiveDepartments(
-      ctx.industry,
-      ctx.operatingModel,
-      ctx.enabledCapabilityCodes
+        return {
+          partnerProfileId: resolvedProfileId,
+          ctx: innerCtx,
+          primaryFacilityId: resolvedFacilityId,
+          activeApplicableDepts: applicableDepts
+        };
+      }
     );
 
-    const existingDeptRows = await db
-      .select()
-      .from(operationalDepartments)
-      .where(eq(operationalDepartments.tenantId, tenantId));
-
-    const existingByCanonicalCode = new Map<string, any>();
-    for (const row of existingDeptRows) {
-      const meta = (row.metadata && typeof row.metadata === 'object') ? (row.metadata as Record<string, any>) : {};
-      const canonical = String(meta['canonicalDepartmentCode'] || row.departmentCode).toUpperCase();
-      existingByCanonicalCode.set(canonical, row);
-      existingByCanonicalCode.set(String(row.departmentCode).toUpperCase(), row);
-    }
-
-    for (const deptDef of activeApplicableDepts) {
-      const scopedCode = `DEPT-${tenantId.substring(0, 8).toUpperCase()}-${deptDef.code}`;
-      const deterministicDeptId = deterministicUuid(`op-dept:${tenantId}:${deptDef.code}`);
-      const found = existingByCanonicalCode.get(deptDef.code) || existingByCanonicalCode.get(scopedCode);
-
-      if (!found) {
-        await db
-          .insert(operationalDepartments)
-          .values({
-            id: deterministicDeptId,
-            tenantId,
-            partnerId: opPartnerId,
-            organizationId: opOrgId,
-            branchId: primaryFacilityId,
-            departmentCode: scopedCode,
-            departmentName: deptDef.name,
-            costCenterCode: `CC-${deptDef.code.substring(0, 10)}`,
-            status: 'ACTIVE',
-            metadata: {
-              canonicalDepartmentCode: deptDef.code,
-              requiredCapabilities: deptDef.requiredCapabilities,
-              industry: ctx.industry,
-              operatingModel: ctx.operatingModel,
-              initializedBy: source
-            }
-          })
-          .onConflictDoNothing();
-      }
-    }
-
-    // 6. Record Configuration Version & Audit Trail
+    // 6. Record Configuration Version Snapshot
     try {
       await configurationVersioningService.createSnapshot(
         partnerProfileId,
@@ -415,27 +448,9 @@ export class PartnerConfigurationEngineService {
         {
           lifecycleStatus: 'PUBLISHED',
           industry: ctx.industry,
-          operatingModel: ctx.operatingModel
+          operatingModel: ctx.operatingModel,
+          tenantId
         }
-      );
-
-      await auditRepository.recordEvent(
-        {
-          eventType: 'PARTNER_CONFIGURATION_INITIALIZED',
-          resourceType: 'partner_configuration',
-          resourceId: String(partnerProfileId),
-          tenantId,
-          branchId: primaryFacilityId,
-          metadata: {
-            source,
-            reason,
-            industry: ctx.industry,
-            operatingModel: ctx.operatingModel,
-            primaryFacilityId,
-            applicableDepartments: activeApplicableDepts.map((d) => d.code)
-          }
-        },
-        session
       );
     } catch (err) {
       logger.warn('Non-fatal audit log notice during partner configuration init: ' + String(err));
@@ -450,7 +465,9 @@ export class PartnerConfigurationEngineService {
    */
   public async getFullPartnerConfiguration(session: SessionContext) {
     const accountData = await partnerAccountService.getPlanAndFeatures(session);
-    const ctx = await this.resolvePartnerClassificationContext(session.tenantId);
+    const ctx = await withSecurityContext(getDatabase(), session, (tx) =>
+      this.resolvePartnerClassificationContext(session.tenantId, tx)
+    );
     const locations = await this.getLocations(session);
     const departments = await this.getDepartments(session);
     const services = await this.getServices(session);
@@ -562,14 +579,15 @@ export class PartnerConfigurationEngineService {
    * STEP 6 / SECTION 6: Locations / Branches Engine
    */
   public async getLocations(session: SessionContext) {
-    const db = getDatabase();
-    await staffAdministrationRepository.ensureDefaults(db, session.tenantId);
+    const rows = await withSecurityContext(getDatabase(), session, async (tx) => {
+      await staffAdministrationRepository.ensureDefaults(tx, session.tenantId);
 
-    const rows = await db
-      .select()
-      .from(operationalFacilities)
-      .where(eq(operationalFacilities.tenantId, session.tenantId))
-      .orderBy(asc(operationalFacilities.createdAt));
+      return tx
+        .select()
+        .from(operationalFacilities)
+        .where(eq(operationalFacilities.tenantId, session.tenantId))
+        .orderBy(asc(operationalFacilities.createdAt));
+    });
 
     return rows.map((row) => {
       const meta = (row.metadata && typeof row.metadata === 'object') ? (row.metadata as Record<string, any>) : {};
@@ -617,7 +635,6 @@ export class PartnerConfigurationEngineService {
       emergencyAvailable?: boolean | undefined;
     }
   ) {
-    const db = getDatabase();
     const tenantId = session.tenantId;
 
     const accountData = await partnerAccountService.getPlanAndFeatures(session);
@@ -629,7 +646,6 @@ export class PartnerConfigurationEngineService {
       });
     }
 
-    const ctx = await this.resolvePartnerClassificationContext(tenantId);
     const currentLocations = await this.getLocations(session);
     const activeLocations = currentLocations.filter((l) => l.status === 'ACTIVE');
 
@@ -642,15 +658,6 @@ export class PartnerConfigurationEngineService {
       });
     }
 
-    if (ctx.operatingModel === 'SOLO' && activeLocations.length >= 1) {
-      throw new AppError({
-        code: ErrorCode.FORBIDDEN,
-        message: `Operating Model 'SOLO' is configured for a single operational location.`,
-        statusCode: 403
-      });
-    }
-
-    const { partnerId, organizationId } = await staffAdministrationRepository.ensureDefaults(db, tenantId);
     const cleanCode =
       payload.locationCode?.trim().toUpperCase() ||
       `LOC-${tenantId.substring(0, 6).toUpperCase()}-${String(currentLocations.length + 1).padStart(2, '0')}`;
@@ -664,47 +671,61 @@ export class PartnerConfigurationEngineService {
       });
     }
 
-    const newId = deterministicUuid(`op-facility:${tenantId}:${cleanCode}`);
-    const [inserted] = await db
-      .insert(operationalFacilities)
-      .values({
-        id: newId,
-        tenantId,
-        partnerId,
-        organizationId,
-        facilityCode: cleanCode,
-        facilityName: payload.locationName.trim(),
-        facilityType: payload.locationType || 'OUTPATIENT_CLINIC',
-        addressStreet: payload.addressStreet.trim(),
-        addressCity: payload.addressCity.trim(),
-        addressState: payload.addressState.trim(),
-        addressPostalCode: payload.addressPostalCode.trim(),
-        addressCountry: payload.addressCountry?.trim() || 'IN',
-        contactEmail: payload.contactEmail.trim(),
-        contactPhone: payload.contactPhone.trim(),
-        status: 'ACTIVE',
-        metadata: {
-          isPrimaryLocation: currentLocations.length === 0,
-          operatingHours: payload.operatingHours || '08:00 - 20:00',
-          emergencyAvailable: Boolean(payload.emergencyAvailable)
-        }
-      })
-      .returning();
+    const inserted = await withSecurityContext(getDatabase(), session, async (tx) => {
+      const ctx = await this.resolvePartnerClassificationContext(tenantId, tx);
+      if (ctx.operatingModel === 'SOLO' && activeLocations.length >= 1) {
+        throw new AppError({
+          code: ErrorCode.FORBIDDEN,
+          message: `Operating Model 'SOLO' is configured for a single operational location.`,
+          statusCode: 403
+        });
+      }
 
-    await auditRepository.recordEvent(
-      {
-        eventType: 'PARTNER_LOCATION_CREATED',
-        resourceType: 'operational_facility',
-        resourceId: inserted!.id,
-        tenantId,
-        branchId: inserted!.id,
-        metadata: { locationCode: cleanCode, locationName: payload.locationName }
-      },
-      session
-    );
+      const { partnerId, organizationId } = await staffAdministrationRepository.ensureDefaults(tx, tenantId);
+      const newId = deterministicUuid(`op-facility:${tenantId}:${cleanCode}`);
+      const [created] = await tx
+        .insert(operationalFacilities)
+        .values({
+          id: newId,
+          tenantId,
+          partnerId,
+          organizationId,
+          facilityCode: cleanCode,
+          facilityName: payload.locationName.trim(),
+          facilityType: payload.locationType || 'OUTPATIENT_CLINIC',
+          addressStreet: payload.addressStreet.trim(),
+          addressCity: payload.addressCity.trim(),
+          addressState: payload.addressState.trim(),
+          addressPostalCode: payload.addressPostalCode.trim(),
+          addressCountry: payload.addressCountry?.trim() || 'IN',
+          contactEmail: payload.contactEmail.trim(),
+          contactPhone: payload.contactPhone.trim(),
+          status: 'ACTIVE',
+          metadata: {
+            isPrimaryLocation: currentLocations.length === 0,
+            operatingHours: payload.operatingHours || '08:00 - 20:00',
+            emergencyAvailable: Boolean(payload.emergencyAvailable)
+          }
+        })
+        .returning();
+
+      await auditRepository.recordEvent(
+        {
+          eventType: 'PARTNER_LOCATION_CREATED',
+          resourceType: 'operational_facility',
+          resourceId: created!.id,
+          tenantId,
+          branchId: created!.id,
+          metadata: { locationCode: cleanCode, locationName: payload.locationName }
+        },
+        session,
+        tx
+      );
+      return created!;
+    });
 
     const updatedList = await this.getLocations(session);
-    return updatedList.find((l) => l.id === inserted!.id) || updatedList[updatedList.length - 1];
+    return updatedList.find((l) => l.id === inserted.id) || updatedList[updatedList.length - 1];
   }
 
   public async updateLocation(
@@ -723,75 +744,77 @@ export class PartnerConfigurationEngineService {
       emergencyAvailable?: boolean | undefined;
     }
   ) {
-    const db = getDatabase();
-    const [existing] = await db
-      .select()
-      .from(operationalFacilities)
-      .where(eq(operationalFacilities.id, locationId))
-      .limit(1);
+    const allLocations = await this.getLocations(session);
+    await withSecurityContext(getDatabase(), session, async (tx) => {
+      const [existing] = await tx
+        .select()
+        .from(operationalFacilities)
+        .where(eq(operationalFacilities.id, locationId))
+        .limit(1);
 
-    if (!existing) {
-      throw new AppError({
-        code: ErrorCode.NOT_FOUND,
-        message: `Location '${locationId}' not found.`,
-        statusCode: 404
-      });
-    }
-    if (existing.tenantId !== session.tenantId) {
-      throw new AppError({
-        code: ErrorCode.FORBIDDEN,
-        message: 'Cross-tenant security violation: Cannot modify a location belonging to another partner.',
-        statusCode: 403
-      });
-    }
-
-    if (payload.status && payload.status !== 'ACTIVE') {
-      const allLocations = await this.getLocations(session);
-      const activeLocations = allLocations.filter((l) => l.status === 'ACTIVE');
-      if (activeLocations.length <= 1 && activeLocations[0]?.id === locationId) {
+      if (!existing) {
         throw new AppError({
-          code: ErrorCode.BAD_REQUEST,
-          message: 'Cannot deactivate the sole active location for this partner. At least one active location is required.',
-          statusCode: 400
+          code: ErrorCode.NOT_FOUND,
+          message: `Location '${locationId}' not found.`,
+          statusCode: 404
         });
       }
-    }
+      if (existing.tenantId !== session.tenantId) {
+        throw new AppError({
+          code: ErrorCode.FORBIDDEN,
+          message: 'Cross-tenant security violation: Cannot modify a location belonging to another partner.',
+          statusCode: 403
+        });
+      }
 
-    const oldMeta = (existing.metadata && typeof existing.metadata === 'object')
-      ? (existing.metadata as Record<string, any>)
-      : {};
+      if (payload.status && payload.status !== 'ACTIVE') {
+        const activeLocations = allLocations.filter((l) => l.status === 'ACTIVE');
+        if (activeLocations.length <= 1 && activeLocations[0]?.id === locationId) {
+          throw new AppError({
+            code: ErrorCode.BAD_REQUEST,
+            message: 'Cannot deactivate the sole active location for this partner. At least one active location is required.',
+            statusCode: 400
+          });
+        }
+      }
 
-    await db
-      .update(operationalFacilities)
-      .set({
-        facilityName: payload.locationName?.trim() || existing.facilityName,
-        addressStreet: payload.addressStreet?.trim() || existing.addressStreet,
-        addressCity: payload.addressCity?.trim() || existing.addressCity,
-        addressState: payload.addressState?.trim() || existing.addressState,
-        addressPostalCode: payload.addressPostalCode?.trim() || existing.addressPostalCode,
-        contactEmail: payload.contactEmail?.trim() || existing.contactEmail,
-        contactPhone: payload.contactPhone?.trim() || existing.contactPhone,
-        status: payload.status || existing.status,
-        metadata: {
-          ...oldMeta,
-          operatingHours: payload.operatingHours ?? oldMeta['operatingHours'],
-          emergencyAvailable: payload.emergencyAvailable ?? oldMeta['emergencyAvailable']
+      const oldMeta = (existing.metadata && typeof existing.metadata === 'object')
+        ? (existing.metadata as Record<string, any>)
+        : {};
+
+      await tx
+        .update(operationalFacilities)
+        .set({
+          facilityName: payload.locationName?.trim() || existing.facilityName,
+          addressStreet: payload.addressStreet?.trim() || existing.addressStreet,
+          addressCity: payload.addressCity?.trim() || existing.addressCity,
+          addressState: payload.addressState?.trim() || existing.addressState,
+          addressPostalCode: payload.addressPostalCode?.trim() || existing.addressPostalCode,
+          contactEmail: payload.contactEmail?.trim() || existing.contactEmail,
+          contactPhone: payload.contactPhone?.trim() || existing.contactPhone,
+          status: payload.status || existing.status,
+          metadata: {
+            ...oldMeta,
+            operatingHours: payload.operatingHours ?? oldMeta['operatingHours'],
+            emergencyAvailable: payload.emergencyAvailable ?? oldMeta['emergencyAvailable']
+          },
+          updatedAt: new Date()
+        })
+        .where(and(eq(operationalFacilities.id, locationId), eq(operationalFacilities.tenantId, session.tenantId)));
+
+      await auditRepository.recordEvent(
+        {
+          eventType: 'PARTNER_LOCATION_UPDATED',
+          resourceType: 'operational_facility',
+          resourceId: locationId,
+          tenantId: session.tenantId,
+          branchId: locationId,
+          metadata: { previousStatus: existing.status, newStatus: payload.status || existing.status }
         },
-        updatedAt: new Date()
-      })
-      .where(and(eq(operationalFacilities.id, locationId), eq(operationalFacilities.tenantId, session.tenantId)));
-
-    await auditRepository.recordEvent(
-      {
-        eventType: 'PARTNER_LOCATION_UPDATED',
-        resourceType: 'operational_facility',
-        resourceId: locationId,
-        tenantId: session.tenantId,
-        branchId: locationId,
-        metadata: { previousStatus: existing.status, newStatus: payload.status || existing.status }
-      },
-      session
-    );
+        session,
+        tx
+      );
+    });
 
     const locations = await this.getLocations(session);
     return locations.find((l) => l.id === locationId);
@@ -801,7 +824,9 @@ export class PartnerConfigurationEngineService {
    * STEP 6 / SECTION 7: Applicable Departments Engine
    */
   public async getDepartments(session: SessionContext) {
-    const ctx = await this.resolvePartnerClassificationContext(session.tenantId);
+    const ctx = await withSecurityContext(getDatabase(), session, (tx) =>
+      this.resolvePartnerClassificationContext(session.tenantId, tx)
+    );
     const configured = await staffAdministrationService.getDepartments(session);
 
     const applicableCatalog = masterFoundationService.resolveEffectiveDepartments(
@@ -842,30 +867,48 @@ export class PartnerConfigurationEngineService {
       departmentHeadId?: string | undefined;
     }
   ) {
-    const db = getDatabase();
-    if (payload.locationId) {
-      const [loc] = await db
-        .select({ id: operationalFacilities.id, tenantId: operationalFacilities.tenantId })
-        .from(operationalFacilities)
-        .where(eq(operationalFacilities.id, payload.locationId))
-        .limit(1);
-      if (!loc) {
-        throw new AppError({
-          code: ErrorCode.NOT_FOUND,
-          message: `Location '${payload.locationId}' does not exist.`,
-          statusCode: 404
-        });
+    const defaults = await withSecurityContext(getDatabase(), session, async (tx) => {
+      if (payload.locationId) {
+        const [loc] = await tx
+          .select({ id: operationalFacilities.id, tenantId: operationalFacilities.tenantId })
+          .from(operationalFacilities)
+          .where(eq(operationalFacilities.id, payload.locationId))
+          .limit(1);
+        if (!loc) {
+          const [crossLoc] = await withSecurityContext(
+            getDatabase(),
+            { tenantId: session.tenantId, userId: session.userId, isSuperAdmin: true },
+            (adminTx) =>
+              adminTx
+                .select({ tenantId: operationalFacilities.tenantId })
+                .from(operationalFacilities)
+                .where(eq(operationalFacilities.id, payload.locationId!))
+                .limit(1)
+          );
+          if (crossLoc && crossLoc.tenantId !== session.tenantId) {
+            throw new AppError({
+              code: ErrorCode.FORBIDDEN,
+              message: 'Cross-tenant security violation: Cannot attach department to another partner location.',
+              statusCode: 403
+            });
+          }
+          throw new AppError({
+            code: ErrorCode.NOT_FOUND,
+            message: `Location '${payload.locationId}' does not exist.`,
+            statusCode: 404
+          });
+        }
+        if (loc.tenantId !== session.tenantId) {
+          throw new AppError({
+            code: ErrorCode.FORBIDDEN,
+            message: 'Cross-tenant security violation: Cannot attach department to another partner location.',
+            statusCode: 403
+          });
+        }
       }
-      if (loc.tenantId !== session.tenantId) {
-        throw new AppError({
-          code: ErrorCode.FORBIDDEN,
-          message: 'Cross-tenant security violation: Cannot attach department to another partner location.',
-          statusCode: 403
-        });
-      }
-    }
 
-    const defaults = await staffAdministrationRepository.ensureDefaults(db, session.tenantId);
+      return staffAdministrationRepository.ensureDefaults(tx, session.tenantId);
+    });
     return staffAdministrationService.createDepartment(
       {
         partnerId: defaults.partnerId,
@@ -892,48 +935,49 @@ export class PartnerConfigurationEngineService {
       status?: 'ACTIVE' | 'INACTIVE' | 'RESTRUCTURED' | undefined;
     }
   ) {
-    const db = getDatabase();
-    const [existing] = await db
-      .select()
-      .from(operationalDepartments)
-      .where(eq(operationalDepartments.id, departmentId))
-      .limit(1);
+    await withSecurityContext(getDatabase(), session, async (tx) => {
+      const [existing] = await tx
+        .select()
+        .from(operationalDepartments)
+        .where(eq(operationalDepartments.id, departmentId))
+        .limit(1);
 
-    if (!existing) {
-      throw new AppError({
-        code: ErrorCode.NOT_FOUND,
-        message: `Department '${departmentId}' not found.`,
-        statusCode: 404
-      });
-    }
-    if (existing.tenantId !== session.tenantId) {
-      throw new AppError({
-        code: ErrorCode.FORBIDDEN,
-        message: 'Cross-tenant security violation: Cannot modify a department belonging to another partner.',
-        statusCode: 403
-      });
-    }
-
-    if (payload.status && payload.status !== 'ACTIVE') {
-      const activeStaffInDept = await db
-        .select({ id: operationalStaff.id })
-        .from(operationalStaff)
-        .where(
-          and(
-            eq(operationalStaff.tenantId, session.tenantId),
-            eq(operationalStaff.departmentId, departmentId),
-            eq(operationalStaff.employmentStatus, 'ACTIVE')
-          )
-        );
-
-      if (activeStaffInDept.length > 0) {
+      if (!existing) {
         throw new AppError({
-          code: ErrorCode.BAD_REQUEST,
-          message: `Cannot deactivate department '${existing.departmentName}' while ${activeStaffInDept.length} active staff member(s) are assigned to it. Reassign or transfer staff first.`,
-          statusCode: 400
+          code: ErrorCode.NOT_FOUND,
+          message: `Department '${departmentId}' not found.`,
+          statusCode: 404
         });
       }
-    }
+      if (existing.tenantId !== session.tenantId) {
+        throw new AppError({
+          code: ErrorCode.FORBIDDEN,
+          message: 'Cross-tenant security violation: Cannot modify a department belonging to another partner.',
+          statusCode: 403
+        });
+      }
+
+      if (payload.status && payload.status !== 'ACTIVE') {
+        const activeStaffInDept = await tx
+          .select({ id: operationalStaff.id })
+          .from(operationalStaff)
+          .where(
+            and(
+              eq(operationalStaff.tenantId, session.tenantId),
+              eq(operationalStaff.departmentId, departmentId),
+              eq(operationalStaff.employmentStatus, 'ACTIVE')
+            )
+          );
+
+        if (activeStaffInDept.length > 0) {
+          throw new AppError({
+            code: ErrorCode.BAD_REQUEST,
+            message: `Cannot deactivate department '${existing.departmentName}' while ${activeStaffInDept.length} active staff member(s) are assigned to it. Reassign or transfer staff first.`,
+            statusCode: 400
+          });
+        }
+      }
+    });
 
     return staffAdministrationService.updateDepartment(departmentId, payload as any, session);
   }
@@ -942,7 +986,9 @@ export class PartnerConfigurationEngineService {
    * STEP 6 / SECTION 8: Applicable Services Engine (Genuine Zero-State + Capability & Department Validated)
    */
   public async getServices(session: SessionContext) {
-    const ctx = await this.resolvePartnerClassificationContext(session.tenantId);
+    const ctx = await withSecurityContext(getDatabase(), session, (tx) =>
+      this.resolvePartnerClassificationContext(session.tenantId, tx)
+    );
     const meta = (ctx.profile?.metadata && typeof ctx.profile.metadata === 'object')
       ? (ctx.profile.metadata as Record<string, any>)
       : {};
@@ -982,7 +1028,6 @@ export class PartnerConfigurationEngineService {
       isActive?: boolean | undefined;
     }
   ): Promise<PartnerOperationalServiceItem> {
-    const db = getDatabase();
     const tenantId = session.tenantId;
 
     const accountData = await partnerAccountService.getPlanAndFeatures(session);
@@ -994,156 +1039,160 @@ export class PartnerConfigurationEngineService {
       });
     }
 
-    const [loc] = await db
-      .select()
-      .from(operationalFacilities)
-      .where(eq(operationalFacilities.id, payload.locationId))
-      .limit(1);
-    if (!loc) {
-      throw new AppError({
-        code: ErrorCode.NOT_FOUND,
-        message: `Location '${payload.locationId}' not found.`,
-        statusCode: 404
-      });
-    }
-    if (loc.tenantId !== tenantId) {
-      throw new AppError({
-        code: ErrorCode.FORBIDDEN,
-        message: 'Cross-tenant security violation: Cannot bind service to another partner location.',
-        statusCode: 403
-      });
-    }
-    if (loc.status !== 'ACTIVE') {
-      throw new AppError({
-        code: ErrorCode.BAD_REQUEST,
-        message: `Location '${loc.facilityName}' is not ACTIVE.`,
-        statusCode: 400
-      });
-    }
+    const serviceItem = await withSecurityContext(getDatabase(), session, async (tx) => {
+      const [loc] = await tx
+        .select()
+        .from(operationalFacilities)
+        .where(eq(operationalFacilities.id, payload.locationId))
+        .limit(1);
+      if (!loc) {
+        throw new AppError({
+          code: ErrorCode.NOT_FOUND,
+          message: `Location '${payload.locationId}' not found.`,
+          statusCode: 404
+        });
+      }
+      if (loc.tenantId !== tenantId) {
+        throw new AppError({
+          code: ErrorCode.FORBIDDEN,
+          message: 'Cross-tenant security violation: Cannot bind service to another partner location.',
+          statusCode: 403
+        });
+      }
+      if (loc.status !== 'ACTIVE') {
+        throw new AppError({
+          code: ErrorCode.BAD_REQUEST,
+          message: `Location '${loc.facilityName}' is not ACTIVE.`,
+          statusCode: 400
+        });
+      }
 
-    const [dept] = await db
-      .select()
-      .from(operationalDepartments)
-      .where(eq(operationalDepartments.id, payload.departmentId))
-      .limit(1);
-    if (!dept) {
-      throw new AppError({
-        code: ErrorCode.NOT_FOUND,
-        message: `Department '${payload.departmentId}' not found.`,
-        statusCode: 404
-      });
-    }
-    if (dept.tenantId !== tenantId) {
-      throw new AppError({
-        code: ErrorCode.FORBIDDEN,
-        message: 'Cross-tenant security violation: Cannot bind service to another partner department.',
-        statusCode: 403
-      });
-    }
-    if (dept.status !== 'ACTIVE') {
-      throw new AppError({
-        code: ErrorCode.BAD_REQUEST,
-        message: `Department '${dept.departmentName}' is not ACTIVE.`,
-        statusCode: 400
-      });
-    }
+      const [dept] = await tx
+        .select()
+        .from(operationalDepartments)
+        .where(eq(operationalDepartments.id, payload.departmentId))
+        .limit(1);
+      if (!dept) {
+        throw new AppError({
+          code: ErrorCode.NOT_FOUND,
+          message: `Department '${payload.departmentId}' not found.`,
+          statusCode: 404
+        });
+      }
+      if (dept.tenantId !== tenantId) {
+        throw new AppError({
+          code: ErrorCode.FORBIDDEN,
+          message: 'Cross-tenant security violation: Cannot bind service to another partner department.',
+          statusCode: 403
+        });
+      }
+      if (dept.status !== 'ACTIVE') {
+        throw new AppError({
+          code: ErrorCode.BAD_REQUEST,
+          message: `Department '${dept.departmentName}' is not ACTIVE.`,
+          statusCode: 400
+        });
+      }
 
-    const ctx = await this.resolvePartnerClassificationContext(tenantId);
-    const normCategory = String(payload.category || '').toUpperCase().trim();
-    const categoryToCapability: Record<string, string> = {
-      LABORATORY_DIAGNOSTICS: 'LABORATORY',
-      PATHOLOGY: 'PATHOLOGY',
-      RADIOLOGY_IMAGING: 'RADIOLOGY',
-      RADIOLOGY: 'RADIOLOGY',
-      PHARMACY_RETAIL: 'PHARMACY_RETAIL',
-      PHARMACY_WHOLESALE: 'PHARMACY_WHOLESALE',
-      OUTPATIENT_CONSULTATION: 'OPD',
-      OPD: 'OPD',
-      INPATIENT_CARE: 'IPD',
-      IPD: 'IPD',
-      EMERGENCY_TRAUMA: 'EMERGENCY',
-      SURGERY_OT: 'OT',
-      BLOOD_BANK: 'BLOOD_BANK'
-    };
+      const ctx = await this.resolvePartnerClassificationContext(tenantId, tx);
+      const normCategory = String(payload.category || '').toUpperCase().trim();
+      const categoryToCapability: Record<string, string> = {
+        LABORATORY_DIAGNOSTICS: 'LABORATORY',
+        PATHOLOGY: 'PATHOLOGY',
+        RADIOLOGY_IMAGING: 'RADIOLOGY',
+        RADIOLOGY: 'RADIOLOGY',
+        PHARMACY_RETAIL: 'PHARMACY_RETAIL',
+        PHARMACY_WHOLESALE: 'PHARMACY_WHOLESALE',
+        OUTPATIENT_CONSULTATION: 'OPD',
+        OPD: 'OPD',
+        INPATIENT_CARE: 'IPD',
+        IPD: 'IPD',
+        EMERGENCY_TRAUMA: 'EMERGENCY',
+        SURGERY_OT: 'OT',
+        BLOOD_BANK: 'BLOOD_BANK'
+      };
 
-    const requiredCap = categoryToCapability[normCategory] || 'BILLING';
-    const capSet = new Set(ctx.enabledCapabilityCodes.map((c) => c.toUpperCase()));
-    if (!capSet.has(requiredCap.toUpperCase())) {
-      throw new AppError({
-        code: ErrorCode.FORBIDDEN,
-        message: `Service category '${normCategory}' requires capability '${requiredCap}', which is not enabled for Industry '${ctx.industry}' (${ctx.operatingModel}).`,
-        statusCode: 403
-      });
-    }
+      const requiredCap = categoryToCapability[normCategory] || 'BILLING';
+      const capSet = new Set(ctx.enabledCapabilityCodes.map((c) => c.toUpperCase()));
+      if (!capSet.has(requiredCap.toUpperCase())) {
+        throw new AppError({
+          code: ErrorCode.FORBIDDEN,
+          message: `Service category '${normCategory}' requires capability '${requiredCap}', which is not enabled for Industry '${ctx.industry}' (${ctx.operatingModel}).`,
+          statusCode: 403
+        });
+      }
 
-    const [profileRow] = await db
-      .select()
-      .from(partnerProfiles)
-      .where(eq(partnerProfiles.tenantId, tenantId))
-      .limit(1);
+      const [profileRow] = await tx
+        .select()
+        .from(partnerProfiles)
+        .where(eq(partnerProfiles.tenantId, tenantId))
+        .limit(1);
 
-    const currentMeta = (profileRow?.metadata && typeof profileRow.metadata === 'object')
-      ? { ...(profileRow.metadata as Record<string, any>) }
-      : {};
-    const existingServices: PartnerOperationalServiceItem[] = Array.isArray(currentMeta['operationalServices'])
-      ? [...currentMeta['operationalServices']]
-      : [];
+      const currentMeta = (profileRow?.metadata && typeof profileRow.metadata === 'object')
+        ? { ...(profileRow.metadata as Record<string, any>) }
+        : {};
+      const existingServices: PartnerOperationalServiceItem[] = Array.isArray(currentMeta['operationalServices'])
+        ? [...currentMeta['operationalServices']]
+        : [];
 
-    const cleanCode = payload.serviceCode.trim().toUpperCase();
-    const existingIdx = existingServices.findIndex(
-      (s) => s.serviceCode.toUpperCase() === cleanCode && s.locationId === payload.locationId
-    );
+      const cleanCode = payload.serviceCode.trim().toUpperCase();
+      const existingIdx = existingServices.findIndex(
+        (s) => s.serviceCode.toUpperCase() === cleanCode && s.locationId === payload.locationId
+      );
 
-    const nowIso = new Date().toISOString();
-    const serviceItem: PartnerOperationalServiceItem = {
-      id: existingIdx >= 0 ? existingServices[existingIdx]!.id : deterministicUuid(`svc:${tenantId}:${cleanCode}:${payload.locationId}`),
-      tenantId,
-      serviceCode: cleanCode,
-      serviceName: payload.serviceName.trim(),
-      category: normCategory,
-      departmentId: dept.id,
-      departmentCode: dept.departmentCode,
-      departmentName: dept.departmentName,
-      locationId: loc.id,
-      locationName: loc.facilityName,
-      requiredCapability: requiredCap,
-      baseTariffInr: Number(payload.baseTariffInr ?? 0),
-      turnaroundMinutes: Number(payload.turnaroundMinutes ?? 30),
-      isActive: payload.isActive !== false,
-      createdAt: existingIdx >= 0 ? existingServices[existingIdx]!.createdAt : nowIso,
-      updatedAt: nowIso
-    };
-
-    if (existingIdx >= 0) {
-      existingServices[existingIdx] = serviceItem;
-    } else {
-      existingServices.push(serviceItem);
-    }
-
-    currentMeta['operationalServices'] = existingServices;
-    if (profileRow) {
-      await db
-        .update(partnerProfiles)
-        .set({ metadata: currentMeta, updatedAt: new Date() })
-        .where(eq(partnerProfiles.id, profileRow.id));
-    }
-
-    await auditRepository.recordEvent(
-      {
-        eventType: 'PARTNER_SERVICE_CONFIGURED',
-        resourceType: 'operational_service',
-        resourceId: serviceItem.id,
+      const nowIso = new Date().toISOString();
+      const builtItem: PartnerOperationalServiceItem = {
+        id: existingIdx >= 0 ? existingServices[existingIdx]!.id : deterministicUuid(`svc:${tenantId}:${cleanCode}:${payload.locationId}`),
         tenantId,
-        branchId: serviceItem.locationId,
-        metadata: {
-          serviceCode: serviceItem.serviceCode,
-          category: serviceItem.category,
-          departmentId: serviceItem.departmentId,
-          isActive: serviceItem.isActive
-        }
-      },
-      session
-    );
+        serviceCode: cleanCode,
+        serviceName: payload.serviceName.trim(),
+        category: normCategory,
+        departmentId: dept.id,
+        departmentCode: dept.departmentCode,
+        departmentName: dept.departmentName,
+        locationId: loc.id,
+        locationName: loc.facilityName,
+        requiredCapability: requiredCap,
+        baseTariffInr: Number(payload.baseTariffInr ?? 0),
+        turnaroundMinutes: Number(payload.turnaroundMinutes ?? 30),
+        isActive: payload.isActive !== false,
+        createdAt: existingIdx >= 0 ? existingServices[existingIdx]!.createdAt : nowIso,
+        updatedAt: nowIso
+      };
+
+      if (existingIdx >= 0) {
+        existingServices[existingIdx] = builtItem;
+      } else {
+        existingServices.push(builtItem);
+      }
+
+      currentMeta['operationalServices'] = existingServices;
+      if (profileRow) {
+        await tx
+          .update(partnerProfiles)
+          .set({ metadata: currentMeta, updatedAt: new Date() })
+          .where(eq(partnerProfiles.id, profileRow.id));
+      }
+
+      await auditRepository.recordEvent(
+        {
+          eventType: 'PARTNER_SERVICE_CONFIGURED',
+          resourceType: 'operational_service',
+          resourceId: builtItem.id,
+          tenantId,
+          branchId: builtItem.locationId,
+          metadata: {
+            serviceCode: builtItem.serviceCode,
+            category: builtItem.category,
+            departmentId: builtItem.departmentId,
+            isActive: builtItem.isActive
+          }
+        },
+        session,
+        tx
+      );
+      return builtItem;
+    });
 
     return serviceItem;
   }
@@ -1158,79 +1207,83 @@ export class PartnerConfigurationEngineService {
       isActive?: boolean | undefined;
     }
   ): Promise<PartnerOperationalServiceItem> {
-    const db = getDatabase();
     const tenantId = session.tenantId;
 
-    const [profileRow] = await db
-      .select()
-      .from(partnerProfiles)
-      .where(eq(partnerProfiles.tenantId, tenantId))
-      .limit(1);
+    return withSecurityContext(getDatabase(), session, async (tx) => {
+      const [profileRow] = await tx
+        .select()
+        .from(partnerProfiles)
+        .where(eq(partnerProfiles.tenantId, tenantId))
+        .limit(1);
 
-    const currentMeta = (profileRow?.metadata && typeof profileRow.metadata === 'object')
-      ? { ...(profileRow.metadata as Record<string, any>) }
-      : {};
-    const existingServices: PartnerOperationalServiceItem[] = Array.isArray(currentMeta['operationalServices'])
-      ? [...currentMeta['operationalServices']]
-      : [];
+      const currentMeta = (profileRow?.metadata && typeof profileRow.metadata === 'object')
+        ? { ...(profileRow.metadata as Record<string, any>) }
+        : {};
+      const existingServices: PartnerOperationalServiceItem[] = Array.isArray(currentMeta['operationalServices'])
+        ? [...currentMeta['operationalServices']]
+        : [];
 
-    const idx = existingServices.findIndex((s) => s.id === serviceId);
-    if (idx === -1) {
-      throw new AppError({
-        code: ErrorCode.NOT_FOUND,
-        message: `Operational service '${serviceId}' not found for this partner.`,
-        statusCode: 404
-      });
-    }
+      const idx = existingServices.findIndex((s) => s.id === serviceId);
+      if (idx === -1) {
+        throw new AppError({
+          code: ErrorCode.NOT_FOUND,
+          message: `Operational service '${serviceId}' not found for this partner.`,
+          statusCode: 404
+        });
+      }
 
-    const current = existingServices[idx]!;
-    if (current.tenantId !== tenantId) {
-      throw new AppError({
-        code: ErrorCode.FORBIDDEN,
-        message: 'Cross-tenant security violation on service update.',
-        statusCode: 403
-      });
-    }
+      const current = existingServices[idx]!;
+      if (current.tenantId !== tenantId) {
+        throw new AppError({
+          code: ErrorCode.FORBIDDEN,
+          message: 'Cross-tenant security violation on service update.',
+          statusCode: 403
+        });
+      }
 
-    const updated: PartnerOperationalServiceItem = {
-      ...current,
-      serviceName: payload.serviceName?.trim() || current.serviceName,
-      baseTariffInr: payload.baseTariffInr !== undefined ? Number(payload.baseTariffInr) : current.baseTariffInr,
-      turnaroundMinutes: payload.turnaroundMinutes !== undefined ? Number(payload.turnaroundMinutes) : current.turnaroundMinutes,
-      isActive: payload.isActive !== undefined ? Boolean(payload.isActive) : current.isActive,
-      updatedAt: new Date().toISOString()
-    };
+      const updated: PartnerOperationalServiceItem = {
+        ...current,
+        serviceName: payload.serviceName?.trim() || current.serviceName,
+        baseTariffInr: payload.baseTariffInr !== undefined ? Number(payload.baseTariffInr) : current.baseTariffInr,
+        turnaroundMinutes: payload.turnaroundMinutes !== undefined ? Number(payload.turnaroundMinutes) : current.turnaroundMinutes,
+        isActive: payload.isActive !== undefined ? Boolean(payload.isActive) : current.isActive,
+        updatedAt: new Date().toISOString()
+      };
 
-    existingServices[idx] = updated;
-    currentMeta['operationalServices'] = existingServices;
+      existingServices[idx] = updated;
+      currentMeta['operationalServices'] = existingServices;
 
-    if (profileRow) {
-      await db
-        .update(partnerProfiles)
-        .set({ metadata: currentMeta, updatedAt: new Date() })
-        .where(eq(partnerProfiles.id, profileRow.id));
-    }
+      if (profileRow) {
+        await tx
+          .update(partnerProfiles)
+          .set({ metadata: currentMeta, updatedAt: new Date() })
+          .where(eq(partnerProfiles.id, profileRow.id));
+      }
 
-    await auditRepository.recordEvent(
-      {
-        eventType: 'PARTNER_SERVICE_UPDATED',
-        resourceType: 'operational_service',
-        resourceId: serviceId,
-        tenantId,
-        branchId: updated.locationId,
-        metadata: { previousActive: current.isActive, newActive: updated.isActive }
-      },
-      session
-    );
+      await auditRepository.recordEvent(
+        {
+          eventType: 'PARTNER_SERVICE_UPDATED',
+          resourceType: 'operational_service',
+          resourceId: serviceId,
+          tenantId,
+          branchId: updated.locationId,
+          metadata: { previousActive: current.isActive, newActive: updated.isActive }
+        },
+        session,
+        tx
+      );
 
-    return updated;
+      return updated;
+    });
   }
 
   /**
    * STEP 6 / SECTION 10: Standard Staff Role Templates (Metadata Only — ZERO Fake Staff Creation)
    */
   public async getStaffTemplates(session: SessionContext) {
-    const ctx = await this.resolvePartnerClassificationContext(session.tenantId);
+    const ctx = await withSecurityContext(getDatabase(), session, (tx) =>
+      this.resolvePartnerClassificationContext(session.tenantId, tx)
+    );
     const templates = masterFoundationService.resolveEffectiveRoleTemplates(
       ctx.industry,
       ctx.operatingModel,
@@ -1262,7 +1315,6 @@ export class PartnerConfigurationEngineService {
    * STEP 6 / SECTION 11 & 12: Real Partner Staff & Role Assignment with Cross-Tenant & Quota Guardrails
    */
   public async createPartnerStaff(session: SessionContext, payload: any) {
-    const db = getDatabase();
     const tenantId = session.tenantId;
 
     const accountData = await partnerAccountService.getPlanAndFeatures(session);
@@ -1274,66 +1326,85 @@ export class PartnerConfigurationEngineService {
       });
     }
 
-    if (payload.branchId || payload.locationId) {
-      const targetLocId = payload.branchId || payload.locationId;
-      const [loc] = await db
-        .select({ id: operationalFacilities.id, tenantId: operationalFacilities.tenantId, status: operationalFacilities.status })
-        .from(operationalFacilities)
-        .where(eq(operationalFacilities.id, targetLocId))
-        .limit(1);
+    await withSecurityContext(getDatabase(), session, async (tx) => {
+      if (payload.branchId || payload.locationId) {
+        const targetLocId = payload.branchId || payload.locationId;
+        const [loc] = await tx
+          .select({ id: operationalFacilities.id, tenantId: operationalFacilities.tenantId, status: operationalFacilities.status })
+          .from(operationalFacilities)
+          .where(eq(operationalFacilities.id, targetLocId))
+          .limit(1);
 
-      if (!loc) {
-        throw new AppError({
-          code: ErrorCode.NOT_FOUND,
-          message: `Location '${targetLocId}' does not exist.`,
-          statusCode: 404
-        });
+        if (!loc) {
+          const [crossLoc] = await withSecurityContext(
+            getDatabase(),
+            { tenantId: session.tenantId, userId: session.userId, isSuperAdmin: true },
+            (adminTx) =>
+              adminTx
+                .select({ tenantId: operationalFacilities.tenantId })
+                .from(operationalFacilities)
+                .where(eq(operationalFacilities.id, targetLocId!))
+                .limit(1)
+          );
+          if (crossLoc && crossLoc.tenantId !== tenantId) {
+            throw new AppError({
+              code: ErrorCode.FORBIDDEN,
+              message: 'Cross-tenant security violation: Cannot assign staff to another partner location.',
+              statusCode: 403
+            });
+          }
+          throw new AppError({
+            code: ErrorCode.NOT_FOUND,
+            message: `Location '${targetLocId}' does not exist.`,
+            statusCode: 404
+          });
+        }
+        if (loc.tenantId !== tenantId) {
+          throw new AppError({
+            code: ErrorCode.FORBIDDEN,
+            message: 'Cross-tenant security violation: Cannot assign staff to another partner location.',
+            statusCode: 403
+          });
+        }
+        if (loc.status !== 'ACTIVE') {
+          throw new AppError({
+            code: ErrorCode.BAD_REQUEST,
+            message: `Cannot assign staff to inactive location '${targetLocId}'.`,
+            statusCode: 400
+          });
+        }
       }
-      if (loc.tenantId !== tenantId) {
-        throw new AppError({
-          code: ErrorCode.FORBIDDEN,
-          message: 'Cross-tenant security violation: Cannot assign staff to another partner location.',
-          statusCode: 403
-        });
-      }
-      if (loc.status !== 'ACTIVE') {
-        throw new AppError({
-          code: ErrorCode.BAD_REQUEST,
-          message: `Cannot assign staff to inactive location '${targetLocId}'.`,
-          statusCode: 400
-        });
-      }
-    }
 
-    if (payload.departmentId) {
-      const [dept] = await db
-        .select({ id: operationalDepartments.id, tenantId: operationalDepartments.tenantId, status: operationalDepartments.status })
-        .from(operationalDepartments)
-        .where(eq(operationalDepartments.id, payload.departmentId))
-        .limit(1);
+      if (payload.departmentId) {
+        const [dept] = await tx
+          .select({ id: operationalDepartments.id, tenantId: operationalDepartments.tenantId, status: operationalDepartments.status })
+          .from(operationalDepartments)
+          .where(eq(operationalDepartments.id, payload.departmentId))
+          .limit(1);
 
-      if (!dept) {
-        throw new AppError({
-          code: ErrorCode.NOT_FOUND,
-          message: `Department '${payload.departmentId}' does not exist.`,
-          statusCode: 404
-        });
+        if (!dept) {
+          throw new AppError({
+            code: ErrorCode.NOT_FOUND,
+            message: `Department '${payload.departmentId}' does not exist.`,
+            statusCode: 404
+          });
+        }
+        if (dept.tenantId !== tenantId) {
+          throw new AppError({
+            code: ErrorCode.FORBIDDEN,
+            message: 'Cross-tenant security violation: Cannot assign staff to another partner department.',
+            statusCode: 403
+          });
+        }
+        if (dept.status !== 'ACTIVE') {
+          throw new AppError({
+            code: ErrorCode.BAD_REQUEST,
+            message: `Cannot assign staff to inactive department '${payload.departmentId}'.`,
+            statusCode: 400
+          });
+        }
       }
-      if (dept.tenantId !== tenantId) {
-        throw new AppError({
-          code: ErrorCode.FORBIDDEN,
-          message: 'Cross-tenant security violation: Cannot assign staff to another partner department.',
-          statusCode: 403
-        });
-      }
-      if (dept.status !== 'ACTIVE') {
-        throw new AppError({
-          code: ErrorCode.BAD_REQUEST,
-          message: `Cannot assign staff to inactive department '${payload.departmentId}'.`,
-          statusCode: 400
-        });
-      }
-    }
+    });
 
     return staffAdministrationService.createStaff(
       {
@@ -1345,31 +1416,32 @@ export class PartnerConfigurationEngineService {
   }
 
   public async assignPartnerStaffRole(session: SessionContext, payload: any) {
-    const db = getDatabase();
     const tenantId = session.tenantId;
 
-    const [staffRow] = await db
-      .select({ id: operationalStaff.id, tenantId: operationalStaff.tenantId })
-      .from(operationalStaff)
-      .where(eq(operationalStaff.id, payload.staffId))
-      .limit(1);
+    const ctx = await withSecurityContext(getDatabase(), session, async (tx) => {
+      const [staffRow] = await tx
+        .select({ id: operationalStaff.id, tenantId: operationalStaff.tenantId })
+        .from(operationalStaff)
+        .where(eq(operationalStaff.id, payload.staffId))
+        .limit(1);
 
-    if (!staffRow) {
-      throw new AppError({
-        code: ErrorCode.NOT_FOUND,
-        message: `Staff member '${payload.staffId}' not found.`,
-        statusCode: 404
-      });
-    }
-    if (staffRow.tenantId !== tenantId) {
-      throw new AppError({
-        code: ErrorCode.FORBIDDEN,
-        message: 'Cross-tenant security violation: Cannot assign roles to staff from another partner.',
-        statusCode: 403
-      });
-    }
+      if (!staffRow) {
+        throw new AppError({
+          code: ErrorCode.NOT_FOUND,
+          message: `Staff member '${payload.staffId}' not found.`,
+          statusCode: 404
+        });
+      }
+      if (staffRow.tenantId !== tenantId) {
+        throw new AppError({
+          code: ErrorCode.FORBIDDEN,
+          message: 'Cross-tenant security violation: Cannot assign roles to staff from another partner.',
+          statusCode: 403
+        });
+      }
 
-    const ctx = await this.resolvePartnerClassificationContext(tenantId);
+      return this.resolvePartnerClassificationContext(tenantId, tx);
+    });
     const applicableTemplates = masterFoundationService.resolveEffectiveRoleTemplates(
       ctx.industry,
       ctx.operatingModel,

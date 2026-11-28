@@ -5,6 +5,7 @@ import { licenseService } from './LicenseService.js';
 import { type SessionContext } from '@docsearch/auth';
 import {
   getDatabase,
+  withSecurityContext,
   operationalFacilities,
   doctorProfiles,
   operationalStaff,
@@ -56,11 +57,20 @@ export class EntitlementService {
       const db = getDatabase();
       if (db) {
         try {
-          const [prof] = await db
-            .select()
-            .from(partnerProfiles)
-            .where(eq(partnerProfiles.tenantId, tenantId))
-            .limit(1);
+          const [prof] = await withSecurityContext(
+            db,
+            {
+              userId: session?.userId || '00000000-0000-4000-8000-000000000001',
+              tenantId,
+              isSuperAdmin: Boolean(session?.isSuperAdmin)
+            },
+            (tx) =>
+              tx
+                .select()
+                .from(partnerProfiles)
+                .where(eq(partnerProfiles.tenantId, tenantId))
+                .limit(1)
+          );
           if (prof) {
             const pMeta = (prof.metadata as Record<string, any>) || {};
             resolved =
@@ -177,31 +187,6 @@ export class EntitlementService {
           ) || tenantLicenses[0]
         : undefined;
 
-    // 100% Full Enterprise Free for Lifetime Authorization:
-    // If no explicit DB license exists yet, auto-provision the lifetime free enterprise license
-    if (!license) {
-      const rawType = (session as any).organizationType || (session as any).partnerType || 'HOSPITAL';
-      const partnerId = (session as any).organizationId || (session as any).partnerId || tenantId;
-      license = {
-        id: `lic-free-${tenantId.slice(0, 8)}`,
-        licenseKey: `LIC-FREE-${tenantId.slice(0, 8).toUpperCase()}`,
-        partnerId,
-        tenantId,
-        subscriptionId: `sub-free-${tenantId.slice(0, 8)}`,
-        planId: 'plan_enterprise_lifetime_free',
-        issuedAt: new Date('2026-01-01T00:00:00Z'),
-        expiryDate: new Date('2099-12-31T23:59:59Z'),
-        gracePeriodEnd: new Date('2099-12-31T23:59:59Z'),
-        status: 'FREE_ACTIVE',
-        signature: '0'.repeat(64),
-        metadata: {
-          commercialModel: '100% Full Enterprise Free for Lifetime',
-          zeroSoftwareFees: true,
-          partnerType: rawType,
-        }
-      } as any;
-    }
-
     if (!license) {
       return false;
     }
@@ -229,11 +214,6 @@ export class EntitlementService {
     const licensePartnerType = await this.resolvePartnerType(tenantId, session, license);
     if (licensePartnerType && !isModuleAllowedForPartnerProfile(licensePartnerType, normalizedCode)) {
       return false;
-    }
-
-    // 100% Full Enterprise Free for Lifetime: All modules within the partner's allowed profile boundary are 100% unlocked
-    if (license.status === 'FREE_ACTIVE' || (license as any)?.metadata?.zeroSoftwareFees) {
-      return true;
     }
 
     // 5. Query plan entitlements from authoritative catalog
@@ -556,6 +536,7 @@ export class EntitlementService {
    */
   async checkDoctorLimit(tenantId: string, currentCount?: number): Promise<LimitCheckResult> {
     const govQuotas = partnerGovernanceService.getGovernanceSnapshot(tenantId)?.quotas;
+    const hasQuotaOverride = partnerGovernanceService.hasExplicitQuotaOverride(tenantId);
     const tenantLicenses = await licenseRepository.findByTenantId(tenantId);
     const license =
       (tenantLicenses &&
@@ -563,6 +544,7 @@ export class EntitlementService {
       (tenantLicenses && tenantLicenses.length > 0 ? tenantLicenses[0] : null);
 
     const maxAllowed =
+      (hasQuotaOverride ? govQuotas?.maxDoctorSeats : undefined) ??
       (license?.metadata as any)?.maxDoctors ??
       (license?.metadata as any)?.maxDoctorSeats ??
       (license?.metadata as any)?.doctorSeats ??

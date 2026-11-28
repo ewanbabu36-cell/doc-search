@@ -1,11 +1,14 @@
 import crypto from 'node:crypto';
 import {
   getDatabase,
+  withSecurityContext,
+  platformSettings,
   workflowInstances,
-  outboxJobs
+  outboxJobs,
+  eq
 } from '@docsearch/database';
 import type { SessionContext } from '@docsearch/auth';
-import { AppError, ErrorCode } from '@docsearch/shared-core';
+import { AppError, ErrorCode, createLogger, distributedCache } from '@docsearch/shared-core';
 import {
   identitySecurityFoundationService,
   type StaffLifecycleStatus,
@@ -561,6 +564,8 @@ export const UNIVERSAL_DEPARTMENT_WORKFLOW_ADAPTERS: Record<string, DepartmentWo
   )
 };
 
+const logger = createLogger('universal-workflow-engine');
+
 export class UniversalHealthcareWorkflowEngineService {
   private definitions = new Map<string, Map<number, DepartmentWorkflowAdapterConfig>>();
   private activeDefinitionVersion = new Map<string, number>();
@@ -583,6 +588,61 @@ export class UniversalHealthcareWorkflowEngineService {
       this.activeDefinitionVersion.set(adapter.code, adapter.version);
       this.activeDefinitionVersion.set(adapter.department, adapter.version);
     }
+  }
+
+  private async persistWorkflowSnapshot(instance: UniversalWorkflowInstance, initialTask?: UniversalWorkflowTask): Promise<void> {
+    const key = `WF_INSTANCE:${instance.workflowInstanceId}`;
+    try {
+      await distributedCache.set(key, instance, { ttlSeconds: 86400 });
+    } catch (err) {
+      logger.warn('distributedCache persist failed for workflow instance', { key, error: String(err) });
+    }
+    try {
+      const db = getDatabase();
+      if (!db) return;
+      await db
+        .insert(platformSettings)
+        .values({ key, value: instance as unknown as Record<string, unknown>, updatedBy: 'universal-workflow-engine' })
+        .onConflictDoUpdate({
+          target: platformSettings.key,
+          set: { value: instance as unknown as Record<string, unknown>, updatedBy: 'universal-workflow-engine', updatedAt: new Date() }
+        });
+      if (initialTask) {
+        const taskKey = `WF_TASK:${initialTask.taskId}`;
+        await db
+          .insert(platformSettings)
+          .values({ key: taskKey, value: initialTask as unknown as Record<string, unknown>, updatedBy: 'universal-workflow-engine' })
+          .onConflictDoUpdate({
+            target: platformSettings.key,
+            set: { value: initialTask as unknown as Record<string, unknown>, updatedBy: 'universal-workflow-engine', updatedAt: new Date() }
+          });
+      }
+    } catch (err) {
+      logger.warn('Failed to persist workflow snapshot to platform_settings', { key, error: String(err) });
+    }
+  }
+
+  public async getWorkflowInstanceAsync(session: SessionContext, instanceId: string): Promise<UniversalWorkflowInstance> {
+    if (!this.instances.has(instanceId)) {
+      const key = `WF_INSTANCE:${instanceId}`;
+      try {
+        const cached = await distributedCache.get<UniversalWorkflowInstance>(key);
+        if (cached) {
+          this.instances.set(instanceId, cached);
+        } else {
+          const db = getDatabase();
+          if (db) {
+            const [row] = await db.select().from(platformSettings).where(eq(platformSettings.key, key)).limit(1);
+            if (row?.value) {
+              this.instances.set(instanceId, row.value as unknown as UniversalWorkflowInstance);
+            }
+          }
+        }
+      } catch (err) {
+        logger.warn('Workflow instance hydration error', { instanceId, error: String(err) });
+      }
+    }
+    return this.getWorkflowInstance(session, instanceId);
   }
 
   // =========================================================================
@@ -851,31 +911,38 @@ export class UniversalHealthcareWorkflowEngineService {
       locationId: instance.locationId
     });
 
-    // Persist to PostgreSQL workflow_instances when DB is connected
+    // Persist to PostgreSQL workflow_instances & durable snapshot when DB is connected
     const db = getDatabase();
     if (db) {
       try {
         const tenantUuid = toDeterministicUuid(partnerId);
-        await db
-          .insert(workflowInstances)
-          .values({
-            id: crypto.randomUUID(),
-            tenantId: tenantUuid,
-            workflowId: crypto.randomUUID(),
-            workflowCode: def.code,
-            workflowVersion: def.version,
-            organizationType: 'HEALTHCARE_PARTNER',
-            entityId: instance.patientId,
-            entityName: `Patient ${instance.patientId} - Encounter ${instance.encounterId}`,
-            currentStageId: crypto.randomUUID(),
-            currentStageCode: instance.currentState,
-            currentStageName: instance.currentStage,
-            status: instance.currentState,
-            contextData: instance as any
-          })
-          .catch(() => {});
-      } catch {}
+        await withSecurityContext(db, { ...session, tenantId: tenantUuid }, (tx) =>
+          tx
+            .insert(workflowInstances)
+            .values({
+              id: crypto.randomUUID(),
+              tenantId: tenantUuid,
+              workflowId: crypto.randomUUID(),
+              workflowCode: def.code,
+              workflowVersion: def.version,
+              organizationType: 'HEALTHCARE_PARTNER',
+              entityId: instance.patientId,
+              entityName: `Patient ${instance.patientId} - Encounter ${instance.encounterId}`,
+              currentStageId: crypto.randomUUID(),
+              currentStageCode: instance.currentState,
+              currentStageName: instance.currentStage,
+              status: instance.currentState,
+              contextData: instance as any
+            })
+        );
+      } catch (err) {
+        logger.warn('workflowInstances insert fallback to durable platformSettings snapshot', {
+          instanceId,
+          error: String(err)
+        });
+      }
     }
+    await this.persistWorkflowSnapshot(instance, initialTask);
 
     const response = { instance, initialTask };
     this.saveIdempotency(partnerId, input.idempotencyKey, input, response);
@@ -897,6 +964,28 @@ export class UniversalHealthcareWorkflowEngineService {
     },
     skipAuthCheck = false
   ): Promise<UniversalWorkflowTask> {
+    if (!this.instances.has(input.workflowInstanceId)) {
+      const key = `WF_INSTANCE:${input.workflowInstanceId}`;
+      try {
+        const cached = await distributedCache.get<UniversalWorkflowInstance>(key);
+        if (cached) {
+          this.instances.set(input.workflowInstanceId, cached);
+        } else {
+          const dbConn = getDatabase();
+          if (dbConn) {
+            const [row] = await dbConn.select().from(platformSettings).where(eq(platformSettings.key, key)).limit(1);
+            if (row?.value) {
+              this.instances.set(input.workflowInstanceId, row.value as unknown as UniversalWorkflowInstance);
+            }
+          }
+        }
+      } catch (err) {
+        logger.warn('Failed to hydrate workflow instance for createTask', {
+          workflowInstanceId: input.workflowInstanceId,
+          error: String(err)
+        });
+      }
+    }
     const instance = this.instances.get(input.workflowInstanceId);
     if (!instance) {
       throw AppError.notFound(`Workflow instance "${input.workflowInstanceId}" not found`);
@@ -2103,20 +2192,37 @@ export class UniversalHealthcareWorkflowEngineService {
       const db = getDatabase();
       if (db) {
         const tenantUuid = toDeterministicUuid(partnerId);
-        await db
-          .insert(outboxJobs)
-          .values({
-            id: eventRecord.eventId,
-            tenantId: tenantUuid,
-            jobType: `WORKFLOW_EVENT_${eventType}`,
-            payload: eventRecord,
-            status: 'PENDING',
-            priority: 1
-          })
-          .catch(() => {});
+        const sysSession = {
+          userId: 'workflow-engine',
+          tenantId: tenantUuid,
+          roles: ['SYSTEM'],
+          permissions: ['*'],
+          isSuperAdmin: false,
+          dataScope: 'tenant'
+        } as unknown as SessionContext;
+        await withSecurityContext(db, sysSession, (tx) =>
+          tx
+            .insert(outboxJobs)
+            .values({
+              id: eventRecord.eventId,
+              tenantId: tenantUuid,
+              jobType: `WORKFLOW_EVENT_${eventType}`,
+              payload: eventRecord,
+              status: 'PENDING',
+              priority: 1
+            })
+        )
+          .catch((outboxErr) => {
+            logger.warn('Failed to enqueue workflow outbox event', {
+              eventType,
+              eventId: eventRecord.eventId,
+              error: String(outboxErr)
+            });
+          });
       }
-    } catch {
+    } catch (err) {
       // Isolated: notification failure does not fail the authoritative workflow transaction
+      logger.warn('Workflow event emission isolated error', { eventType, error: String(err) });
     }
   }
 

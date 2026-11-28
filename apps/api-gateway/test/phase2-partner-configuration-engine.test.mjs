@@ -5,11 +5,15 @@ import { buildApp } from '../dist/app.js';
 import { signJwt } from '@docsearch/auth';
 import {
   getDatabase,
+  withSecurityContext,
   tenants,
   partnerProfiles,
+  products,
   plans,
   subscriptions,
   licenses,
+  operationalStaff,
+  staffRoleAssignments,
   eq
 } from '@docsearch/database';
 import { env } from '../dist/config/env.js';
@@ -46,92 +50,15 @@ async function seedTestPartner(db, { slug, legalName, partnerType, operatingMode
   const licId = detUuid(`phase2-lic:${slug}`);
   const email = `admin@${slug}.docsearch.test`;
 
-  await db
-    .insert(tenants)
-    .values({
-      id: tenantId,
-      name: legalName,
-      slug: `p2-${slug}`,
-      status: 'ACTIVE'
-    })
-    .onConflictDoNothing();
-
-  await db
-    .insert(partnerProfiles)
-    .values({
-      id: partnerId,
-      tenantId,
-      legalName,
-      tradeName: legalName,
-      partnerType,
-      lifecycleStatus: 'ACTIVE',
-      verificationStatus: 'VERIFIED',
-      primaryContactName: 'Dr. Admin',
-      primaryContactEmail: email,
-      primaryContactPhone: '+91-9876543210',
-      address: {
-        street: '101 Healthcare Park',
-        city: 'Patna',
-        state: 'Bihar',
-        postalCode: '800001',
-        country: 'IN'
-      },
-      metadata: {
-        industry: partnerType,
-        operatingModel: operatingMode,
-        operatingMode
-      }
-    })
-    .onConflictDoNothing();
-
-  await db
-    .insert(plans)
-    .values({
-      id: planId,
-      productId: '77777777-7777-4777-8777-777777777777',
-      code: `PLAN-${slug.toUpperCase()}`,
-      name: `${legalName} Commercial Plan`,
-      description: `Commercial subscription plan for ${legalName}`,
-      version: '1.0.0',
-      billingInterval: 'ANNUAL',
-      basePrice: '12000',
-      currency: 'INR',
-      maxDoctors,
-      maxBranches,
-      maxBeds: partnerType === 'MULTI_SPECIALITY_HOSPITAL' ? 50 : 0,
-      effectiveDate: new Date(),
-      status: 'ACTIVE'
-    })
-    .onConflictDoNothing();
-
-  const startDate = new Date(Date.now() - 86400 * 1000);
-  const expiryDate =
-    licenseStatus === 'EXPIRED'
-      ? new Date(Date.now() - 10 * 86400 * 1000)
-      : new Date(Date.now() + 365 * 86400 * 1000);
-  const gracePeriodEnd =
-    licenseStatus === 'EXPIRED'
-      ? new Date(Date.now() - 2 * 86400 * 1000)
-      : new Date(Date.now() + 380 * 86400 * 1000);
-
-  await db
-    .insert(subscriptions)
-    .values({
-      id: subId,
-      partnerId,
-      productId: '77777777-7777-4777-8777-777777777777',
-      planId,
-      planVersion: '1.0.0',
-      status: licenseStatus === 'ACTIVE' ? 'ACTIVE' : licenseStatus,
-      billingCycle: 'ANNUAL',
-      startDate,
-      renewalDate: expiryDate,
-      endDate: expiryDate,
-      metadata: { partnerType, operatingMode }
-    })
-    .onConflictDoNothing();
-
   const licenseKey = `LIC-P2-${slug.toUpperCase().slice(0, 6)}-${tenantId.slice(0, 6).toUpperCase()}`;
+  const now = new Date();
+  const startDate = new Date(now.getTime() - 10 * 86400000);
+  const expiryDate = licenseStatus === 'EXPIRED'
+    ? new Date(now.getTime() - 5 * 86400000)
+    : new Date(now.getTime() + 365 * 86400000);
+  const gracePeriodEnd = licenseStatus === 'EXPIRED'
+    ? null
+    : new Date(expiryDate.getTime() + 30 * 86400000);
   const signature = licenseService.signLicensePayload({
     licenseKey,
     partnerId,
@@ -141,29 +68,195 @@ async function seedTestPartner(db, { slug, legalName, partnerType, operatingMode
     expiryDate: expiryDate.toISOString()
   });
 
-  await db
-    .insert(licenses)
-    .values({
-      id: licId,
-      licenseKey,
-      partnerId,
+  const allowedModules =
+    partnerType === 'PATHOLOGY'
+      ? ['PATHOLOGY_LIMS', 'PATIENTS', 'BILLING', 'STAFF', 'OPERATIONS']
+      : partnerType === 'PHARMACY_WHOLESALE'
+      ? ['PHARMACY_WHOLESALE', 'BILLING', 'STAFF', 'OPERATIONS']
+      : partnerType.includes('PHARM')
+      ? ['PHARMACY', 'PHARMACY_POS', 'PATIENTS', 'BILLING', 'STAFF', 'OPERATIONS']
+      : ['CLINICAL_EMR', 'OPD_CONSULTATION', 'INPATIENT_IPD', 'EMERGENCY_ICU', 'OT_SURGERY', 'PATHOLOGY_LIMS', 'RADIOLOGY_PACS', 'PHARMACY', 'PHARMACY_POS', 'PATIENTS', 'BILLING', 'STAFF', 'OPERATIONS'];
+
+  await withSecurityContext(
+    db,
+    {
+      userId: '00000000-0000-4000-8000-000000000001',
       tenantId,
-      subscriptionId: subId,
-      planId,
-      licenseType: 'COMMERCIAL',
-      status: licenseStatus,
-      activationStatus: 'ACTIVATED',
-      maxConcurrentUsers: 25,
-      maxDoctors,
-      maxBranches,
-      issuedAt: startDate,
-      startDate,
-      expiryDate,
-      gracePeriodEnd,
-      signature,
-      metadata: { partnerType, operatingMode }
-    })
-    .onConflictDoNothing();
+      roles: ['SUPER_ADMIN'],
+      permissions: ['*'],
+      isSuperAdmin: true,
+      dataScope: 'global'
+    },
+    async (tx) => {
+      await tx.delete(staffRoleAssignments).where(eq(staffRoleAssignments.tenantId, tenantId));
+      await tx.delete(operationalStaff).where(eq(operationalStaff.tenantId, tenantId));
+      await tx
+        .insert(tenants)
+        .values({
+          id: tenantId,
+          name: legalName,
+          slug: `p2-${slug}`,
+          status: 'ACTIVE'
+        })
+        .onConflictDoNothing();
+
+      await tx
+        .insert(partnerProfiles)
+        .values({
+          id: partnerId,
+          tenantId,
+          legalName,
+          tradeName: legalName,
+          partnerType,
+          lifecycleStatus: 'ACTIVE',
+          verificationStatus: 'VERIFIED',
+          primaryContactName: 'Dr. Admin',
+          primaryContactEmail: email,
+          primaryContactPhone: '+91-9876543210',
+          address: {
+            street: '101 Healthcare Park',
+            city: 'Patna',
+            state: 'Bihar',
+            postalCode: '800001',
+            country: 'IN'
+          },
+          metadata: {
+            industry: partnerType,
+            operatingModel: operatingMode,
+            operatingMode
+          }
+        })
+        .onConflictDoUpdate({
+          target: partnerProfiles.id,
+          set: {
+            operatingModel: operatingMode,
+            metadata: {
+              industry: partnerType,
+              operatingModel: operatingMode,
+              operatingMode,
+              operationalServices: []
+            },
+            updatedAt: new Date()
+          }
+        });
+
+      const existingProducts = await tx
+        .select({ id: products.id })
+        .from(products)
+        .where(eq(products.code, 'PROD_HEALTHCARE_SUITE'))
+        .limit(1);
+      let resolvedProductId = existingProducts[0]?.id;
+      if (!resolvedProductId) {
+        resolvedProductId = '77777777-7777-4777-8777-777777777777';
+        await tx
+          .insert(products)
+          .values({
+            id: resolvedProductId,
+            code: 'PROD_HEALTHCARE_SUITE',
+            name: 'DOC SEARCH Healthcare Platform',
+            description: 'Complete Hospital, Clinic, Pharmacy and Diagnostic Suite',
+            category: 'CORE_PLATFORM',
+            status: 'ACTIVE',
+            version: '1.0.0'
+          })
+          .onConflictDoNothing();
+      }
+
+      await tx
+        .insert(plans)
+        .values({
+          id: planId,
+          productId: resolvedProductId,
+          code: `PLAN-${slug.toUpperCase()}`,
+          name: `${legalName} Commercial Plan`,
+          description: `Commercial subscription plan for ${legalName}`,
+          version: '1.0.0',
+          billingInterval: 'ANNUAL',
+          basePrice: '12000',
+          currency: 'INR',
+          maxDoctors,
+          maxBranches,
+          maxBeds: partnerType === 'MULTI_SPECIALITY_HOSPITAL' ? 50 : 0,
+          effectiveDate: new Date(),
+          status: 'ACTIVE',
+          metadata: { includedModules: allowedModules }
+        })
+        .onConflictDoUpdate({
+          target: plans.id,
+          set: {
+            maxDoctors,
+            maxBranches,
+            status: 'ACTIVE',
+            metadata: { includedModules: allowedModules },
+            updatedAt: new Date()
+          }
+        });
+
+      await tx
+        .insert(subscriptions)
+        .values({
+          id: subId,
+          partnerId,
+          productId: resolvedProductId,
+          planId,
+          planVersion: '1.0.0',
+          status: licenseStatus === 'ACTIVE' ? 'ACTIVE' : licenseStatus,
+          billingCycle: 'ANNUAL',
+          startDate,
+          renewalDate: expiryDate,
+          endDate: expiryDate,
+          metadata: { partnerType, operatingMode, includedModules: allowedModules }
+        })
+        .onConflictDoUpdate({
+          target: subscriptions.id,
+          set: {
+            planId,
+            status: licenseStatus === 'ACTIVE' ? 'ACTIVE' : licenseStatus,
+            renewalDate: expiryDate,
+            endDate: expiryDate,
+            metadata: { partnerType, operatingMode, includedModules: allowedModules },
+            updatedAt: new Date()
+          }
+        });
+
+      await tx
+        .insert(licenses)
+        .values({
+          id: licId,
+          licenseKey,
+          partnerId,
+          tenantId,
+          subscriptionId: subId,
+          planId,
+          licenseType: 'COMMERCIAL',
+          status: licenseStatus,
+          activationStatus: 'ACTIVATED',
+          maxConcurrentUsers: 25,
+          maxDoctors,
+          maxBranches,
+          issuedAt: startDate,
+          startDate,
+          expiryDate,
+          gracePeriodEnd,
+          signature,
+          metadata: { partnerType, operatingMode, includedModules: allowedModules }
+        })
+        .onConflictDoUpdate({
+          target: licenses.id,
+          set: {
+            status: licenseStatus,
+            activationStatus: 'ACTIVATED',
+            maxDoctors,
+            maxBranches,
+            expiryDate,
+            gracePeriodEnd,
+            signature,
+            metadata: { partnerType, operatingMode, includedModules: allowedModules },
+            updatedAt: new Date()
+          }
+        });
+    }
+  );
 
   return {
     tenantId,

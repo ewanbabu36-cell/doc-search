@@ -158,8 +158,8 @@ export class BillingManagementService {
   }
 
   async getPatientBillingHistory(session: SessionContext, patientId: string) {
-    return withSecurityContext(getDatabase(), session, async () => {
-      return billingManagementRepository.getPatientBillingHistory(session.tenantId, patientId);
+    return withSecurityContext(getDatabase(), session, async (tx) => {
+      return billingManagementRepository.getPatientBillingHistory(session.tenantId, patientId, tx);
     });
   }
 
@@ -261,7 +261,6 @@ export class BillingManagementService {
 
       const canRefund = RBACEvaluator.hasPermission(session, 'billing:invoices', 'refund') ||
                         RBACEvaluator.hasPermission(session, 'billing:refund', 'approve') ||
-                        RBACEvaluator.hasPermission(session, 'billing:invoices', 'update') ||
                         hasValidSupervisorOverride;
       if (!canRefund) {
         throw new AppError({

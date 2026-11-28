@@ -1,6 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Badge, Button } from '@docsearch/ui-kit';
 import { useGlobalLocale } from '../common/GlobalCurrencyLocaleContext.js';
+import { riskManagementService, type CompanyRiskOverviewDto } from '../../services/risk-management-service.js';
+import { executiveService, type DailyOperationsData } from '../../services/executive-service.js';
+import type { ExecutiveDashboardData } from '../../types/executive.js';
 
 export interface DashboardWidget {
   id: string;
@@ -21,11 +24,11 @@ export const MASTER_WIDGET_CATALOG: DashboardWidget[] = [
   {
     id: 'WID-ARR-01',
     titleKey: 'arr_revenue',
-    defaultTitle: '📈 Annual Recurring Revenue (ARR)',
+    defaultTitle: 'Annual Recurring Revenue (ARR)',
     category: 'REVENUE',
     gridSpan: '2x1',
-    inrAmount: 27000000,
-    subtext: '+28.4% MoM Net Growth',
+    staticValue: 'Loading...',
+    subtext: 'Live PostgreSQL subscription ARR',
     accentColor: '#10B981',
     isPinned: true,
     isVisible: true,
@@ -34,138 +37,136 @@ export const MASTER_WIDGET_CATALOG: DashboardWidget[] = [
   {
     id: 'WID-ER-02',
     titleKey: 'emergency_sirens',
-    defaultTitle: '🚨 National Emergency ER Sirens',
+    defaultTitle: 'Active Hospital & Emergency Escalations',
     category: 'EMERGENCY',
     gridSpan: '1x1',
-    staticValue: '89 Dispatches',
-    subtext: '100% Pre-Arrival Triage',
+    staticValue: 'Loading...',
+    subtext: 'Live clinical operations monitor',
     accentColor: '#EF4444',
     isPinned: true,
     isVisible: true,
-    description: 'Real-time 108 ambulance dispatch and emergency triage arrivals'
+    description: 'Unresolved hospital escalations and emergency triage arrivals'
   },
   {
     id: 'WID-CONSULT-03',
     titleKey: 'live_consults',
-    defaultTitle: '🩺 Live Doctor Consultations / Hr',
+    defaultTitle: 'Today Appointments & OPD Volume',
     category: 'CLINICAL',
     gridSpan: '2x2',
-    staticValue: '15,160 / hr',
-    subtext: '4,820 Active Doctors Online',
+    staticValue: 'Loading...',
+    subtext: 'Completed & waiting consultations',
     accentColor: '#06B6D4',
     isPinned: false,
     isVisible: true,
-    description: 'Real-time specialist OPD consultations across 486 hospital nodes'
+    description: 'Real-time outpatient appointments across active partner clinics'
   },
   {
     id: 'WID-QUOTA-04',
     titleKey: 'tenant_quota',
-    defaultTitle: '⚡ Tenant Quota Throttler Status',
+    defaultTitle: 'Risk & Revenue Leakage Radar',
     category: 'INFRASTRUCTURE',
     gridSpan: '1x1',
-    staticValue: '1 Throttled',
-    subtext: '2 Near Capacity (>85%)',
+    staticValue: 'Loading...',
+    subtext: 'Open PostgreSQL risk alerts',
     accentColor: '#FCD34D',
     isPinned: false,
     isVisible: true,
-    description: 'Multi-tenant API rate limiters and database storage quotas'
+    description: 'Detected leakage exposures across billing, licenses & COGS'
   },
   {
     id: 'WID-SEC-05',
     titleKey: 'security_rbac',
-    defaultTitle: '🛡️ SOC2 Intrusion Threat Radar',
+    defaultTitle: 'Platform Health & Security Isolation',
     category: 'SECURITY',
     gridSpan: '2x1',
-    staticValue: 'Zero Breaches',
-    subtext: 'CloudHSM KMS Encrypted',
+    staticValue: 'Loading...',
+    subtext: 'PostgreSQL RLS & SHA-256 Audit Ledger',
     accentColor: '#38BDF8',
     isPinned: false,
     isVisible: true,
-    description: 'Continuous cryptographic KMS audit trail and DDoS defense telemetry'
+    description: 'Multi-tenant RLS enforcement & active gateway status'
   },
   {
     id: 'WID-FX-06',
     titleKey: 'multi_currency',
-    defaultTitle: '🌐 Multi-Currency Net Take-Rate',
+    defaultTitle: 'Gross & EBITDA Margin %',
     category: 'REVENUE',
     gridSpan: '1x1',
-    staticValue: '15.2% Margin',
-    subtext: 'USD, EUR, AED, INR Settled',
+    staticValue: 'Loading...',
+    subtext: 'Live P&L unit profitability',
     accentColor: '#A78BFA',
     isPinned: false,
     isVisible: true,
-    description: 'Cross-border interbank FX Treasury conversion margin'
+    description: 'Net gross margin after recorded COGS and operating costs'
   },
-
-  // 5 Modular Catalog Widgets
   {
     id: 'WID-BED-07',
     titleKey: 'bed_occupancy',
-    defaultTitle: '🛏️ Live Inpatient Bed Occupancy %',
+    defaultTitle: 'Inpatient (IPD) Bed Occupancy',
     category: 'CLINICAL',
     gridSpan: '2x1',
-    staticValue: '82.4% Occupied',
-    subtext: '14,280 / 17,320 Beds (ICU, Deluxe, General)',
+    staticValue: 'Loading...',
+    subtext: 'Live ward & ICU bed allocation',
     accentColor: '#F59E0B',
     isPinned: false,
     isVisible: true,
-    description: 'Real-time IPD bed census, ICU vacancy, and ventilator standby'
+    description: 'Real-time occupied vs total IPD beds and ICU vacancy'
   },
   {
     id: 'WID-LIMS-08',
     titleKey: 'lims_volume',
-    defaultTitle: '🧪 Daily LIMS Pathology Lab Volume',
+    defaultTitle: 'Today Diagnostic Volume (LIMS & RIS)',
     category: 'CLINICAL',
     gridSpan: '1x1',
-    staticValue: '28,500 Orders / Day',
-    subtext: '+31.8% MoM Automated Lab Orders',
+    staticValue: 'Loading...',
+    subtext: 'Pathology tests & radiology orders',
     accentColor: '#10B981',
     isPinned: false,
     isVisible: true,
-    description: 'Diagnostic analyzer test throughput across CBC, LFT, and KFT panels'
+    description: 'Authoritative diagnostic investigation orders today'
   },
   {
     id: 'WID-PHARM-09',
     titleKey: 'pharm_sales',
-    defaultTitle: '💊 Pharmacy Medicine Sales & Stockout Risk',
+    defaultTitle: 'Partner Clinical GMV & Rx Orders',
     category: 'REVENUE',
     gridSpan: '2x1',
-    staticValue: '51,400 RX Dispensed',
-    subtext: '99.4% Fulfillment Rate (Zero Stockout)',
+    staticValue: 'Loading...',
+    subtext: 'Take-rate & pharmacy dispensing volume',
     accentColor: '#A78BFA',
     isPinned: false,
     isVisible: true,
-    description: 'E-Prescription dispensing revenue and automated inventory reorder alerts'
+    description: 'Clinical GMV realized across partner hospitals & pharmacies'
   },
   {
     id: 'WID-BILLING-10',
     titleKey: 'unpaid_invoices',
-    defaultTitle: '💳 Unpaid Hospital Invoices & Dues',
+    defaultTitle: 'B2B Receivables & Overdue Invoices',
     category: 'REVENUE',
     gridSpan: '1x1',
-    inrAmount: 8400000,
-    subtext: 'Pending TPA / Corporate Insurance Pre-Auth',
+    staticValue: 'Loading...',
+    subtext: 'Pending partner subscription dues',
     accentColor: '#EF4444',
     isPinned: false,
     isVisible: true,
-    description: 'Outstanding institutional claims and cashless patient discharge balances'
+    description: 'Pending & overdue invoices in company.invoices'
   },
   {
     id: 'WID-AI-11',
     titleKey: 'ai_copilot',
-    defaultTitle: '🤖 AI Clinical Copilot Diagnostic Accuracy',
+    defaultTitle: 'Net Company P&L / Burn Rate',
     category: 'CLINICAL',
     gridSpan: '1x1',
-    staticValue: '99.2% Accuracy',
-    subtext: 'ICD-10 Validated with Zero Safety Flags',
+    staticValue: 'Loading...',
+    subtext: 'Live revenue minus COGS & OPEX',
     accentColor: '#06B6D4',
     isPinned: false,
     isVisible: true,
-    description: 'Differential diagnosis validation and drug-drug interaction alerts'
+    description: 'Monthly net profit or burn directly from PostgreSQL ledger'
   }
 ];
 
-const STORAGE_KEY = 'docsearch_executive_custom_grid_layout_v3';
+const STORAGE_KEY = 'docsearch_executive_custom_grid_layout_v4';
 
 interface SavedProfileVault {
   version: string;
@@ -204,6 +205,114 @@ export const CustomizableExecutiveWidgetGridView: React.FC = () => {
   const [draggedWidgetId, setDraggedWidgetId] = useState<string | null>(null);
   const [dragOverWidgetId, setDragOverWidgetId] = useState<string | null>(null);
   const [saveNotice, setSaveNotice] = useState<string | null>(null);
+  const [riskOv, setRiskOv] = useState<CompanyRiskOverviewDto | null>(null);
+  const [opsData, setOpsData] = useState<DailyOperationsData | null>(null);
+  const [execData, setExecData] = useState<ExecutiveDashboardData | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    Promise.allSettled([
+      riskManagementService.getOverview(),
+      executiveService.getDailyOperations(),
+      executiveService.getExecutiveDashboard()
+    ]).then(([rRes, oRes, eRes]) => {
+      if (!active) return;
+      if (rRes.status === 'fulfilled') setRiskOv(rRes.value);
+      if (oRes.status === 'fulfilled') setOpsData(oRes.value);
+      if (eRes.status === 'fulfilled') setExecData(eRes.value);
+    });
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const liveMetrics = useMemo(() => {
+    const pnl = riskOv?.pnl;
+    const ops = opsData?.metrics;
+    const exec = execData?.metrics;
+    const totalBeds = ops?.totalBedsCount ?? 0;
+    const occupiedBeds = ops?.occupiedBedsCount ?? 0;
+    const bedPct = totalBeds > 0 ? ((occupiedBeds / totalBeds) * 100).toFixed(1) : '0.0';
+    return new Map<string, { value: string; subtext?: string }>([
+      [
+        'WID-ARR-01',
+        {
+          value: pnl ? formatMoney(pnl.contractedArrInr) : formatMoney(0),
+          subtext: `MRR: ${formatMoney(pnl?.contractedMrrInr ?? 0)} (${riskOv?.partnerSummary.paidPartners ?? 0} paid)`
+        }
+      ],
+      [
+        'WID-ER-02',
+        {
+          value: `${ops?.unresolvedEscalationsCount ?? 0} Unresolved`,
+          subtext: `${ops?.pendingDoctorsCount ?? 0} Pending Dr Verifications`
+        }
+      ],
+      [
+        'WID-CONSULT-03',
+        {
+          value: `${ops?.appointmentsToday ?? 0} Today`,
+          subtext: `${ops?.appointmentsCompleted ?? 0} Done • ${ops?.appointmentsWaiting ?? 0} Waiting`
+        }
+      ],
+      [
+        'WID-QUOTA-04',
+        {
+          value: `${riskOv?.openAlertsSummary.totalOpen ?? 0} Open Alerts`,
+          subtext: `${riskOv?.openAlertsSummary.critical ?? 0} Critical • Burn: ${formatMoney(pnl?.totalDirectLeakageExposureInr ?? 0)}`
+        }
+      ],
+      [
+        'WID-SEC-05',
+        {
+          value: execData?.systemHealth?.overallStatus || 'OPERATIONAL',
+          subtext: `${exec?.activeTenants ?? 0}/${exec?.totalTenants ?? 0} Active Tenants • ${exec?.totalBranches ?? 0} Branches`
+        }
+      ],
+      [
+        'WID-FX-06',
+        {
+          value: `${pnl?.grossMarginPercent ?? 0}% Gross`,
+          subtext: `EBITDA Margin: ${pnl?.ebitdaMarginPercent ?? 0}%`
+        }
+      ],
+      [
+        'WID-BED-07',
+        {
+          value: `${bedPct}% Occupied`,
+          subtext: `${occupiedBeds} / ${totalBeds} Beds (${ops?.vacantIcuBedsCount ?? 0} ICU free)`
+        }
+      ],
+      [
+        'WID-LIMS-08',
+        {
+          value: `${ops?.pathologyTestsToday ?? 0} Labs Today`,
+          subtext: `${ops?.radiologyOrdersToday ?? 0} Radiology Orders Today`
+        }
+      ],
+      [
+        'WID-PHARM-09',
+        {
+          value: `${formatMoney(pnl?.partnerClinicalGmvInr ?? 0)} GMV`,
+          subtext: `${ops?.rxOrdersToday ?? 0} Rx Today • Take-rate: ${formatMoney(pnl?.platformTakeRateInr ?? 0)}`
+        }
+      ],
+      [
+        'WID-BILLING-10',
+        {
+          value: formatMoney(pnl?.pendingReceivablesInr ?? 0),
+          subtext: `Overdue: ${formatMoney(pnl?.overdueReceivablesInr ?? 0)}`
+        }
+      ],
+      [
+        'WID-AI-11',
+        {
+          value: pnl ? `${pnl.netProfitLossInr >= 0 ? '+' : '-'} ${formatMoney(Math.abs(pnl.netProfitLossInr))}` : formatMoney(0),
+          subtext: (pnl?.netProfitLossInr ?? 0) >= 0 ? 'Net Profitable' : `Burn: ${formatMoney(pnl?.monthlyBurnRateInr ?? 0)}/mo`
+        }
+      ]
+    ]);
+  }, [riskOv, opsData, execData, formatMoney]);
 
   // Auto-Save Effect: Runs on every single widget, resize, pin, hide or preset mutation
   useEffect(() => {
@@ -534,7 +643,9 @@ export const CustomizableExecutiveWidgetGridView: React.FC = () => {
         }}
       >
         {widgets.filter((w) => w.isVisible).map((w) => {
-          const displayValue = w.inrAmount ? formatMoney(w.inrAmount) : w.staticValue;
+          const live = liveMetrics.get(w.id);
+          const displayValue = live?.value ?? (w.inrAmount ? formatMoney(w.inrAmount) : w.staticValue || '—');
+          const displaySubtext = live?.subtext ?? w.subtext;
           const displayTitle = t(w.titleKey, w.defaultTitle);
           const isDragging = draggedWidgetId === w.id;
           const isDragOver = dragOverWidgetId === w.id;
@@ -630,7 +741,7 @@ export const CustomizableExecutiveWidgetGridView: React.FC = () => {
                 <div style={{ fontSize: '1.75rem', fontWeight: 900, color: w.accentColor, margin: '12px 0 4px' }}>
                   {displayValue}
                 </div>
-                <span style={{ fontSize: '0.75rem', color: '#94A3B8' }}>{w.subtext}</span>
+                <span style={{ fontSize: '0.75rem', color: '#94A3B8' }}>{displaySubtext}</span>
               </div>
 
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '14px', borderTop: '1px solid #1E293B', paddingTop: '8px' }}>
@@ -766,7 +877,8 @@ export const CustomizableExecutiveWidgetGridView: React.FC = () => {
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '12px' }}>
               {filteredCatalog.map((item) => {
                 const isAlreadyOnBoard = widgets.some((w) => w.id === item.id && w.isVisible);
-                const displayVal = item.inrAmount ? formatMoney(item.inrAmount) : item.staticValue;
+                const live = liveMetrics.get(item.id);
+                const displayVal = live?.value ?? (item.inrAmount ? formatMoney(item.inrAmount) : item.staticValue || '—');
 
                 return (
                   <div

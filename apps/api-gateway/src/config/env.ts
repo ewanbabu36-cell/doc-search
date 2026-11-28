@@ -19,9 +19,11 @@ const EnvSchema = z.object({
     .default(
       'http://localhost:5173,http://localhost:5174,http://localhost:5175,http://localhost:5176,http://localhost:5177,http://127.0.0.1:5173,http://127.0.0.1:5174,http://127.0.0.1:5175,http://127.0.0.1:5176,http://127.0.0.1:5177'
     ),
-  PARTNER_PORTAL_URL: z.string().default(process.env['NODE_ENV'] === 'production' ? 'https://partner.docsearch.health' : 'http://localhost:5173'),
-  COMPANY_PORTAL_URL: z.string().default(process.env['NODE_ENV'] === 'production' ? 'https://admin.docsearch.health' : 'http://localhost:5177'),
-  PATIENT_PORTAL_URL: z.string().default(process.env['NODE_ENV'] === 'production' ? 'https://my.docsearch.health' : 'http://localhost:5174'),
+  PARTNER_PORTAL_URL: z.string().default(process.env['NODE_ENV'] === 'production' ? 'https://partner.docsearch.in' : 'http://localhost:5173'),
+  COMPANY_PORTAL_URL: z.string().default(process.env['NODE_ENV'] === 'production' ? 'https://hq.docsearch.in' : 'http://localhost:5177'),
+  PATIENT_PORTAL_URL: z.string().default(process.env['NODE_ENV'] === 'production' ? 'https://patient.docsearch.in' : 'http://localhost:5174'),
+  MEDIA_CDN_BASE_URL: z.string().url().optional(),
+  FINANCING_ESCROW_API_KEY: z.string().optional(),
   RATE_LIMIT_MAX: z.coerce.number().default(100),
   RATE_LIMIT_TIME_WINDOW: z.coerce.number().default(60000),
   REDIS_URL: z.string().optional(),
@@ -258,6 +260,7 @@ export function getExternalReadinessReport() {
     },
     tts: {
       status: env.TTS_PROVIDER !== 'NONE' && (e['TTS_PROVIDER_API_KEY'] || env.TTS_PROVIDER_API_KEY) ? 'CONFIGURED' : 'BLOCKED_MISSING_CREDENTIALS',
+      configured: env.TTS_PROVIDER !== 'NONE' && Boolean(e['TTS_PROVIDER_API_KEY'] || env.TTS_PROVIDER_API_KEY),
       provider: env.TTS_PROVIDER,
       hasApiKey: Boolean(e['TTS_PROVIDER_API_KEY'] || env.TTS_PROVIDER_API_KEY)
     },
@@ -275,15 +278,17 @@ export function getExternalReadinessReport() {
     },
     hcx: {
       status: hcxConfigured ? 'CONFIGURED' : 'SANDBOX_SIMULATION_ACTIVE',
+      configured: hcxConfigured,
       baseUrl: env.HCX_BASE_URL,
       participantCode: env.HCX_PARTICIPANT_CODE,
       hasAuthToken: hcxConfigured
     },
     upi: {
-      status: 'ACTIVE',
-      vpa: env.UPI_VPA,
+      status: isNonPlaceholder(e['UPI_VPA'] || env.UPI_VPA, ['docsearch.hospital@icici']) ? 'ACTIVE' : 'SANDBOX_DEFAULT_VPA',
+      vpa: e['UPI_VPA'] || env.UPI_VPA,
+      vpaConfigured: isNonPlaceholder(e['UPI_VPA'] || env.UPI_VPA, ['docsearch.hospital@icici']),
       merchantName: env.UPI_MERCHANT_NAME,
-      soundboxConfigured: Boolean(env.UPI_SOUNDBOX_WEBHOOK_SECRET)
+      soundboxConfigured: isNonPlaceholder(e['UPI_SOUNDBOX_WEBHOOK_SECRET'] || env.UPI_SOUNDBOX_WEBHOOK_SECRET, ['docsearch_soundbox_secret_default'])
     }
   };
 }

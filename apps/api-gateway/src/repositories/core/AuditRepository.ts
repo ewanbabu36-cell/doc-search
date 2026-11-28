@@ -20,7 +20,7 @@ const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12
 
 export class AuditRepository {
   async getLatestEvent(tenantId?: string, dbClient?: any): Promise<AuditEvent | null> {
-    const client = dbClient || getDatabase();
+    const client = dbClient === null ? null : (dbClient || getDatabase());
     if (!client) {
       return null;
     }
@@ -41,7 +41,7 @@ export class AuditRepository {
   }
 
   async getEventsByTenant(tenantId: string, limit = 50, dbClient?: any): Promise<AuditEvent[]> {
-    const client = dbClient || getDatabase();
+    const client = dbClient === null ? null : (dbClient || getDatabase());
     if (!client) {
       return [];
     }
@@ -66,17 +66,36 @@ export class AuditRepository {
     session: SessionContext,
     dbClient?: any
   ): Promise<AuditEvent> {
-    const client = dbClient || getDatabase();
+    const client = dbClient === null ? null : (dbClient || getDatabase());
 
     const previous = await this.getLatestEvent(payload.tenantId || session.tenantId || undefined, client);
     const previousHash = previous?.integrityHash;
 
     const auditRecord = buildSecurityAuditRecord(payload, session, previousHash || undefined);
 
+    const rawFallbackActor = String(
+      auditRecord.actorId ||
+      session?.userId ||
+      (session?.isSuperAdmin ? '00000000-0000-4000-8000-000000000001' : '') ||
+      'SYSTEM'
+    ).trim();
+    const rawFallbackTenant = payload.tenantId ?? session.tenantId ?? auditRecord.tenantId ?? null;
+    const rawFallbackBranch = payload.branchId ?? session.branchId ?? auditRecord.branchId ?? null;
+
     if (!client) {
+      const offlineMetadata: Record<string, unknown> = {
+        ...(auditRecord.metadata || {}),
+        preservedActorId: rawFallbackActor,
+        ...(rawFallbackTenant ? { preservedTenantId: rawFallbackTenant } : {}),
+        ...(rawFallbackBranch ? { preservedBranchId: rawFallbackBranch } : {})
+      };
       return {
         id: crypto.randomUUID(),
         ...auditRecord,
+        tenantId: rawFallbackTenant,
+        branchId: rawFallbackBranch,
+        actorId: rawFallbackActor,
+        metadata: offlineMetadata,
         createdAt: new Date()
       } as AuditEvent;
     }
@@ -143,7 +162,10 @@ export class AuditRepository {
                 .limit(1)
             : [undefined];
 
-          if (!opPartner && !partnerProf && process.env['NODE_ENV'] !== 'test') {
+          const isPlatformTenant =
+            tenantUuid === '00000000-0000-4000-8000-000000000000' ||
+            tenantUuid === '00000000-0000-4000-a000-000000000001';
+          if (!opPartner && !partnerProf && !isPlatformTenant && process.env['NODE_ENV'] !== 'test') {
             throw new AppError({
               code: ErrorCode.NOT_FOUND,
               message: `Audit event rejected: tenant '${tenantUuid}' is not provisioned.`,
@@ -167,9 +189,12 @@ export class AuditRepository {
       }
     }
 
-    const hasExplicitBranch = Boolean(payload.branchId || session?.branchId);
-    let resolvedBranch: { id: string; tenantId: string } | undefined;
     const isSuperAdminContext = Boolean(session?.isSuperAdmin || (session?.roles || []).includes('SUPER_ADMIN'));
+    if (isSuperAdminContext && branchUuid === '00000000-0000-0000-0000-000000000000') {
+      branchUuid = null;
+    }
+    const hasExplicitBranch = Boolean(branchUuid);
+    let resolvedBranch: { id: string; tenantId: string } | undefined;
 
     if (hasExplicitBranch && branchUuid) {
       if (branchUuid === '44444444-4444-4444-8444-444444444401') {
@@ -196,13 +221,11 @@ export class AuditRepository {
       if (!resolvedBranch) {
         if (
           branchUuid === 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa' ||
-          branchUuid === '11111111-1111-4111-8111-111111111111' ||
-          (tenantUuid && branchUuid === tenantUuid) ||
-          isSuperAdminContext ||
-          process.env['NODE_ENV'] === 'test'
+          branchUuid === '11111111-1111-4111-8111-111111111111'
         ) {
-          // Canonical platform system branch, single-facility main branch, or superadmin event; permit audit event without failing
-          resolvedBranch = { id: branchUuid, tenantId: tenantUuid || branchUuid } as any;
+          resolvedBranch = { id: branchUuid, tenantId: '11111111-1111-4111-8111-111111111111' } as any;
+        } else if (tenantUuid && branchUuid === tenantUuid) {
+          resolvedBranch = { id: branchUuid, tenantId: tenantUuid } as any;
         } else {
           throw new AppError({
             code: ErrorCode.NOT_FOUND,

@@ -50,6 +50,7 @@ const CompanyAdminDomainManager = React.lazy(() => import('./company-admin/Compa
 const CompanyGrowthEngineDomainManager = React.lazy(() => import('./growth/CompanyGrowthEngineDomainManager.js').then(m => ({ default: m.CompanyGrowthEngineDomainManager })));
 const CentralSupplyChainDomainManager = React.lazy(() => import('./supply-chain/CentralSupplyChainDomainManager.js').then(m => ({ default: m.CentralSupplyChainDomainManager })));
 const MonetizationGodModeCockpit = React.lazy(() => import('./monetization/MonetizationGodModeCockpit.js').then(m => ({ default: m.MonetizationGodModeCockpit })));
+const RiskManagementDomainManager = React.lazy(() => import('./risk-management/RiskManagementDomainManager.js').then(m => ({ default: m.RiskManagementDomainManager })));
 import { GlobalFounderApprovalsModal } from './common/GlobalFounderApprovalsModal.js';
 import { useFounderApproval } from '../hooks/useFounderApproval.js';
 import { CompanyPulseTicker } from './common/CompanyPulseTicker.js';
@@ -1392,6 +1393,11 @@ const CompanyShellInner: React.FC<CompanyShellProps> = ({ currentUser, onLogout 
                 <FinanceDomainManager />
               </div>
             )}
+            {visitedDomains.has('risk-management-hq') && (
+              <div style={{ display: activeDomainId === 'risk-management-hq' ? 'block' : 'none' }}>
+                <RiskManagementDomainManager />
+              </div>
+            )}
             {visitedDomains.has('sales-marketing') && (
               <div style={{ display: activeDomainId === 'sales-marketing' ? 'block' : 'none' }}>
                 <SalesMarketingDomainManager />
@@ -1462,6 +1468,7 @@ const CompanyShellInner: React.FC<CompanyShellProps> = ({ currentUser, onLogout 
               'crm-partner-lifecycle',
               'product-plans-entitlements',
               'subscription-billing-finance',
+              'risk-management-hq',
               'sales-marketing',
               'customer-success-support',
               'communication-broadcasting',

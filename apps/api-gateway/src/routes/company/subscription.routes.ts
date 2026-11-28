@@ -34,7 +34,8 @@ const NegotiateDealSchema = z.object({
   customDiscountPercent: z.number().optional(),
   agreedLumpSum: z.number().optional(),
   paymentTerms: z.string().optional(),
-  negotiationNotes: z.string().optional()
+  negotiationNotes: z.string().optional(),
+  cfoOverrideApproved: z.boolean().optional()
 });
 
 export const subscriptionRoutes: FastifyPluginAsync = async (fastify) => {

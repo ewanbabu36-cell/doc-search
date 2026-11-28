@@ -8,6 +8,7 @@ import { auditRepository } from '../../repositories/core/AuditRepository.js';
 import { authenticate, requirePermission, requireRoles } from '../../plugins/auth-guard.js';
 
 const PATHOLOGIST_ROLES = ['SUPER_ADMIN', 'COMPANY_ADMIN', 'HOSPITAL_ADMIN', 'CLINIC_ADMIN', 'CHIEF_MEDICAL_OFFICER', 'DOCTOR', 'PATHOLOGIST'] as const;
+const TECHNICAL_LAB_VALIDATION_ROLES = [...PATHOLOGIST_ROLES, 'LAB_TECHNICIAN', 'SENIOR_LAB_TECH', 'LAB_DIRECTOR'] as const;
 import { requireFeatureEntitlement, requireModuleCommercialAccess } from '../../plugins/commercial-guard.js';
 import {
   type CreateLabOrderInput,
@@ -424,7 +425,7 @@ export const labDiagnosticsRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.post(
     '/api/v1/partner/lab/orders/:id/technical-validate',
     {
-      preHandler: [authenticate, requirePermission('lab:results', 'validate'), requireRoles(...PATHOLOGIST_ROLES)]
+      preHandler: [authenticate, requirePermission('lab:results', 'validate'), requireRoles(...TECHNICAL_LAB_VALIDATION_ROLES)]
     },
     async (request, reply) => {
       const { id } = request.params as { id: string };
@@ -588,13 +589,24 @@ export const labDiagnosticsRoutes: FastifyPluginAsync = async (fastify) => {
       };
       const page = query.page !== undefined ? Number(query.page) : undefined;
       const limit = query.limit !== undefined ? Number(query.limit) : undefined;
-      const data = await labDiagnosticsService.getCatalog(request.session, {
-        category: query.category,
-        searchTerm: query.search || query.searchTerm,
-        status: query.status,
-        page,
-        limit
-      } as any);
+      const hasPaginationOrFilter =
+        page !== undefined ||
+        limit !== undefined ||
+        Boolean(query.category) ||
+        Boolean(query.search || query.searchTerm) ||
+        Boolean(query.status);
+      const data = await labDiagnosticsService.getCatalog(
+        request.session,
+        hasPaginationOrFilter
+          ? ({
+              category: query.category,
+              searchTerm: query.search || query.searchTerm,
+              status: query.status,
+              page,
+              limit
+            } as any)
+          : undefined
+      );
       return { success: true, data };
     }
   );

@@ -13,7 +13,7 @@ import {
   PARTNER_PROFILE_ALLOWED_MODULES,
   isModuleAllowedForPartnerProfile
 } from '@docsearch/shared-core';
-import { getDatabase, partnerProfiles, eq, or } from '@docsearch/database';
+import { getDatabase, partnerProfiles, eq, or, withSecurityContext } from '@docsearch/database';
 import { isValidUuid } from '../utils/uuid-guard.js';
 
 export { PARTNER_PROFILE_ALLOWED_MODULES, isModuleAllowedForPartnerProfile };
@@ -103,11 +103,13 @@ export async function requireActiveCommercialAccess(
         if (isValidUuid(tenantId)) {
           whereConditions.push(eq(partnerProfiles.id, tenantId));
         }
-        const [profile] = await db
-          .select()
-          .from(partnerProfiles)
-          .where(whereConditions.length > 1 ? or(...whereConditions) : whereConditions[0]!)
-          .limit(1);
+        const [profile] = await withSecurityContext(db, request.session, (tx) =>
+          tx
+            .select()
+            .from(partnerProfiles)
+            .where(whereConditions.length > 1 ? or(...whereConditions) : whereConditions[0]!)
+            .limit(1)
+        );
 
         if (profile && (profile.lifecycleStatus === 'ACTIVE' || profile.verificationStatus === 'VERIFIED')) {
           const { partnerSyncService } = await import('../services/company/PartnerSyncService.js');
@@ -129,38 +131,16 @@ export async function requireActiveCommercialAccess(
     }
   }
 
-  // 100% Full Enterprise Free for Lifetime Authorization:
-  // Under the DocSearch national sovereign healthcare mandate, all registered healthcare partners
-  // (Multi-Hospital, Clinic, Pathology, Pharmacy) have 100% Free Lifetime Enterprise access.
-  let isOnboardingBaseline = false;
   if (!license) {
-    isOnboardingBaseline = true;
-    const rawType = (session as any).organizationType || (session as any).partnerType || 'HOSPITAL';
-    const partnerId = (session as any).organizationId || (session as any).partnerId || tenantId;
-    license = {
-      id: `lic-free-${tenantId.slice(0, 8)}`,
-      licenseKey: `LIC-FREE-${tenantId.slice(0, 8).toUpperCase()}`,
-      partnerId,
-      tenantId,
-      subscriptionId: `sub-free-${tenantId.slice(0, 8)}`,
-      planId: 'plan_enterprise_lifetime_free',
-      issuedAt: new Date('2026-01-01T00:00:00Z'),
-      expiryDate: new Date('2099-12-31T23:59:59Z'),
-      gracePeriodEnd: new Date('2099-12-31T23:59:59Z'),
-      status: 'FREE_ACTIVE',
-      signature: '0'.repeat(64),
-      metadata: {
-        commercialModel: '100% Full Enterprise Free for Lifetime',
-        zeroSoftwareFees: true,
-        isOnboardingBaseline: true,
-        partnerType: rawType,
-        includedModules: PARTNER_PROFILE_ALLOWED_MODULES[rawType] || ['*']
-      }
-    } as any;
+    throw new AppError({
+      message: `COMMERCIAL_ACCESS_DENIED: No active commercial license found for tenant '${tenantId}'. Access denied.`,
+      code: ErrorCode.COMMERCIAL_ACCESS_DENIED,
+      statusCode: 403
+    });
   }
 
   // Attach resolved license to request for downstream profile boundary checks
-  const activeLicense = license!;
+  const activeLicense = license;
   (request as any).__activeCommercialLicense = activeLicense;
 
   const evaluation = licenseService.evaluateLicenseStatus(activeLicense);
@@ -204,7 +184,7 @@ export async function requireActiveCommercialAccess(
     });
   }
 
-  if (isOnboardingBaseline || (activeLicense.metadata as any)?.isOnboardingBaseline) {
+  if ((activeLicense.metadata as any)?.isOnboardingBaseline) {
     reply.header('x-commercial-onboarding', 'true');
     reply.header('x-commercial-days-remaining', '365');
   } else if (evaluation.isInGracePeriod) {
@@ -266,11 +246,13 @@ async function resolvePartnerProfileType(
     const db = getDatabase();
     if (db) {
       try {
-        const [prof] = await db
-          .select()
-          .from(partnerProfiles)
-          .where(eq(partnerProfiles.tenantId, request.session.tenantId))
-          .limit(1);
+        const [prof] = await withSecurityContext(db, request.session, (tx) =>
+          tx
+            .select()
+            .from(partnerProfiles)
+            .where(eq(partnerProfiles.tenantId, request.session.tenantId))
+            .limit(1)
+        );
         if (prof) {
           const pMeta = (prof.metadata as Record<string, any>) || {};
           resolvedPartnerType =

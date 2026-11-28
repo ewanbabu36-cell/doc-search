@@ -71,6 +71,14 @@ export const PHASE_1_DOMAINS: Phase1Domain[] = [
     status: 'active'
   },
   {
+    id: 'risk-management-hq',
+    title: 'Risk Management & Economics',
+    description: 'Live Company P&L, net profit/loss, unit margin leaderboard, leakage radar & automated containment rules',
+    icon: '🛡️',
+    category: 'revenue',
+    status: 'active'
+  },
+  {
     id: 'product-plans-entitlements',
     title: 'Product Plans, Tiers & Quotas',
     description: 'SaaS tier catalog, feature entitlements, and OPD quota limits',

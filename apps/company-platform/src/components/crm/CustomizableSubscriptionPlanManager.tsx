@@ -41,10 +41,10 @@ export interface TenureOption {
 
 const DEFAULT_TENURES: TenureOption[] = [
   { code: 'HALF_YEARLY', label: 'Half-Yearly (6 Months)', months: 6, durationDays: 180, defaultDiscountPercent: 0, badge: 'Flexible', description: 'Standard base rate with 6-month flexibility' },
-  { code: 'YEARLY', label: '1 Year (12 Months)', months: 12, durationDays: 365, defaultDiscountPercent: 10, badge: '⭐ Standard Annual', description: 'Save 10% on annual upfront commitment' },
-  { code: 'TWO_YEARS', label: '2 Years (24 Months)', months: 24, durationDays: 730, defaultDiscountPercent: 20, badge: '🏆 2-Year Lock-in', description: 'Save 20% with price-protection for 2 full years' },
-  { code: 'THREE_YEARS', label: '3 Years (36 Months)', months: 36, durationDays: 1095, defaultDiscountPercent: 30, badge: '💎 3-Year Enterprise', description: 'Save 30% with multi-year rate lock & priority onboarding' },
-  { code: 'FIVE_YEARS', label: '5 Years (60 Months)', months: 60, durationDays: 1825, defaultDiscountPercent: 40, badge: '👑 5-Year Institutional', description: 'Save 40% maximum savings & permanent dedicated support' }
+  { code: 'YEARLY', label: '1 Year (12 Months)', months: 12, durationDays: 365, defaultDiscountPercent: 0, badge: '⭐ Standard Annual', description: 'Standard 1-year annual commitment (0% discount)' },
+  { code: 'TWO_YEARS', label: '2 Years (24 Months)', months: 24, durationDays: 730, defaultDiscountPercent: 2, badge: '🏆 2-Year Lock-in', description: 'Save 2% with price-protection for 2 full years' },
+  { code: 'THREE_YEARS', label: '3 Years (36 Months)', months: 36, durationDays: 1095, defaultDiscountPercent: 10, badge: '💎 3-Year Enterprise', description: 'Save 10% with multi-year rate lock & priority onboarding' },
+  { code: 'FIVE_YEARS', label: '5 Years (60 Months)', months: 60, durationDays: 1825, defaultDiscountPercent: 20, badge: '👑 5-Year Institutional', description: 'Save 20% maximum savings & permanent dedicated support' }
 ];
 
 export const CustomizableSubscriptionPlanManager: React.FC = () => {

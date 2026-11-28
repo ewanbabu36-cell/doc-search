@@ -1,6 +1,6 @@
 import type { FastifyInstance, FastifyRequest } from 'fastify';
 import { AppError, ErrorCode } from '@docsearch/shared-core';
-import { authenticate, requirePermission } from '../../plugins/auth-guard.js';
+import { authenticate } from '../../plugins/auth-guard.js';
 import {
   patient360ContinuityService,
   type CanonicalEncounterRecord,
@@ -244,7 +244,7 @@ export async function patient360ContinuityRoutes(app: FastifyInstance): Promise<
    */
   app.delete(
     '/api/v1/partner/patient-360/patients/:patientId',
-    { preHandler: [authenticate, requirePermission('clinical:patients', 'delete')] },
+    { preHandler: [authenticate] },
     async (_request, reply) => {
       return reply.status(405).send({
         success: false,

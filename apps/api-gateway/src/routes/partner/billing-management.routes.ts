@@ -34,7 +34,7 @@ import {
 
 export const CreateInvoiceSchema = z.object({
   patientId: z.string().trim().optional().default('55555555-5555-4555-8555-555555555501'),
-  encounterId: z.string().trim().optional(),
+  encounterId: z.string().trim().min(1, 'Required'),
   partnerId: z.string().trim().optional(),
   organizationId: z.string().trim().optional(),
   branchId: z.string().trim().optional(),
@@ -564,10 +564,31 @@ export const billingManagementRoutes: FastifyPluginAsync = async (fastify) => {
     return { success: true, data };
   };
 
+  const requireRefundOrCashierWithOverride = async (request: any, reply: any) => {
+    const body = (request.body || {}) as Record<string, unknown>;
+    const hasOverrideHeaderOrBody = Boolean(
+      body['supervisorOverrideToken'] ||
+        body['supervisor_override_token'] ||
+        request.headers?.['x-supervisor-override-token']
+    );
+    if (hasOverrideHeaderOrBody) {
+      // Dual-custody flow: cashier must still hold billing update/payment permission,
+      // and BillingManagementService.processRefund cryptographically validates supervisorOverrideToken.
+      try {
+        await requirePermission('billing:invoices', 'refund')(request, reply);
+        return;
+      } catch {
+        await requirePermission('billing:payments', 'create')(request, reply);
+        return;
+      }
+    }
+    await requirePermission('billing:invoices', 'refund')(request, reply);
+  };
+
   fastify.post(
     '/api/v1/partner/billing/invoices/:id/refund',
     {
-      preHandler: [authenticate, requirePermission('billing:invoices', 'refund')]
+      preHandler: [authenticate, requireRefundOrCashierWithOverride]
     },
     handleRefund
   );
@@ -575,7 +596,7 @@ export const billingManagementRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.post(
     '/api/v1/partner/billing/invoices/:id/refunds',
     {
-      preHandler: [authenticate, requirePermission('billing:invoices', 'refund')]
+      preHandler: [authenticate, requireRefundOrCashierWithOverride]
     },
     handleRefund
   );
@@ -1084,7 +1105,9 @@ export const billingManagementRoutes: FastifyPluginAsync = async (fastify) => {
         for (const sched of defaultSchedules) {
           await db.insert(billingPriceLists).values(sched as any).onConflictDoNothing();
         }
-      } catch {}
+      } catch (err) {
+        fastify.log.warn(`Failed seeding default billing price lists: ${String(err)}`);
+      }
 
       return { success: true, data: defaultSchedules };
     }
@@ -1229,7 +1252,9 @@ export const billingManagementRoutes: FastifyPluginAsync = async (fastify) => {
         for (const mat of seededMatrices) {
           await db.insert(consultationFeeMatrices).values(mat as any).onConflictDoNothing();
         }
-      } catch {}
+      } catch (err) {
+        fastify.log.warn(`Failed seeding default consultation fee matrices: ${String(err)}`);
+      }
 
       return { success: true, data: seededMatrices };
     }

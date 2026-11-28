@@ -2,6 +2,8 @@ import { describe, it, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { buildApp } from '../dist/app.js';
 import { signJwt } from '@docsearch/auth';
+import { setupTestDatabase } from '@docsearch/database';
+import { realAuthService } from '../dist/services/core/RealAuthService.js';
 
 describe('Wave 2 — API Gateway, Repositories, & Real Database Persistence', () => {
   let app;
@@ -45,18 +47,42 @@ describe('Wave 2 — API Gateway, Repositories, & Real Database Persistence', ()
     return signJwt(claims, { secret: MASTER_SECRET });
   }
 
+  let testDb;
+
   before(async () => {
     process.env.JWT_SECRET = MASTER_SECRET;
     process.env.JWT_ISSUER = ISSUER;
     process.env.JWT_AUDIENCE = AUDIENCE;
     process.env.NODE_ENV = 'development';
-    process.env.DATABASE_URL = 'postgresql://postgres:postgres@localhost:5432/docsearch';
+    testDb = await setupTestDatabase({ seedBaseline: true, seedDemoFixtures: true });
+    for (const u of [
+      { email: 'clinician@hospital.com', firstName: 'Clinician', lastName: 'User', roles: ['DOCTOR'] },
+      { email: 'nurse@hospital.com', firstName: 'Nurse', lastName: 'User', roles: ['NURSE'] },
+      { email: 'doc@hospital.com', firstName: 'Doc', lastName: 'User', roles: ['DOCTOR'] }
+    ]) {
+      realAuthService.registerPartnerUserCredential({
+        email: u.email,
+        plainPassword: 'securePassword123!',
+        firstName: u.firstName,
+        lastName: u.lastName,
+        tenantName: 'Apex Hospital',
+        tenantId: tenantA_Id,
+        organizationId: '00000000-0000-4000-8000-000000000002',
+        branchId: branchA1_Id,
+        roles: u.roles,
+        status: 'ACTIVE'
+      });
+    }
+    await new Promise((r) => setTimeout(r, 150));
     app = await buildApp();
   });
 
   after(async () => {
     if (app) {
       await app.close();
+    }
+    if (testDb) {
+      await testDb.cleanup();
     }
   });
 
@@ -362,6 +388,7 @@ describe('Wave 2 — API Gateway, Repositories, & Real Database Persistence', ()
     const tokenBranchA2 = createTestToken({
       tenantId: tenantA_Id,
       branchId: branchA2_Id,
+      roles: ['RADIOLOGIST'],
       dataScope: 'branch'
     });
 

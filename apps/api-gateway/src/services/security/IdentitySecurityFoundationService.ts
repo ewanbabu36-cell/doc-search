@@ -1,6 +1,7 @@
 import crypto from 'node:crypto';
 import {
   getDatabase,
+  withSecurityContext,
   partnerProfiles,
   licenses,
   partnerCapabilities,
@@ -8,6 +9,7 @@ import {
   operationalStaff,
   staffCredentials,
   breakGlassAccess,
+  platformSettings,
   users,
   eq,
   and,
@@ -526,6 +528,34 @@ export class IdentitySecurityFoundationService {
   private securityAuditLog: Array<Record<string, any>> = [];
   private identityCache = new Map<string, { expiresAt: number; context: CanonicalIdentityContext }>();
 
+  private async persistSetting(key: string, value: unknown): Promise<void> {
+    try {
+      const db = getDatabase();
+      if (!db) return;
+      await db
+        .insert(platformSettings)
+        .values({ key, value: value as Record<string, unknown>, updatedBy: 'identity-security-foundation' })
+        .onConflictDoUpdate({
+          target: platformSettings.key,
+          set: { value: value as Record<string, unknown>, updatedBy: 'identity-security-foundation', updatedAt: new Date() }
+        });
+    } catch (err) {
+      console.warn('[IdentitySecurityFoundation] Failed to persist setting:', key, err);
+    }
+  }
+
+  private async readSetting<T>(key: string): Promise<T | null> {
+    try {
+      const db = getDatabase();
+      if (!db) return null;
+      const [row] = await db.select().from(platformSettings).where(eq(platformSettings.key, key)).limit(1);
+      return (row?.value as T) ?? null;
+    } catch (err) {
+      console.warn('[IdentitySecurityFoundation] Failed to read setting:', key, err);
+      return null;
+    }
+  }
+
   /**
    * Normalizes any action/permission string to canonical DOMAIN:RESOURCE:ACTION format
    */
@@ -846,16 +876,18 @@ export class IdentitySecurityFoundationService {
 
     if (db) {
       try {
-        const [profile] = await db
-          .select()
-          .from(partnerProfiles)
-          .where(eq(partnerProfiles.tenantId, tenantUuid))
-          .limit(1);
-        if (profile) {
-          const meta = (profile.metadata || {}) as Record<string, any>;
-          industry = String(meta['industry'] || profile.partnerType || industry).toUpperCase();
-          operatingModel = String(meta['operatingModel'] || meta['operatingMode'] || operatingModel).toUpperCase();
-        }
+        await withSecurityContext(db, session, async (tx) => {
+          const [profile] = await tx
+            .select()
+            .from(partnerProfiles)
+            .where(eq(partnerProfiles.tenantId, tenantUuid))
+            .limit(1);
+          if (profile) {
+            const meta = (profile.metadata || {}) as Record<string, any>;
+            industry = String(meta['industry'] || profile.partnerType || industry).toUpperCase();
+            operatingModel = String(meta['operatingModel'] || meta['operatingMode'] || operatingModel).toUpperCase();
+          }
+        });
 
         const licRows = await db
           .select()
@@ -1024,6 +1056,7 @@ export class IdentitySecurityFoundationService {
     };
 
     tenantMap.set(roleCode, record);
+    await this.persistSetting(`IDENTITY_ROLE:${partnerId}:${roleCode}`, record);
     this.invalidateSecurityCache(partnerId);
 
     await this.recordSecurityAudit({
@@ -1126,6 +1159,7 @@ export class IdentitySecurityFoundationService {
 
     // Override standard role permissions for this tenant if custom modified
     CANONICAL_ROLE_PERMISSIONS[`${partnerId}:${code}`] = existing.permissions;
+    await this.persistSetting(`IDENTITY_ROLE:${partnerId}:${code}`, existing);
     this.invalidateSecurityCache(partnerId);
 
     await this.recordSecurityAudit({
@@ -1190,6 +1224,7 @@ export class IdentitySecurityFoundationService {
     };
 
     this.makerCheckerStore.set(record.id, record);
+    await this.persistSetting(`MAKER_CHECKER:${record.id}`, record);
 
     await this.recordSecurityAudit({
       actorUserId: identity.userId,
@@ -1225,7 +1260,14 @@ export class IdentitySecurityFoundationService {
       throw AppError.unauthorized('Authentication required');
     }
 
-    const reqRecord = this.makerCheckerStore.get(requestId);
+    let reqRecord = this.makerCheckerStore.get(requestId);
+    if (!reqRecord) {
+      const dbRecord = await this.readSetting<MakerCheckerRequestRecord>(`MAKER_CHECKER:${requestId}`);
+      if (dbRecord) {
+        this.makerCheckerStore.set(requestId, dbRecord);
+        reqRecord = dbRecord;
+      }
+    }
     if (!reqRecord) {
       throw AppError.notFound(`Maker-Checker request ${requestId} not found`);
     }
@@ -1279,6 +1321,7 @@ export class IdentitySecurityFoundationService {
     reqRecord.decidedAt = new Date().toISOString();
 
     this.makerCheckerStore.set(requestId, reqRecord);
+    await this.persistSetting(`MAKER_CHECKER:${requestId}`, reqRecord);
 
     await this.recordSecurityAudit({
       actorUserId: checkerIdentity.userId,
@@ -2015,20 +2058,22 @@ export class IdentitySecurityFoundationService {
           }
         }
 
-        await db.insert(breakGlassAccess).values({
-          id,
-          tenantId: tenantUuid,
-          partnerId: session.tenantId,
-          userId: resolvedUserId,
-          userEmail: session.actorEmail || `${session.userId}@partner.local`,
-          patientId,
-          reason: reasonText,
-          scope: 'PATIENT_EMERGENCY',
-          triggeredAt: new Date(nowMs),
-          expiresAt: new Date(nowMs + durationSec * 1000),
-          revokedAt: null,
-          revokedBy: null,
-          ipAddress: session.sessionId || '127.0.0.1'
+        await withSecurityContext(db, { ...session, tenantId: tenantUuid }, async (tx) => {
+          await tx.insert(breakGlassAccess).values({
+            id,
+            tenantId: tenantUuid,
+            partnerId: session.tenantId,
+            userId: resolvedUserId,
+            userEmail: session.actorEmail || `${session.userId}@partner.local`,
+            patientId,
+            reason: reasonText,
+            scope: 'PATIENT_EMERGENCY',
+            triggeredAt: new Date(nowMs),
+            expiresAt: new Date(nowMs + durationSec * 1000),
+            revokedAt: null,
+            revokedBy: null,
+            ipAddress: session.sessionId || '127.0.0.1'
+          });
         });
       } catch (err) {
         console.error('[IdentitySecurityFoundation] Failed to persist break-glass access to PostgreSQL:', err);
@@ -2056,14 +2101,24 @@ export class IdentitySecurityFoundationService {
     const db = getDatabase();
     if (db) {
       try {
-        await db
-          .update(breakGlassAccess)
-          .set({
-            expiresAt: new Date(Date.now() - 60000),
-            revokedAt: new Date(),
-            revokedBy: 'SYSTEM_EXPIRY'
-          })
-          .where(eq(breakGlassAccess.id, breakGlassId));
+        const bgSession = {
+          userId: 'system-expiry',
+          tenantId: existing?.partnerId || '00000000-0000-4000-8000-000000000000',
+          roles: ['SUPER_ADMIN'],
+          permissions: ['*'],
+          isSuperAdmin: true,
+          dataScope: 'global'
+        } as unknown as SessionContext;
+        await withSecurityContext(db, bgSession, async (tx) => {
+          await tx
+            .update(breakGlassAccess)
+            .set({
+              expiresAt: new Date(Date.now() - 60000),
+              revokedAt: new Date(),
+              revokedBy: 'SYSTEM_EXPIRY'
+            })
+            .where(eq(breakGlassAccess.id, breakGlassId));
+        });
       } catch (err) {
         console.error('[IdentitySecurityFoundation] Failed to expire break-glass in PostgreSQL:', err);
         throw new AppError({
@@ -2086,6 +2141,55 @@ export class IdentitySecurityFoundationService {
     expiresAt?: string;
   }> {
     const nowMs = Date.now();
+    const db = getDatabase();
+    if (db) {
+      try {
+        const tenantUuid = toDeterministicUuid(identity.partnerId);
+        const userUuid = toDeterministicUuid(identity.userId);
+        const bgReadSession = {
+          userId: identity.userId,
+          tenantId: tenantUuid,
+          roles: identity.roleCodes?.length ? identity.roleCodes : ['DOCTOR'],
+          permissions: ['*'],
+          isSuperAdmin: false,
+          dataScope: 'tenant'
+        } as unknown as SessionContext;
+        const rows = await withSecurityContext(db, bgReadSession, (tx) =>
+          tx
+            .select()
+            .from(breakGlassAccess)
+            .where(and(eq(breakGlassAccess.tenantId, tenantUuid), eq(breakGlassAccess.patientId, patientId.trim())))
+        );
+
+        const userRows = rows.filter(
+          (r: any) =>
+            r.userId === identity.userId ||
+            r.userId === userUuid ||
+            (identity.actorEmail && String(r.userEmail || '').toLowerCase() === identity.actorEmail.toLowerCase())
+        );
+
+        if (userRows.length > 0) {
+          for (const r of userRows) {
+            if (r.revokedAt) continue;
+            const expMs = r.expiresAt ? new Date(r.expiresAt).getTime() : 0;
+            if (expMs > nowMs) {
+              return {
+                active: true,
+                expired: false,
+                breakGlassId: r.id,
+                reason: r.reason,
+                expiresAt: r.expiresAt instanceof Date ? r.expiresAt.toISOString() : String(r.expiresAt)
+              };
+            }
+          }
+          const hadExpired = userRows.some((r: any) => !r.revokedAt && r.expiresAt && new Date(r.expiresAt).getTime() <= nowMs);
+          return { active: false, expired: hadExpired };
+        }
+      } catch (err) {
+        console.warn('[IdentitySecurityFoundation] DB break-glass evaluation fallback to local cache:', err);
+      }
+    }
+
     const memGrants = Array.from(this.breakGlassStore.values()).filter(
       (g) =>
         g.partnerId === identity.partnerId &&
@@ -2108,48 +2212,7 @@ export class IdentitySecurityFoundationService {
       return { active: false, expired: true };
     }
 
-    const db = getDatabase();
-    if (!db) {
-      return { active: false, expired: false };
-    }
-    try {
-      const tenantUuid = toDeterministicUuid(identity.partnerId);
-      const userUuid = toDeterministicUuid(identity.userId);
-      const rows = await db
-        .select()
-        .from(breakGlassAccess)
-        .where(and(eq(breakGlassAccess.tenantId, tenantUuid), eq(breakGlassAccess.patientId, patientId.trim())));
-
-      const userRows = rows.filter(
-        (r: any) =>
-          r.userId === identity.userId ||
-          r.userId === userUuid ||
-          (identity.actorEmail && String(r.userEmail || '').toLowerCase() === identity.actorEmail.toLowerCase())
-      );
-
-      if (userRows.length === 0) {
-        return { active: false, expired: false };
-      }
-
-      for (const r of userRows) {
-        if (r.revokedAt) continue;
-        const expMs = r.expiresAt ? new Date(r.expiresAt).getTime() : 0;
-        if (expMs > nowMs) {
-          return {
-            active: true,
-            expired: false,
-            breakGlassId: r.id,
-            reason: r.reason,
-            expiresAt: r.expiresAt instanceof Date ? r.expiresAt.toISOString() : String(r.expiresAt)
-          };
-        }
-      }
-
-      const hadExpired = userRows.some((r: any) => !r.revokedAt && r.expiresAt && new Date(r.expiresAt).getTime() <= nowMs);
-      return { active: false, expired: hadExpired };
-    } catch {
-      return { active: false, expired: false };
-    }
+    return { active: false, expired: false };
   }
 
   // =========================================================================

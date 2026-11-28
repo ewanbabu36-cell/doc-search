@@ -2,6 +2,7 @@ import { describe, it, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { buildApp } from '../dist/app.js';
 import { signJwt } from '@docsearch/auth';
+import { setupTestDatabase } from '@docsearch/database';
 
 describe('Domain 2.19 — Asset & Biomedical (HTM) Vertical Slice Test Suite', () => {
   let app;
@@ -42,7 +43,10 @@ describe('Domain 2.19 — Asset & Biomedical (HTM) Vertical Slice Test Suite', (
   let createdSparePartId;
   let createdCondemnationId;
 
+  let testDb;
+
   before(async () => {
+    testDb = await setupTestDatabase({ seedBaseline: true, seedDemoFixtures: true });
     app = await buildApp();
     await app.ready();
 
@@ -54,10 +58,11 @@ describe('Domain 2.19 — Asset & Biomedical (HTM) Vertical Slice Test Suite', (
   });
 
   after(async () => {
-    await app.close();
+    if (app) await app.close();
+    if (testDb) await testDb.cleanup();
   });
 
-  it('TEST 01: GET /api/v1/partner/biomedical/overview returns operational equipment metrics', async () => {
+  it('TEST 01: GET /api/v1/partner/biomedical/overview returns honest zero-state prior to asset registration', async () => {
     const res = await app.inject({
       method: 'GET',
       url: '/api/v1/partner/biomedical/overview',
@@ -67,11 +72,11 @@ describe('Domain 2.19 — Asset & Biomedical (HTM) Vertical Slice Test Suite', (
     assert.equal(res.statusCode, 200);
     const body = JSON.parse(res.body);
     assert.equal(body.success, true);
-    assert.ok(body.data.totalAssetsCount > 0);
-    assert.ok(body.data.criticalUptimePercent >= 90);
+    assert.equal(body.data.totalAssetsCount, 0);
+    assert.equal(body.data.criticalUptimePercent, 0);
   });
 
-  it('TEST 02: GET /api/v1/partner/biomedical/analytics/downtime returns MTTR & MTBF analytics', async () => {
+  it('TEST 02: GET /api/v1/partner/biomedical/analytics/downtime returns honest zero MTTR prior to work orders', async () => {
     const res = await app.inject({
       method: 'GET',
       url: '/api/v1/partner/biomedical/analytics/downtime',
@@ -81,8 +86,8 @@ describe('Domain 2.19 — Asset & Biomedical (HTM) Vertical Slice Test Suite', (
     assert.equal(res.statusCode, 200);
     const body = JSON.parse(res.body);
     assert.equal(body.success, true);
-    assert.ok(body.data.meanTimeToRepairMinutes > 0);
-    assert.ok(body.data.meanTimeBetweenFailuresDays > 0);
+    assert.equal(body.data.meanTimeToRepairMinutes, 0);
+    assert.equal(body.data.meanTimeBetweenFailuresDays, 0);
   });
 
   it('TEST 03: POST /api/v1/partner/biomedical/assets creates a new biomedical asset registry entry', async () => {

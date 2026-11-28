@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { DocSearchLogo } from '@docsearch/ui-kit';
 import { type Language, translations, PATIENT_LANGUAGE_OPTIONS } from '../i18n.js';
 import { type PatientProfile } from '../services/patient-api.js';
@@ -35,7 +35,16 @@ export const PatientHomeScreen: React.FC<Props> = ({
   onSelectPatient
 }) => {
   const t = translations[language];
-  const [doctorReels] = useState(() => doctorReelsService.getReels());
+  const [doctorReels, setDoctorReels] = useState(() => doctorReelsService.getReels());
+  useEffect(() => {
+    let active = true;
+    void doctorReelsService.fetchReels().then((live) => {
+      if (active && live.length > 0) setDoctorReels(live);
+    });
+    return () => {
+      active = false;
+    };
+  }, []);
   const [showQrPass, setShowQrPass] = useState(false);
   const [showEmergencySos, setShowEmergencySos] = useState(false);
   const [showFamilyModal, setShowFamilyModal] = useState(false);
@@ -276,7 +285,37 @@ export const PatientHomeScreen: React.FC<Props> = ({
             msOverflowStyle: 'none'
           }}
         >
-          {doctorReels.map((reel) => {
+          {doctorReels.length === 0 ? (
+            <button
+              type="button"
+              onClick={() => onNavigate('REELS')}
+              style={{
+                width: '100%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: '10px',
+                padding: '10px 14px',
+                borderRadius: '14px',
+                border: '1px dashed rgba(56, 189, 248, 0.35)',
+                backgroundColor: 'rgba(15, 23, 42, 0.65)',
+                color: '#CBD5E1',
+                fontSize: '0.75rem',
+                fontWeight: 600,
+                cursor: 'pointer',
+                textAlign: 'left'
+              }}
+            >
+              <span>
+                {language === 'hi'
+                  ? 'सत्यापित डॉक्टर रील्स अभी उपलब्ध नहीं हैं। लाइव शॉर्ट्स देखने के लिए टैप करें।'
+                  : 'No verified doctor health shorts published yet. Tap to open Reels Studio.'}
+              </span>
+              <span style={{ color: '#38BDF8', fontWeight: 700, flexShrink: 0 }}>
+                {language === 'hi' ? 'खोलें →' : 'Open →'}
+              </span>
+            </button>
+          ) : doctorReels.map((reel) => {
             const shortDocName = reel.doctorName.replace(/^Dr\.\s*/, '').split(' ')[0];
             return (
               <button

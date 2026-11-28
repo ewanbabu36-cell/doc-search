@@ -16,7 +16,7 @@ export const founderApprovalRoutes: FastifyPluginAsync = async (fastify) => {
       session?.actorEmail === 'meraj@docsearch.health'
     );
     if (!isFounder) {
-      throw AppError.forbidden('Access Denied: Only Founder / Super Admin has authority to approve or reject requests.');
+      throw AppError.forbidden('Access Denied: Only Founder MERAJ SHARIF has the authority to approve or reject requests.');
     }
   };
 

@@ -129,6 +129,7 @@ export class ClinicalWorkflowService {
           doctorId: encounter.doctorId || undefined,
           branchId: encounter.branchId || undefined,
           departmentId: encounter.departmentId || undefined,
+          preserveEncounterStatus: true,
           metadata: {
             encounterNumber: encounter.encounterNumber,
             ...(encounter.metadata || {})
@@ -285,10 +286,15 @@ export class ClinicalWorkflowService {
   // ==========================================
 
   async saveConsultation(input: Omit<SaveConsultationInput, 'tenantId'>, session: SessionContext) {
+    const scope = ScopeGuard.resolveEffectiveQueryScope(session, {
+      branchId: input.branchId
+    });
+    const effectiveBranchId = scope.branchId || session.branchId;
     return withSecurityContext(getDatabase(), session, async (tx) => {
       const consultation = await clinicalWorkflowRepository.saveConsultation({
         ...input,
-        tenantId: session.tenantId
+        tenantId: scope.tenantId,
+        ...(effectiveBranchId ? { branchId: effectiveBranchId } : {})
       }, tx);
 
       await auditRepository.recordEvent({
@@ -737,8 +743,8 @@ export class ClinicalWorkflowService {
   }
 
   async getPatientClinicalHistory(patientId: string, session: SessionContext) {
-    return withSecurityContext(getDatabase(), session, async () => {
-      return clinicalWorkflowRepository.getPatientClinicalHistory(session.tenantId, patientId);
+    return withSecurityContext(getDatabase(), session, async (tx) => {
+      return clinicalWorkflowRepository.getPatientClinicalHistory(session.tenantId, patientId, tx);
     });
   }
 

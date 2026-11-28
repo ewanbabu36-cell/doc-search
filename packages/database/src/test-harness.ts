@@ -42,6 +42,7 @@ export const TEST_SEEDS = {
   FEAT_RADIOLOGY_ID: '66666666-6666-4666-8666-666666666606',
   FEAT_OT_ID: '66666666-6666-4666-8666-666666666607',
   FEAT_BLOOD_BANK_ID: '66666666-6666-4666-8666-666666666608',
+  FEAT_EMERGENCY_ID: '44444444-4444-4444-8444-444444444010',
   SUBSCRIPTION_ID_A: '33333333-3333-4333-8333-333333333301',
   LICENSE_ID_A: '44444444-4444-4444-8444-444444444401',
   SUBSCRIPTION_ID_B: '33333333-3333-4333-8333-333333333302',
@@ -472,7 +473,13 @@ export async function createTestDatabase(options: { seedBaseline?: boolean; seed
         ('${FEAT_BILLING_ID}', 'BILLING_INSURANCE', 'Billing & TPA Insurance', 'Invoicing, receipts, refunds, and insurance claims', 'MODULE_ACCESS', 'ACTIVE'),
         ('${FEAT_RADIOLOGY_ID}', 'RADIOLOGY_PACS', 'Radiology, Imaging & PACS', 'Radiology imaging, modality worklist, PACS integration, and reports', 'MODULE_ACCESS', 'ACTIVE'),
         ('${FEAT_OT_ID}', 'OT_SURGERY', 'Operation Theatre & Surgery', 'OT rooms, scheduling, and operative notes', 'MODULE_ACCESS', 'ACTIVE'),
-        ('${FEAT_BLOOD_BANK_ID}', 'BLOOD_BANK', 'Blood Bank & Transfusion', 'Blood donor registry, testing, and transfusion', 'MODULE_ACCESS', 'ACTIVE')
+        ('${FEAT_BLOOD_BANK_ID}', 'BLOOD_BANK', 'Blood Bank & Transfusion', 'Blood donor registry, testing, and transfusion', 'MODULE_ACCESS', 'ACTIVE'),
+        ('44444444-4444-4444-8444-444444444009', 'EXECUTIVE_COMMAND', 'Hospital Executive Command & MIS', 'Executive MIS dashboard, surge command, and forecasting', 'MODULE_ACCESS', 'ACTIVE'),
+        ('44444444-4444-4444-8444-444444444010', 'EMERGENCY_ICU', 'Emergency & ICU Critical Care', 'Emergency triage, trauma bay, and ICU critical care', 'MODULE_ACCESS', 'ACTIVE'),
+        ('44444444-4444-4444-8444-444444444011', 'DIETARY', 'Dietary & Nutrition Management', 'Therapeutic diet orders, kitchen production & tray delivery', 'MODULE_ACCESS', 'ACTIVE'),
+        ('44444444-4444-4444-8444-444444444012', 'OPERATIONS', 'Hospital Operations, HTM & Hardware', 'Biomedical HTM, quality/infection control & hardware bridge', 'MODULE_ACCESS', 'ACTIVE'),
+        ('44444444-4444-4444-8444-444444444013', 'PROCUREMENT', 'Procurement & Supply Chain', 'Vendors, purchase orders, GRN & warehouse transfers', 'MODULE_ACCESS', 'ACTIVE'),
+        ('44444444-4444-4444-8444-444444444014', 'MRD', 'Medical Records Department & ICD-10', 'MRD coding, record requests & archival compliance', 'MODULE_ACCESS', 'ACTIVE')
       ON CONFLICT DO NOTHING;
     `);
 
@@ -483,21 +490,50 @@ export async function createTestDatabase(options: { seedBaseline?: boolean; seed
         ('55555555-5555-4555-8555-555555555002', '${PLAN_STARTER_ID}', '${FEAT_PHARMACY_ID}', 'FEATURE_ACCESS', '{"enabled":true}'::jsonb, 'ACTIVE'),
         ('55555555-5555-4555-8555-555555555003', '${PLAN_STARTER_ID}', '${FEAT_BILLING_ID}', 'FEATURE_ACCESS', '{"enabled":true}'::jsonb, 'ACTIVE'),
         ('55555555-5555-4555-8555-555555555023', '${PLAN_STARTER_ID}', '${FEAT_OT_ID}', 'FEATURE_ACCESS', '{"enabled":true}'::jsonb, 'ACTIVE'),
+        ('55555555-5555-4555-8555-555555555031', '${PLAN_STARTER_ID}', '${FEAT_LAB_ID}', 'FEATURE_ACCESS', '{"enabled":true}'::jsonb, 'ACTIVE'),
+        ('55555555-5555-4555-8555-555555555032', '${PLAN_STARTER_ID}', '${FEAT_INPATIENT_ID}', 'FEATURE_ACCESS', '{"enabled":true}'::jsonb, 'ACTIVE'),
+        ('55555555-5555-4555-8555-555555555033', '${PLAN_STARTER_ID}', '${FEAT_RADIOLOGY_ID}', 'FEATURE_ACCESS', '{"enabled":true}'::jsonb, 'ACTIVE'),
+        ('55555555-5555-4555-8555-555555555034', '${PLAN_STARTER_ID}', '${FEAT_BLOOD_BANK_ID}', 'FEATURE_ACCESS', '{"enabled":true}'::jsonb, 'ACTIVE'),
+        ('55555555-5555-4555-8555-555555555035', '${PLAN_STARTER_ID}', '44444444-4444-4444-8444-444444444009', 'FEATURE_ACCESS', '{"enabled":true}'::jsonb, 'ACTIVE'),
+        ('55555555-5555-4555-8555-555555555036', '${PLAN_STARTER_ID}', '44444444-4444-4444-8444-444444444010', 'FEATURE_ACCESS', '{"enabled":true}'::jsonb, 'ACTIVE'),
+        ('55555555-5555-4555-8555-555555555037', '${PLAN_STARTER_ID}', '44444444-4444-4444-8444-444444444011', 'FEATURE_ACCESS', '{"enabled":true}'::jsonb, 'ACTIVE'),
+        ('55555555-5555-4555-8555-555555555038', '${PLAN_STARTER_ID}', '44444444-4444-4444-8444-444444444012', 'FEATURE_ACCESS', '{"enabled":true}'::jsonb, 'ACTIVE'),
+        ('55555555-5555-4555-8555-555555555039', '${PLAN_STARTER_ID}', '44444444-4444-4444-8444-444444444013', 'FEATURE_ACCESS', '{"enabled":true}'::jsonb, 'ACTIVE'),
+        ('55555555-5555-4555-8555-555555555040', '${PLAN_STARTER_ID}', '44444444-4444-4444-8444-444444444014', 'FEATURE_ACCESS', '{"enabled":true}'::jsonb, 'ACTIVE'),
         ('55555555-5555-4555-8555-555555555004', '${PLAN_PRO_ID}', '${FEAT_OPD_ID}', 'FEATURE_ACCESS', '{"enabled":true}'::jsonb, 'ACTIVE'),
         ('55555555-5555-4555-8555-555555555005', '${PLAN_PRO_ID}', '${FEAT_PHARMACY_ID}', 'FEATURE_ACCESS', '{"enabled":true}'::jsonb, 'ACTIVE'),
         ('55555555-5555-4555-8555-555555555006', '${PLAN_PRO_ID}', '${FEAT_LAB_ID}', 'FEATURE_ACCESS', '{"enabled":true}'::jsonb, 'ACTIVE'),
         ('55555555-5555-4555-8555-555555555007', '${PLAN_PRO_ID}', '${FEAT_BILLING_ID}', 'FEATURE_ACCESS', '{"enabled":true}'::jsonb, 'ACTIVE'),
         ('55555555-5555-4555-8555-555555555014', '${PLAN_PRO_ID}', '${FEAT_RADIOLOGY_ID}', 'FEATURE_ACCESS', '{"enabled":true}'::jsonb, 'ACTIVE'),
+        ('55555555-5555-4555-8555-555555555024', '${PLAN_PRO_ID}', '${FEAT_INPATIENT_ID}', 'FEATURE_ACCESS', '{"enabled":true}'::jsonb, 'ACTIVE'),
         ('55555555-5555-4555-8555-555555555020', '${PLAN_HOSPITAL_ID}', '${FEAT_INPATIENT_ID}', 'FEATURE_ACCESS', '{"enabled":true}'::jsonb, 'ACTIVE'),
         ('55555555-5555-4555-8555-555555555021', '${PLAN_PRO_ID}', '${FEAT_OT_ID}', 'FEATURE_ACCESS', '{"enabled":true}'::jsonb, 'ACTIVE'),
         ('55555555-5555-4555-8555-555555555022', '${PLAN_PRO_ID}', '${FEAT_BLOOD_BANK_ID}', 'FEATURE_ACCESS', '{"enabled":true}'::jsonb, 'ACTIVE'),
+        ('55555555-5555-4555-8555-555555555025', '${PLAN_PRO_ID}', '44444444-4444-4444-8444-444444444009', 'FEATURE_ACCESS', '{"enabled":true}'::jsonb, 'ACTIVE'),
+        ('55555555-5555-4555-8555-555555555026', '${PLAN_ENTERPRISE_ID}', '44444444-4444-4444-8444-444444444009', 'FEATURE_ACCESS', '{"enabled":true}'::jsonb, 'ACTIVE'),
+        ('55555555-5555-4555-8555-555555555027', '${PLAN_HOSPITAL_ID}', '44444444-4444-4444-8444-444444444009', 'FEATURE_ACCESS', '{"enabled":true}'::jsonb, 'ACTIVE'),
+        ('55555555-5555-4555-8555-555555555028', '${PLAN_PRO_ID}', '44444444-4444-4444-8444-444444444010', 'FEATURE_ACCESS', '{"enabled":true}'::jsonb, 'ACTIVE'),
+        ('55555555-5555-4555-8555-555555555029', '${PLAN_ENTERPRISE_ID}', '44444444-4444-4444-8444-444444444010', 'FEATURE_ACCESS', '{"enabled":true}'::jsonb, 'ACTIVE'),
+        ('55555555-5555-4555-8555-555555555030', '${PLAN_HOSPITAL_ID}', '44444444-4444-4444-8444-444444444010', 'FEATURE_ACCESS', '{"enabled":true}'::jsonb, 'ACTIVE'),
+        ('55555555-5555-4555-8555-555555555041', '${PLAN_PRO_ID}', '44444444-4444-4444-8444-444444444011', 'FEATURE_ACCESS', '{"enabled":true}'::jsonb, 'ACTIVE'),
+        ('55555555-5555-4555-8555-555555555042', '${PLAN_PRO_ID}', '44444444-4444-4444-8444-444444444012', 'FEATURE_ACCESS', '{"enabled":true}'::jsonb, 'ACTIVE'),
+        ('55555555-5555-4555-8555-555555555043', '${PLAN_PRO_ID}', '44444444-4444-4444-8444-444444444013', 'FEATURE_ACCESS', '{"enabled":true}'::jsonb, 'ACTIVE'),
+        ('55555555-5555-4555-8555-555555555044', '${PLAN_PRO_ID}', '44444444-4444-4444-8444-444444444014', 'FEATURE_ACCESS', '{"enabled":true}'::jsonb, 'ACTIVE'),
         ('55555555-5555-4555-8555-555555555008', '${PLAN_ENTERPRISE_ID}', '${FEAT_OPD_ID}', 'FEATURE_ACCESS', '{"enabled":true}'::jsonb, 'ACTIVE'),
         ('55555555-5555-4555-8555-555555555009', '${PLAN_ENTERPRISE_ID}', '${FEAT_PHARMACY_ID}', 'FEATURE_ACCESS', '{"enabled":true}'::jsonb, 'ACTIVE'),
         ('55555555-5555-4555-8555-555555555010', '${PLAN_ENTERPRISE_ID}', '${FEAT_LAB_ID}', 'FEATURE_ACCESS', '{"enabled":true}'::jsonb, 'ACTIVE'),
         ('55555555-5555-4555-8555-555555555011', '${PLAN_ENTERPRISE_ID}', '${FEAT_INPATIENT_ID}', 'FEATURE_ACCESS', '{"enabled":true}'::jsonb, 'ACTIVE'),
         ('55555555-5555-4555-8555-555555555012', '${PLAN_ENTERPRISE_ID}', '${FEAT_BILLING_ID}', 'FEATURE_ACCESS', '{"enabled":true}'::jsonb, 'ACTIVE'),
         ('55555555-5555-4555-8555-555555555015', '${PLAN_ENTERPRISE_ID}', '${FEAT_RADIOLOGY_ID}', 'FEATURE_ACCESS', '{"enabled":true}'::jsonb, 'ACTIVE'),
-        ('55555555-5555-4555-8555-555555555016', '${PLAN_HOSPITAL_ID}', '${FEAT_RADIOLOGY_ID}', 'FEATURE_ACCESS', '{"enabled":true}'::jsonb, 'ACTIVE')
+        ('55555555-5555-4555-8555-555555555045', '${PLAN_ENTERPRISE_ID}', '44444444-4444-4444-8444-444444444011', 'FEATURE_ACCESS', '{"enabled":true}'::jsonb, 'ACTIVE'),
+        ('55555555-5555-4555-8555-555555555046', '${PLAN_ENTERPRISE_ID}', '44444444-4444-4444-8444-444444444012', 'FEATURE_ACCESS', '{"enabled":true}'::jsonb, 'ACTIVE'),
+        ('55555555-5555-4555-8555-555555555047', '${PLAN_ENTERPRISE_ID}', '44444444-4444-4444-8444-444444444013', 'FEATURE_ACCESS', '{"enabled":true}'::jsonb, 'ACTIVE'),
+        ('55555555-5555-4555-8555-555555555048', '${PLAN_ENTERPRISE_ID}', '44444444-4444-4444-8444-444444444014', 'FEATURE_ACCESS', '{"enabled":true}'::jsonb, 'ACTIVE'),
+        ('55555555-5555-4555-8555-555555555016', '${PLAN_HOSPITAL_ID}', '${FEAT_RADIOLOGY_ID}', 'FEATURE_ACCESS', '{"enabled":true}'::jsonb, 'ACTIVE'),
+        ('55555555-5555-4555-8555-555555555049', '${PLAN_HOSPITAL_ID}', '44444444-4444-4444-8444-444444444011', 'FEATURE_ACCESS', '{"enabled":true}'::jsonb, 'ACTIVE'),
+        ('55555555-5555-4555-8555-555555555050', '${PLAN_HOSPITAL_ID}', '44444444-4444-4444-8444-444444444012', 'FEATURE_ACCESS', '{"enabled":true}'::jsonb, 'ACTIVE'),
+        ('55555555-5555-4555-8555-555555555051', '${PLAN_HOSPITAL_ID}', '44444444-4444-4444-8444-444444444013', 'FEATURE_ACCESS', '{"enabled":true}'::jsonb, 'ACTIVE'),
+        ('55555555-5555-4555-8555-555555555052', '${PLAN_HOSPITAL_ID}', '44444444-4444-4444-8444-444444444014', 'FEATURE_ACCESS', '{"enabled":true}'::jsonb, 'ACTIVE')
       ON CONFLICT DO NOTHING;
 
       INSERT INTO "core"."tenants" ("id", "name", "slug")
@@ -566,6 +602,21 @@ export async function createTestDatabase(options: { seedBaseline?: boolean; seed
       VALUES 
         ('${TEST_SEEDS.DOCTOR_ID}', '${TEST_SEEDS.TENANT_A}', '${TEST_SEEDS.PARTNER_ID_A}', '${TEST_SEEDS.ORG_ID_A}', '${TEST_SEEDS.FACILITY_ID_A}', '${TEST_SEEDS.DEPT_ID_A}', '${TEST_SEEDS.STAFF_ID_A}', 'DOC-01', 'MED-12345', 'MBBS, MD', 'General Medicine'),
         ('88888888-8888-4888-8888-888888888802', '${TEST_SEEDS.TENANT_B}', '${TEST_SEEDS.PARTNER_ID_B}', '${TEST_SEEDS.ORG_ID_B}', '${TEST_SEEDS.FACILITY_ID_B}', '${TEST_SEEDS.DEPT_ID_B}', '${TEST_SEEDS.STAFF_ID_B}', 'DOC-02', 'MED-67890', 'MBBS, MD', 'General Medicine')
+      ON CONFLICT DO NOTHING;
+
+      INSERT INTO "clinical"."staff_credentials" (
+        "id", "tenant_id", "partner_id", "organization_id", "staff_id",
+        "credential_type", "registration_number", "issuing_authority",
+        "issue_date", "expiry_date", "verification_status", "metadata"
+      )
+      VALUES
+        (
+          '77777777-7777-4777-8777-777777777101',
+          '${TEST_SEEDS.TENANT_A}', '${TEST_SEEDS.PARTNER_ID_A}', '${TEST_SEEDS.ORG_ID_A}', '${TEST_SEEDS.STAFF_ID_A}',
+          'MEDICAL_LICENSE', 'MED-12345', 'National Medical Commission',
+          now() - interval '365 days', now() + interval '1825 days', 'VERIFIED',
+          '{"authorizedBranches":["${TEST_SEEDS.FACILITY_ID_A}","${TEST_SEEDS.BRANCH_A}"]}'::jsonb
+        )
       ON CONFLICT DO NOTHING;
 
       INSERT INTO "company"."partner_profiles" (
@@ -725,6 +776,23 @@ export async function createTestDatabase(options: { seedBaseline?: boolean; seed
       VALUES 
         ('${DOCTOR_ID}', '${TENANT_A}', '${PARTNER_ID_A}', '${ORG_ID_A}', '${FACILITY_ID_A}', '${DEPT_ID_A}', '${STAFF_ID_A}', 'DOC-01', 'MED-12345', 'MBBS, MD', 'General Medicine'),
         ('99999999-9999-4999-8999-999999999998', '${TENANT_B}', '${PARTNER_ID_B}', '${ORG_ID_B}', '${FACILITY_ID_B}', '${DEPT_ID_B}', '${STAFF_ID_B}', 'DOC-02', 'MED-54321', 'MBBS, MD', 'General Medicine')
+      ON CONFLICT DO NOTHING;
+    `);
+
+    await pool.query(`
+      INSERT INTO "clinical"."staff_credentials" (
+        "id", "tenant_id", "partner_id", "organization_id", "staff_id",
+        "credential_type", "registration_number", "issuing_authority",
+        "issue_date", "expiry_date", "verification_status", "metadata"
+      )
+      VALUES
+        (
+          '77777777-7777-4777-8777-777777777101',
+          '${TENANT_A}', '${PARTNER_ID_A}', '${ORG_ID_A}', '${STAFF_ID_A}',
+          'MEDICAL_LICENSE', 'MED-12345', 'National Medical Commission',
+          now() - interval '365 days', now() + interval '1825 days', 'VERIFIED',
+          '{"authorizedBranches":["${FACILITY_ID_A}","${BRANCH_A}"]}'::jsonb
+        )
       ON CONFLICT DO NOTHING;
     `);
 

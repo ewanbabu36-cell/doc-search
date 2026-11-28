@@ -20,20 +20,24 @@ android {
 
     signingConfigs {
         release {
-            def keystorePath = System.getenv("RELEASE_KEYSTORE_PATH") ?: "aarogya360-release.keystore"
-            if (file(keystorePath).exists()) {
+            def keystorePath = System.getenv("RELEASE_KEYSTORE_PATH") ?: project.findProperty("RELEASE_KEYSTORE_PATH")
+            def storePass = System.getenv("RELEASE_KEYSTORE_PASSWORD") ?: project.findProperty("RELEASE_KEYSTORE_PASSWORD")
+            def keyAliasVal = System.getenv("RELEASE_KEY_ALIAS") ?: project.findProperty("RELEASE_KEY_ALIAS") ?: "aarogya360"
+            def keyPass = System.getenv("RELEASE_KEY_PASSWORD") ?: project.findProperty("RELEASE_KEY_PASSWORD") ?: storePass
+            if (keystorePath && file(keystorePath).exists() && storePass) {
                 storeFile file(keystorePath)
-                storePassword System.getenv("RELEASE_KEYSTORE_PASSWORD") ?: "docsearch_prod_pass_2026"
-                keyAlias System.getenv("RELEASE_KEY_ALIAS") ?: "aarogya360"
-                keyPassword System.getenv("RELEASE_KEY_PASSWORD") ?: "docsearch_prod_pass_2026"
+                storePassword storePass
+                keyAlias keyAliasVal
+                keyPassword keyPass
             }
         }
     }
 
     buildTypes {
         release {
-            minifyEnabled false
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            minifyEnabled true
+            shrinkResources true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
             if (signingConfigs.release.storeFile != null) {
                 signingConfig signingConfigs.release
             }

@@ -540,6 +540,20 @@
       "when": 1788557000000,
       "tag": "0076_rotate_and_harden_rls_context",
       "breakpoints": true
+    },
+    {
+      "idx": 77,
+      "version": "7",
+      "when": 1788558000000,
+      "tag": "0077_platform_settings",
+      "breakpoints": true
+    },
+    {
+      "idx": 78,
+      "version": "7",
+      "when": 1788559000000,
+      "tag": "0078_company_risk_management_economics",
+      "breakpoints": true
     }
   ]
 }

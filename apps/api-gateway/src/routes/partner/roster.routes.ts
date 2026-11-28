@@ -54,7 +54,9 @@ export const rosterRoutes: FastifyPluginAsync = async (fastify) => {
               .orderBy(desc(doctorSchedules.createdAt));
 
             if (rows.length > 0) return rows;
-          } catch (err) {}
+          } catch (err) {
+            request.log.warn({ err: String(err) }, 'Roster DB query failed, falling back to memory schedule store');
+          }
 
           let list = memorySchedules.filter((s) => s.tenantId === request.session.tenantId);
           if (q.doctorId) list = list.filter((s) => s.doctorId === q.doctorId);

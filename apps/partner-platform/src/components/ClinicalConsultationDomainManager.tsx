@@ -28,7 +28,7 @@ import { pharmacyStockService } from '../services/pharmacy-stock-service.js';
 import { PanelContextSwitcher } from './common/PanelContextSwitcher.js';
 import { ConsultationOverviewView } from './views/ConsultationOverviewView.js';
 import { ConsultationAuditVaultView } from './views/ConsultationAuditVaultView.js';
-import { SoloDoctorOpdCockpitView } from './views/SoloDoctorOpdCockpitView.js';
+const SoloDoctorOpdCockpitView = React.lazy(() => import('./views/SoloDoctorOpdCockpitView.js').then(m => ({ default: m.SoloDoctorOpdCockpitView })));
 import { SmartWaitingRoomVitalsGateway } from './views/SmartWaitingRoomVitalsGateway.js';
 import { DoctorFifteenSecondRxCockpit } from './clinical/DoctorFifteenSecondRxCockpit.js';
 import { PatientStoryboardRail } from './clinical/PatientStoryboardRail.js';
@@ -1163,89 +1163,91 @@ export const ClinicalConsultationDomainManager: React.FC<ClinicalConsultationDom
 
         <div style={{ flex: 1, minWidth: 0 }}>
           {context && (
-            <SoloDoctorOpdCockpitView
-          consultation={selectedConsultation}
-          consultations={consultations}
-          encounters={encounters}
-          actorId={context.userEmail}
-          actorRole={context.userRole}
-          onSelectConsultation={handleSelectConsultation}
-          onSaveDraft={async (_c, data) => {
-            if (!_c) return;
-            await handleSaveDraft({
-              tenantId: _c.tenantId,
-              consultationId: _c.id,
-              chiefComplaint: data.chiefComplaint,
-              clinicalAssessment: data.clinicalAssessment,
-              treatmentPlan: data.treatmentPlan,
-              actorId: context.userEmail,
-              actorRole: context.userRole,
-              justification: 'Auto-saved draft from Doctor OPD Cockpit',
-              ...((_c as any).medications ? { medications: (_c as any).medications } : {}),
-              ...((_c as any).labInvestigations ? { labInvestigations: (_c as any).labInvestigations } : {})
-            } as any);
-          }}
-          onCompleteConsultation={async (_c, asmt, plan) => {
-            if (!_c) return;
-            await handleCompleteConsultation({
-              tenantId: _c.tenantId,
-              consultationId: _c.id,
-              clinicalAssessment: asmt,
-              treatmentPlan: plan,
-              actorId: context.userEmail,
-              actorRole: context.userRole,
-              justification: 'Completed from Doctor OPD Cockpit',
-              encounterId: _c.encounterId,
-              patientId: _c.patientId,
-              patientName: _c.patientName,
-              patientMrn: _c.patientMrn,
-              patientMobile: (_c as any).patientMobile,
-              queueToken: (_c as any).queueToken,
-              diagnoses: (_c as any).diagnoses,
-              chiefComplaint: _c.chiefComplaint,
-              vitals: _c.vitals,
-              encounterStatus: (_c as any).encounterStatus,
-              consultationStatus: (_c as any).consultationStatus,
-              ...((_c as any).medications ? { medications: (_c as any).medications } : {}),
-              ...((_c as any).labInvestigations ? { labInvestigations: (_c as any).labInvestigations } : {})
-            } as any);
-          }}
-          onCallNextPatient={handleCallNextPatient}
-          onAddMedication={handleAddMedication}
-          onRemoveMedication={async (medId) => {
-            if (!selectedConsultation) return;
-            const med = selectedConsultation.medications?.find((m) => m.id === medId);
-            if (med) {
-              await handleDiscontinueMedication(selectedConsultation, med);
-            }
-          }}
-          onAddDiagnosis={handleAddDiagnosis}
-          onRemoveDiagnosis={(diagId) => {
-            if (selectedConsultation) handleRemoveDiagnosis(selectedConsultation, diagId);
-          }}
-          chamberRoom={chamberProfile.roomNumber}
-          chamberDoctor={chamberProfile.doctorName || currentUser?.name || 'Attending Physician'}
-          consultationFeeFirstVisit={chamberProfile.consultationFeeFirstVisit}
-          consultationFeeFollowUp={chamberProfile.consultationFeeFollowUp}
-          followUpValidityDays={chamberProfile.followUpValidityDays}
-          onBackToStandardDesk={async () => {
-            isChamberVacantRef.current = true;
-            activeConsultationIdRef.current = null;
-            setIsChamberVacant(true);
-            setSelectedConsultationId(null);
-            try {
-              await clinicalConsultationService.vacateChamber(currentUser?.id);
-            } catch (err) {
-              console.warn('Failed to vacate chamber on server:', err);
-            }
-          }}
-          onOpenSettings={() => {
-            setChamberSettingsTab('profile');
-            setIsSettingsOpen(true);
-          }}
-          onQuickRegisterWalkIn={handleQuickRegisterWalkIn}
-        />
-      )}
+            <React.Suspense fallback={<div style={{ padding: '24px', color: '#94A3B8', fontSize: '0.9rem' }}>Loading OPD Clinical Cockpit...</div>}>
+              <SoloDoctorOpdCockpitView
+                consultation={selectedConsultation}
+                consultations={consultations}
+                encounters={encounters}
+                actorId={context.userEmail}
+                actorRole={context.userRole}
+                onSelectConsultation={handleSelectConsultation}
+                onSaveDraft={async (_c, data) => {
+                  if (!_c) return;
+                  await handleSaveDraft({
+                    tenantId: _c.tenantId,
+                    consultationId: _c.id,
+                    chiefComplaint: data.chiefComplaint,
+                    clinicalAssessment: data.clinicalAssessment,
+                    treatmentPlan: data.treatmentPlan,
+                    actorId: context.userEmail,
+                    actorRole: context.userRole,
+                    justification: 'Auto-saved draft from Doctor OPD Cockpit',
+                    ...((_c as any).medications ? { medications: (_c as any).medications } : {}),
+                    ...((_c as any).labInvestigations ? { labInvestigations: (_c as any).labInvestigations } : {})
+                  } as any);
+                }}
+                onCompleteConsultation={async (_c, asmt, plan) => {
+                  if (!_c) return;
+                  await handleCompleteConsultation({
+                    tenantId: _c.tenantId,
+                    consultationId: _c.id,
+                    clinicalAssessment: asmt,
+                    treatmentPlan: plan,
+                    actorId: context.userEmail,
+                    actorRole: context.userRole,
+                    justification: 'Completed from Doctor OPD Cockpit',
+                    encounterId: _c.encounterId,
+                    patientId: _c.patientId,
+                    patientName: _c.patientName,
+                    patientMrn: _c.patientMrn,
+                    patientMobile: (_c as any).patientMobile,
+                    queueToken: (_c as any).queueToken,
+                    diagnoses: (_c as any).diagnoses,
+                    chiefComplaint: _c.chiefComplaint,
+                    vitals: _c.vitals,
+                    encounterStatus: (_c as any).encounterStatus,
+                    consultationStatus: (_c as any).consultationStatus,
+                    ...((_c as any).medications ? { medications: (_c as any).medications } : {}),
+                    ...((_c as any).labInvestigations ? { labInvestigations: (_c as any).labInvestigations } : {})
+                  } as any);
+                }}
+                onCallNextPatient={handleCallNextPatient}
+                onAddMedication={handleAddMedication}
+                onRemoveMedication={async (medId) => {
+                  if (!selectedConsultation) return;
+                  const med = selectedConsultation.medications?.find((m) => m.id === medId);
+                  if (med) {
+                    await handleDiscontinueMedication(selectedConsultation, med);
+                  }
+                }}
+                onAddDiagnosis={handleAddDiagnosis}
+                onRemoveDiagnosis={(diagId) => {
+                  if (selectedConsultation) handleRemoveDiagnosis(selectedConsultation, diagId);
+                }}
+                chamberRoom={chamberProfile.roomNumber}
+                chamberDoctor={chamberProfile.doctorName || currentUser?.name || 'Attending Physician'}
+                consultationFeeFirstVisit={chamberProfile.consultationFeeFirstVisit}
+                consultationFeeFollowUp={chamberProfile.consultationFeeFollowUp}
+                followUpValidityDays={chamberProfile.followUpValidityDays}
+                onBackToStandardDesk={async () => {
+                  isChamberVacantRef.current = true;
+                  activeConsultationIdRef.current = null;
+                  setIsChamberVacant(true);
+                  setSelectedConsultationId(null);
+                  try {
+                    await clinicalConsultationService.vacateChamber(currentUser?.id);
+                  } catch (err) {
+                    console.warn('Failed to vacate chamber on server:', err);
+                  }
+                }}
+                onOpenSettings={() => {
+                  setChamberSettingsTab('profile');
+                  setIsSettingsOpen(true);
+                }}
+                onQuickRegisterWalkIn={handleQuickRegisterWalkIn}
+              />
+            </React.Suspense>
+          )}
         </div>
       </div>
 

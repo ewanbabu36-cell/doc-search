@@ -2,6 +2,7 @@ import { describe, it, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { buildApp } from '../dist/app.js';
 import { signJwt } from '@docsearch/auth';
+import { setupTestDatabase, TEST_SEEDS } from '@docsearch/database';
 
 describe('Emergency & Trauma Vertical Slice: Registration -> Triage -> Encounter -> Orders -> Treatment -> Disposition -> History', () => {
   let app;
@@ -20,7 +21,12 @@ describe('Emergency & Trauma Vertical Slice: Registration -> Triage -> Encounter
       sub: overrides.userId || DOCTOR_ID,
       email: overrides.email || 'doctor@docsearch.health',
       tenantId: overrides.tenantId !== undefined ? overrides.tenantId : TENANT_A,
-      branchId: overrides.branchId !== undefined ? overrides.branchId : 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+      branchId:
+        overrides.branchId !== undefined
+          ? overrides.branchId
+          : overrides.tenantId === TENANT_B
+          ? TEST_SEEDS.FACILITY_ID_B
+          : 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
       roles: overrides.roles || ['DOCTOR', 'HOSPITAL_ADMIN', 'NURSE'],
       permissions: overrides.permissions || [
         'clinical:patients:create',
@@ -41,6 +47,12 @@ describe('Emergency & Trauma Vertical Slice: Registration -> Triage -> Encounter
   before(async () => {
     process.env['JWT_SECRET'] = MASTER_SECRET;
     process.env['NODE_ENV'] = 'development';
+    const dbInstance = await setupTestDatabase({ seedBaseline: true, seedDemoFixtures: true });
+    await dbInstance.pool.query(`
+      UPDATE "company"."licenses"
+      SET "metadata" = '{"includedModules":["EMERGENCY_ICU","CLINICAL_EMR","PATIENTS"]}'::jsonb
+      WHERE "id" = '${TEST_SEEDS.LICENSE_ID_B}'
+    `);
     app = await buildApp();
     await app.ready();
   });

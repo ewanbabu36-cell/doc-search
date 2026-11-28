@@ -1255,6 +1255,18 @@ export async function seedUniversalDatabase(db: NodePgDatabase<typeof schema>): 
     const activePlanId = existingPlans[2]?.id || existingPlans[0]?.id || UNIVERSAL_SEED_IDS.PLAN_ENTERPRISE_ID;
 
     await db
+      .insert(schema.tenants)
+      .values([
+        {
+          id: UNIVERSAL_SEED_IDS.TENANT_B_ID,
+          name: 'Care Clinic Network',
+          slug: 'care-clinic-b',
+          status: 'ACTIVE'
+        }
+      ])
+      .onConflictDoNothing();
+
+    await db
       .insert(schema.partnerProfiles)
       .values([
         {
@@ -1269,6 +1281,19 @@ export async function seedUniversalDatabase(db: NodePgDatabase<typeof schema>): 
           tradeName: 'Apex Multi-Specialty Hospital',
           primaryContactName: 'Dr. Test Admin',
           primaryContactEmail: 'contact@apexhealth.in'
+        },
+        {
+          id: UNIVERSAL_SEED_IDS.PARTNER_PROFILE_B_ID,
+          tenantId: UNIVERSAL_SEED_IDS.TENANT_B_ID,
+          partnerType: 'HOSPITAL_NETWORK',
+          lifecycleStatus: 'ACTIVE',
+          verificationStatus: 'VERIFIED',
+          onboardingStep: 'COMPLETED',
+          onboardingProgressPercent: 100,
+          legalName: 'Care Clinic & Diagnostics Network',
+          tradeName: 'Care Hospital Beta',
+          primaryContactName: 'Dr. Clinic Admin',
+          primaryContactEmail: 'admin@carebeta.in'
         }
       ])
       .onConflictDoNothing();
@@ -1286,9 +1311,41 @@ export async function seedUniversalDatabase(db: NodePgDatabase<typeof schema>): 
           billingCycle: 'MONTHLY',
           startDate: new Date('2026-01-01T00:00:00Z'),
           renewalDate: new Date('2026-12-31T23:59:59Z')
+        },
+        {
+          id: UNIVERSAL_SEED_IDS.SUBSCRIPTION_B_ID,
+          partnerId: UNIVERSAL_SEED_IDS.PARTNER_PROFILE_B_ID,
+          productId: activeProductId,
+          planId: activePlanId,
+          planVersion: '1.0.0',
+          status: 'ACTIVE',
+          billingCycle: 'MONTHLY',
+          startDate: new Date('2026-01-01T00:00:00Z'),
+          renewalDate: new Date('2026-12-31T23:59:59Z')
         }
       ])
       .onConflictDoNothing();
+
+    const fullIncludedModules = [
+      'CLINICAL_EMR',
+      'OPD_QUEUE',
+      'BILLING',
+      'PHARMACY_POS',
+      'PATHOLOGY_LIMS',
+      'RADIOLOGY_PACS',
+      'INPATIENT_IPD',
+      'OT_SURGERY',
+      'BLOOD_BANK',
+      'EMERGENCY_ICU',
+      'ABDM_GATEWAY',
+      'WHATSAPP_AUTOMATION',
+      'TPA_INSURANCE',
+      'OPERATIONS',
+      'DIETARY',
+      'PROCUREMENT',
+      'MRD',
+      'EXECUTIVE_COMMAND'
+    ];
 
     await db
       .insert(schema.licenses)
@@ -1313,22 +1370,7 @@ export async function seedUniversalDatabase(db: NodePgDatabase<typeof schema>): 
           metadata: {
             commercialModel: 'Enterprise Hospital Suite',
             partnerType: 'HOSPITAL',
-            includedModules: [
-              'CLINICAL_EMR',
-              'OPD_QUEUE',
-              'BILLING',
-              'PHARMACY_POS',
-              'PATHOLOGY_LIMS',
-              'RADIOLOGY_PACS',
-              'INPATIENT_IPD',
-              'OT_SURGERY',
-              'BLOOD_BANK',
-              'EMERGENCY_ICU',
-              'ABDM_GATEWAY',
-              'WHATSAPP_AUTOMATION',
-              'TPA_INSURANCE',
-              'OPERATIONS'
-            ]
+            includedModules: fullIncludedModules
           },
           signature: crypto
             .createHmac(
@@ -1339,6 +1381,40 @@ export async function seedUniversalDatabase(db: NodePgDatabase<typeof schema>): 
             )
             .update(
               `LIC-DOCSEARCH-PRO-001:${UNIVERSAL_SEED_IDS.PARTNER_PROFILE_A_ID}:${TENANT_ID}:fc000000-0000-4000-8000-000000000001:${activePlanId}`
+            )
+            .digest('hex')
+        },
+        {
+          id: UNIVERSAL_SEED_IDS.LICENSE_B_ID,
+          licenseKey: 'LIC-CARE-BETA-001',
+          partnerId: UNIVERSAL_SEED_IDS.PARTNER_PROFILE_B_ID,
+          tenantId: UNIVERSAL_SEED_IDS.TENANT_B_ID,
+          subscriptionId: UNIVERSAL_SEED_IDS.SUBSCRIPTION_B_ID,
+          planId: activePlanId,
+          licenseType: 'COMMERCIAL',
+          status: 'ACTIVE',
+          activationStatus: 'ACTIVATED',
+          maxConcurrentUsers: 100,
+          maxDoctors: 50,
+          maxBranches: 10,
+          issuedAt: new Date('2026-01-01T00:00:00Z'),
+          startDate: new Date('2026-01-01T00:00:00Z'),
+          expiryDate: new Date('2027-12-31T23:59:59Z'),
+          gracePeriodEnd: new Date('2028-01-15T23:59:59Z'),
+          metadata: {
+            commercialModel: 'Enterprise Hospital Suite',
+            partnerType: 'HOSPITAL',
+            includedModules: fullIncludedModules
+          },
+          signature: crypto
+            .createHmac(
+              'sha256',
+              process.env['LICENSE_HMAC_SECRET'] ||
+                process.env['JWT_SECRET'] ||
+                'docsearch_master_jwt_secret_dev_32char_key_only'
+            )
+            .update(
+              `LIC-CARE-BETA-001:${UNIVERSAL_SEED_IDS.PARTNER_PROFILE_B_ID}:${UNIVERSAL_SEED_IDS.TENANT_B_ID}:${UNIVERSAL_SEED_IDS.SUBSCRIPTION_B_ID}:${activePlanId}`
             )
             .digest('hex')
         }

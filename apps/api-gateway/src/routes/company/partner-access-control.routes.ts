@@ -1113,6 +1113,29 @@ export const partnerAccessControlRoutes: FastifyPluginAsync = async (fastify) =>
       });
     }
 
+    const ADMIN_REVOKE_ROLES = new Set([
+      'SUPER_ADMIN',
+      'COMPANY_ADMIN',
+      'HOSPITAL_ADMIN',
+      'CLINIC_ADMIN',
+      'PARTNER_ADMIN',
+      'CHIEF_MEDICAL_OFFICER',
+      'COMPLIANCE_OFFICER'
+    ]);
+    const callerRoles = Array.isArray(session.roles)
+      ? session.roles.map((r: any) => String(r).toUpperCase().trim())
+      : [];
+    const userUuid = toDeterministicUuid(session.userId);
+    const isGrantHolder = existing.userId === session.userId || existing.userId === userUuid;
+    const hasAdminRole = Boolean(session.isSuperAdmin) || callerRoles.some((r: string) => ADMIN_REVOKE_ROLES.has(r));
+    if (!hasAdminRole && !isGrantHolder) {
+      throw new AppError({
+        message: 'Access denied: Only an authorized administrator or the break-glass holder can revoke an active emergency grant.',
+        code: ErrorCode.FORBIDDEN,
+        statusCode: 403
+      });
+    }
+
     const revokedAt = new Date();
     const revokedBy = session.actorEmail || (session as any).email || session.userId;
     const [updated] = await db
@@ -1162,10 +1185,7 @@ export const partnerAccessControlRoutes: FastifyPluginAsync = async (fastify) =>
   fastify.post(
     '/api/v1/partner/break-glass/:id/revoke',
     {
-      preHandler: [
-        authenticate,
-        requireRoles('SUPER_ADMIN', 'COMPANY_ADMIN', 'HOSPITAL_ADMIN', 'CLINIC_ADMIN', 'CHIEF_MEDICAL_OFFICER', 'COMPLIANCE_OFFICER')
-      ]
+      preHandler: [authenticate]
     },
     handleBreakGlassRevoke
   );

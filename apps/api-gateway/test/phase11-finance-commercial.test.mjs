@@ -39,7 +39,7 @@ describe('DOC SEARCH Phase 11 — Finance + Commercial Control Layer Verificatio
   const BRANCH_A = TEST_SEEDS.BRANCH_A;
   const FINANCE_OFFICER_A = 'ffffffff-1111-4fff-8fff-111111111111';
   const CASHIER_A = 'cccccccc-1111-4ccc-8ccc-111111111111';
-  const SUPERVISOR_A = 'ssssssss-1111-4sss-8sss-111111111111';
+  const SUPERVISOR_A = '99999999-1111-4999-8999-111111111111';
 
   // Tenant B: Secondary Partner (Multi-Tenant & Zero-State tests)
   const TENANT_B = TEST_SEEDS.TENANT_B;
@@ -60,6 +60,7 @@ describe('DOC SEARCH Phase 11 — Finance + Commercial Control Layer Verificatio
         'billing:invoices:create',
         'billing:invoices:read',
         'billing:invoices:update',
+        'billing:invoices:refund',
         'billing:payments:create',
         'billing:payments:read',
         'billing:reports:read'
@@ -81,6 +82,7 @@ describe('DOC SEARCH Phase 11 — Finance + Commercial Control Layer Verificatio
         'billing:invoices:create',
         'billing:invoices:read',
         'billing:invoices:update',
+        'billing:invoices:refund',
         'billing:payments:create',
         'billing:payments:read',
         'billing:reports:read'
@@ -106,6 +108,7 @@ describe('DOC SEARCH Phase 11 — Finance + Commercial Control Layer Verificatio
   }
 
   let testPatientId = '33333333-3333-4333-8333-333333333333';
+  let testEncounterId = '44444444-4444-4444-8444-444444444401';
   let testInvoiceId;
   let testPackageId;
   let testPatientPackageId;
@@ -114,7 +117,7 @@ describe('DOC SEARCH Phase 11 — Finance + Commercial Control Layer Verificatio
   let testPayableId;
 
   before(async () => {
-    testDb = await setupTestDatabase();
+    testDb = await setupTestDatabase({ seedBaseline: true, seedDemoFixtures: true });
     process.env['JWT_SECRET'] = MASTER_SECRET;
     process.env['NODE_ENV'] = 'development';
 
@@ -131,6 +134,49 @@ describe('DOC SEARCH Phase 11 — Finance + Commercial Control Layer Verificatio
 
     app = await buildApp({ db: testDb });
     await app.ready();
+
+    // Seed real patient & active encounter for invoice linkage (IMPL-P1-002)
+    const adminToken = signJwt(
+      {
+        sub: SUPERVISOR_A,
+        email: 'admin-setup@apollo.health',
+        tenantId: TENANT_A,
+        branchId: BRANCH_A,
+        roles: ['HOSPITAL_ADMIN', 'DOCTOR'],
+        permissions: ['*'],
+        iss: ISSUER,
+        aud: AUDIENCE
+      },
+      { secret: MASTER_SECRET, issuer: ISSUER, audience: AUDIENCE, expiresInSeconds: 3600 }
+    );
+    const patRes = await app.inject({
+      method: 'POST',
+      url: '/api/v1/partner/patients',
+      headers: { Authorization: `Bearer ${adminToken}` },
+      payload: {
+        firstName: 'Priya',
+        lastName: 'Sharma',
+        gender: 'FEMALE',
+        mobileNumber: '9876543219',
+        dateOfBirth: '1990-05-12'
+      }
+    });
+    assert.strictEqual(patRes.statusCode, 201);
+    testPatientId = patRes.json().data.id;
+
+    const encRes = await app.inject({
+      method: 'POST',
+      url: '/api/v1/partner/encounters',
+      headers: { Authorization: `Bearer ${adminToken}` },
+      payload: {
+        patientId: testPatientId,
+        encounterType: 'OPD',
+        status: 'IN_PROGRESS',
+        chiefComplaint: 'Chest evaluation & ECG workup'
+      }
+    });
+    assert.strictEqual(encRes.statusCode, 201);
+    testEncounterId = encRes.json().data.id;
   });
 
   after(async () => {
@@ -239,6 +285,7 @@ describe('DOC SEARCH Phase 11 — Finance + Commercial Control Layer Verificatio
       headers: { Authorization: `Bearer ${token}` },
       payload: {
         patientId: testPatientId,
+        encounterId: testEncounterId,
         patientName: 'Priya Sharma',
         patientMrn: 'MRN-2026-00101',
         billingType: 'SELF_PAY',

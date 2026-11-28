@@ -12,6 +12,9 @@ import {
   billingEodClosings,
   purchaseInvoices,
   insuranceAuthorizations,
+  insurancePayers,
+  insurancePlans,
+  insurancePatientPolicies,
   investigationOrders,
   pharmacyDispensing,
   pharmacyDispensingItems,
@@ -993,6 +996,71 @@ export class BillingManagementRepository {
     try {
       return await runInTx(db, async (tx: any) => {
         try {
+          const payerCode = `PAYER-${(input.payerName || 'TPA').toUpperCase().replace(/[^A-Z0-9]+/g, '-').slice(0, 24)}`;
+          let [payerRow] = await tx
+            .select()
+            .from(insurancePayers)
+            .where(and(eq(insurancePayers.tenantId, input.tenantId), eq(insurancePayers.payerCode, payerCode)))
+            .limit(1);
+          if (!payerRow) {
+            [payerRow] = await tx.insert(insurancePayers).values({
+              id: crypto.randomUUID(),
+              tenantId: input.tenantId,
+              partnerId: invoice.partnerId,
+              organizationId: invoice.organizationId,
+              branchId: invoice.branchId,
+              payerCode,
+              payerName: input.payerName || 'Third-Party Administrator',
+              payerType: 'TPA'
+            } as any).returning();
+          }
+
+          const planCode = `PLAN-${payerCode.slice(6, 20)}`;
+          let [planRow] = await tx
+            .select()
+            .from(insurancePlans)
+            .where(and(eq(insurancePlans.tenantId, input.tenantId), eq(insurancePlans.payerId, payerRow.id)))
+            .limit(1);
+          if (!planRow) {
+            [planRow] = await tx.insert(insurancePlans).values({
+              id: crypto.randomUUID(),
+              tenantId: input.tenantId,
+              partnerId: invoice.partnerId,
+              organizationId: invoice.organizationId,
+              payerId: payerRow.id,
+              planCode,
+              planName: `${input.payerName || 'Cashless'} Standard Benefit Plan`,
+              planType: 'COMPREHENSIVE'
+            } as any).returning();
+          }
+
+          const policyNumber = input.policyNumber || `POL-${input.patientId.slice(0, 8)}`;
+          let [policyRow] = await tx
+            .select()
+            .from(insurancePatientPolicies)
+            .where(and(
+              eq(insurancePatientPolicies.tenantId, input.tenantId),
+              eq(insurancePatientPolicies.patientId, input.patientId),
+              eq(insurancePatientPolicies.policyNumber, policyNumber)
+            ))
+            .limit(1);
+          if (!policyRow) {
+            [policyRow] = await tx.insert(insurancePatientPolicies).values({
+              id: crypto.randomUUID(),
+              tenantId: input.tenantId,
+              partnerId: invoice.partnerId,
+              organizationId: invoice.organizationId,
+              branchId: invoice.branchId,
+              patientId: input.patientId,
+              payerId: payerRow.id,
+              planId: planRow.id,
+              memberId: `MEM-${input.patientId.slice(0, 8)}`,
+              policyNumber,
+              subscriberName: invoice.patientName || 'Insured Beneficiary',
+              verificationStatus: 'VERIFIED'
+            } as any).returning();
+          }
+
           await tx.insert(insuranceAuthorizations).values({
             id: crypto.randomUUID(),
             tenantId: input.tenantId,
@@ -1000,6 +1068,9 @@ export class BillingManagementRepository {
             organizationId: invoice.organizationId,
             branchId: invoice.branchId,
             patientId: input.patientId,
+            policyId: policyRow.id,
+            payerId: payerRow.id,
+            encounterId: invoice.encounterId || null,
             authorizationNumber: input.preAuthNumber,
             approvedAmount: approved.toString(),
             requestedAmount: requested.toString(),

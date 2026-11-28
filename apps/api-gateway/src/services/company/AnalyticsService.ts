@@ -16,14 +16,14 @@ export class AnalyticsService {
   }
 
   async getUsageMetrics(session: SessionContext, category?: string) {
-    return withSecurityContext(getDatabase(), session, async () => {
-      return analyticsRepository.getUsageMetrics(category);
+    return withSecurityContext(getDatabase(), session, async (tx) => {
+      return analyticsRepository.getUsageMetrics(category, tx);
     });
   }
 
   async getCrossTenantAggregates(session: SessionContext) {
-    return withSecurityContext(getDatabase(), session, async () => {
-      return analyticsRepository.getCrossTenantAggregates();
+    return withSecurityContext(getDatabase(), session, async (tx) => {
+      return analyticsRepository.getCrossTenantAggregates(tx);
     });
   }
 

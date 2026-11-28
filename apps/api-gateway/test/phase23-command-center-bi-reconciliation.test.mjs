@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { buildApp } from '../dist/app.js';
 import { signJwt } from '@docsearch/auth';
 import {
+  setupTestDatabase,
   getDatabase,
   patients,
   inpatientBeds,
@@ -78,7 +79,10 @@ describe('PHASE 23 — Command Center & BI Independent Reconciliation Test Suite
   let hqToken;
   let unprivilegedToken;
 
+  let testDb;
+
   before(async () => {
+    testDb = await setupTestDatabase({ seedBaseline: true, seedDemoFixtures: true });
     app = await buildApp();
     await app.ready();
     db = getDatabase();
@@ -95,7 +99,8 @@ describe('PHASE 23 — Command Center & BI Independent Reconciliation Test Suite
   });
 
   after(async () => {
-    await app.close();
+    if (app) await app.close();
+    if (testDb) await testDb.cleanup();
   });
 
   // =========================================================================

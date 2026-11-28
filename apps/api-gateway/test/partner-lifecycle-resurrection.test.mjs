@@ -13,7 +13,7 @@ const ISSUER = 'docsearch-api';
 const AUDIENCE = 'docsearch-platform';
 
 // Dynamic import of signJwt from auth package
-const { signJwt } = await import('file:///C:/Users/alamr/OneDrive/Desktop/DOC%20SEARCH/packages/auth/dist/index.js');
+const { signJwt } = await import('@docsearch/auth');
 
 function createAdminToken() {
   const claims = {

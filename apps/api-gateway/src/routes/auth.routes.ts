@@ -34,7 +34,7 @@ import { identitySecurityFoundationService } from '../services/security/Identity
 import { partnerOnboardingRepository } from '../repositories/company/PartnerOnboardingRepository.js';
 import { registrationFormPolicyService, resolveCanonicalRequestedPlan } from '../services/core/RegistrationFormPolicyService.js';
 import { launchOfferCampaignService } from '../services/core/LaunchOfferCampaignService.js';
-import { getDatabase, partnerProfiles, partnerOnboardingStagedRegistrations, operationalStaff, eq, or } from '@docsearch/database';
+import { getDatabase, withSecurityContext, partnerProfiles, partnerOnboardingStagedRegistrations, operationalStaff, platformSettings, eq, or } from '@docsearch/database';
 
 export async function getApprovedPartnersFromDisk(): Promise<any[]> {
   try {
@@ -208,7 +208,9 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
           userRec.status = match?.status || 'PENDING_APPROVAL';
         }
       }
-    } catch {}
+    } catch (approvalErr) {
+      fastify.log.warn(`[AuthLogin] Partner onboarding approval lookup fallback: ${String(approvalErr)}`);
+    }
 
     // Real authentication & cryptographic password verification
     let user;
@@ -521,11 +523,21 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
           if (tenantId && tenantId.length === 36) {
             profileConditions.push(eq(partnerProfiles.tenantId, tenantId));
           }
-          const [prof] = await db
-            .select()
-            .from(partnerProfiles)
-            .where(or(...profileConditions))
-            .limit(1);
+          const validProfileTenant = tenantId && tenantId.length === 36 ? tenantId : '00000000-0000-4000-8000-000000000000';
+          const [prof] = await withSecurityContext(
+            db,
+            {
+              userId: existingUser?.id || '00000000-0000-4000-8000-000000000001',
+              tenantId: validProfileTenant,
+              isSuperAdmin: !(tenantId && tenantId.length === 36)
+            },
+            (tx) =>
+              tx
+                .select()
+                .from(partnerProfiles)
+                .where(or(...profileConditions))
+                .limit(1)
+          );
 
           const [staged] = await db
             .select()
@@ -553,7 +565,9 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
           loginTenantName = loginTenantName || prof?.legalName || prof?.tradeName || staged?.organizationName;
           loginOrgType = loginOrgType || prof?.partnerType || staged?.organizationType;
           loginPlanTier = loginPlanTier || (prof?.metadata as any)?.planTier || pPayload.planTier;
-        } catch {}
+        } catch (err) {
+          fastify.log.warn(`[AuthLogin] Partner profile enrichment fallback: ${String(err)}`);
+        }
       }
     }
 
@@ -677,7 +691,9 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
             sessionId = payload.sessionId || payload.jti;
             userId = payload.sub;
           }
-        } catch {}
+        } catch (decodeErr) {
+          fastify.log.warn(`[AuthLogout] JWT payload decode skipped: ${String(decodeErr)}`);
+        }
       }
     }
 
@@ -705,7 +721,9 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
               timestamp: new Date().toISOString()
             }
           }, sessionContext);
-        } catch {}
+        } catch (auditErr) {
+          fastify.log.warn(`[AuthLogout] Logout audit write warning: ${String(auditErr)}`);
+        }
       }
     }
 
@@ -717,7 +735,9 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
           await sessionRevocationService.revokeSession(session.id, 'User initiated logout via refresh token', session.userId);
           await sessionService.logout(session.id);
         }
-      } catch {}
+      } catch (refreshLogoutErr) {
+        fastify.log.warn(`[AuthLogout] Refresh token logout cleanup warning: ${String(refreshLogoutErr)}`);
+      }
     }
 
     return reply.status(200).send({
@@ -756,7 +776,9 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
               isApproved = true;
               realAuthService.activatePartnerUserCredential(actorEmail);
             }
-          } catch {}
+          } catch (queueErr) {
+            fastify.log.warn(`[AuthMe] Onboarding queue check warning: ${String(queueErr)}`);
+          }
         }
       }
 
@@ -780,11 +802,23 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
             if (request.session.tenantId && request.session.tenantId.length === 36) {
               profileConditions.push(eq(partnerProfiles.tenantId, request.session.tenantId));
             }
-            const [prof] = await db
-              .select()
-              .from(partnerProfiles)
-              .where(or(...profileConditions))
-              .limit(1);
+            const validMeTenant = request.session.tenantId && request.session.tenantId.length === 36
+              ? request.session.tenantId
+              : '00000000-0000-4000-8000-000000000000';
+            const [prof] = await withSecurityContext(
+              db,
+              {
+                ...request.session,
+                tenantId: validMeTenant,
+                isSuperAdmin: request.session.isSuperAdmin || !(request.session.tenantId && request.session.tenantId.length === 36)
+              },
+              (tx) =>
+                tx
+                  .select()
+                  .from(partnerProfiles)
+                  .where(or(...profileConditions))
+                  .limit(1)
+            );
 
             // B. Check company.partner_onboarding_staged_registrations
             const [staged] = await db
@@ -828,7 +862,9 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
             resolvedTenantName = resolvedTenantName || prof?.legalName || prof?.tradeName || staged?.organizationName;
             resolvedOrgType = resolvedOrgType || prof?.partnerType || staged?.organizationType;
             resolvedPlanTier = resolvedPlanTier || (prof?.metadata as any)?.planTier || pPayload.planTier;
-          } catch {}
+          } catch (err) {
+            fastify.log.warn(`[AuthMe] Profile metadata enrichment warning: ${String(err)}`);
+          }
         }
       }
 
@@ -998,7 +1034,54 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
   // =========================================================================
   // ⚡ AUTOMATED PARTNER ONBOARDING ENGINE & POLICY STATE
   // =========================================================================
-  let isAutoOnboardPolicyActive = true;
+  let isAutoOnboardPolicyCache = false;
+
+  async function getAutoOnboardPolicyActive(): Promise<boolean> {
+    try {
+      const db = getDatabase();
+      if (!db) return isAutoOnboardPolicyCache;
+      const [row] = await db
+        .select()
+        .from(platformSettings)
+        .where(eq(platformSettings.key, 'AUTO_ONBOARD_POLICY_ENABLED'))
+        .limit(1);
+      if (row && row.value && typeof (row.value as any).enabled === 'boolean') {
+        isAutoOnboardPolicyCache = Boolean((row.value as any).enabled);
+      }
+    } catch {
+      // Fail-closed to MANUAL_REVIEW_QUEUE default if DB lookup fails
+    }
+    return isAutoOnboardPolicyCache;
+  }
+
+  async function setAutoOnboardPolicyActive(enabled: boolean, updatedBy?: string): Promise<boolean> {
+    isAutoOnboardPolicyCache = Boolean(enabled);
+    try {
+      const db = getDatabase();
+      if (db) {
+        const now = new Date();
+        await db
+          .insert(platformSettings)
+          .values({
+            key: 'AUTO_ONBOARD_POLICY_ENABLED',
+            value: { enabled: isAutoOnboardPolicyCache },
+            updatedBy: updatedBy || 'SYSTEM_ADMIN',
+            updatedAt: now
+          })
+          .onConflictDoUpdate({
+            target: platformSettings.key,
+            set: {
+              value: { enabled: isAutoOnboardPolicyCache },
+              updatedBy: updatedBy || 'SYSTEM_ADMIN',
+              updatedAt: now
+            }
+          });
+      }
+    } catch {
+      // Cache updated even if fallback table unavailable in minimal tests
+    }
+    return isAutoOnboardPolicyCache;
+  }
 
   async function executePartnerApprovalHelper({
     id,
@@ -1241,7 +1324,7 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
     });
 
     let autoApproved = false;
-    if (isAutoOnboardPolicyActive) {
+    if (await getAutoOnboardPolicyActive()) {
       try {
         await executePartnerApprovalHelper({
           id: registered.id,
@@ -1501,7 +1584,7 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
     });
 
     let autoApproved = false;
-    if (isAutoOnboardPolicyActive) {
+    if (await getAutoOnboardPolicyActive()) {
       try {
         await executePartnerApprovalHelper({
           id: created.id,
@@ -1621,7 +1704,7 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
     });
 
     let autoApproved = false;
-    if (isAutoOnboardPolicyActive) {
+    if (await getAutoOnboardPolicyActive()) {
       try {
         await executePartnerApprovalHelper({
           id: created.id,
@@ -2047,10 +2130,11 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
 
   // GET /api/v1/auth/auto-onboard-policy (Fetch live auto-onboarding policy state)
   fastify.get('/api/v1/auth/auto-onboard-policy', async (_request, reply) => {
+    const active = await getAutoOnboardPolicyActive();
     return reply.status(200).send({
       success: true,
-      isAutoOnboardEnabled: isAutoOnboardPolicyActive,
-      policy: isAutoOnboardPolicyActive ? 'ZERO_FRICTION_FAST_TRACK' : 'MANUAL_REVIEW_QUEUE'
+      isAutoOnboardEnabled: active,
+      policy: active ? 'ZERO_FRICTION_FAST_TRACK' : 'MANUAL_REVIEW_QUEUE'
     });
   });
 
@@ -2062,13 +2146,14 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
     },
     async (request, reply) => {
       const body = (request.body as { enabled?: boolean }) || {};
-      if (body.enabled !== undefined) {
-        isAutoOnboardPolicyActive = Boolean(body.enabled);
-      }
+      const active =
+        body.enabled !== undefined
+          ? await setAutoOnboardPolicyActive(Boolean(body.enabled), (request.session as any)?.actorEmail || (request.session as any)?.userId)
+          : await getAutoOnboardPolicyActive();
       return reply.status(200).send({
         success: true,
-        isAutoOnboardEnabled: isAutoOnboardPolicyActive,
-        message: isAutoOnboardPolicyActive
+        isAutoOnboardEnabled: active,
+        message: active
           ? 'Fast-Track Zero-Friction Auto-Onboarding Policy is now ACTIVE'
           : 'Manual Review Verification Queue Policy is now ACTIVE'
       });

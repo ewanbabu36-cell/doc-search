@@ -1,21 +1,45 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Badge, Button } from '@docsearch/ui-kit';
 import { useGlobalLocale } from '../common/GlobalCurrencyLocaleContext.js';
+import { riskManagementService, type CompanyRiskOverviewDto } from '../../services/risk-management-service.js';
 
 export const EbitdaWhatIfSimulatorView: React.FC = () => {
   const { formatMoney } = useGlobalLocale();
 
-  // Scenario Simulation Sliders
+  const [overview, setOverview] = useState<CompanyRiskOverviewDto | null>(null);
+  const [loadingBaseline, setLoadingBaseline] = useState(true);
+
+  useEffect(() => {
+    let active = true;
+    riskManagementService
+      .getOverview()
+      .then((data) => {
+        if (active) setOverview(data);
+      })
+      .catch(() => {
+        if (active) setOverview(null);
+      })
+      .finally(() => {
+        if (active) setLoadingBaseline(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  // Scenario Simulation Sliders (interactive forward sensitivity multipliers)
   const [hospitalsMonthly, setHospitalsMonthly] = useState<number>(25); // 10 to 100
-  const [takeRatePercent, setTakeRatePercent] = useState<number>(15.2); // 8% to 25%
+  const [takeRatePercent, setTakeRatePercent] = useState<number>(15.0); // 8% to 25%
   const [opdGrowthRate, setOpdGrowthRate] = useState<number>(20); // 5% to 50%
   const [opexSavingsPercent, setOpexSavingsPercent] = useState<number>(15); // 0% to 40%
 
-  // Baseline figures
-  const baseMonthlyGmv = 177600000; // ₹ 17.76 Cr
-  const baseMonthlyOpex = 2350000; // ₹ 23.5 Lakhs
+  // Live PostgreSQL baseline figures (honest zero-state when database has no ledger entries yet)
+  const baseMonthlyGmv = overview
+    ? Math.max(overview.pnl.partnerClinicalGmvInr, overview.pnl.totalRecognizedRevenueInr)
+    : 0;
+  const baseMonthlyOpex = overview ? overview.pnl.totalCostInr : 0;
 
-  // Computed Projections
+  // Computed Projections from real baseline
   const hospitalGrowthMultiplier = 1 + (hospitalsMonthly - 25) * 0.015;
   const opdGrowthMultiplier = 1 + (opdGrowthRate - 20) * 0.02;
 
@@ -23,7 +47,10 @@ export const EbitdaWhatIfSimulatorView: React.FC = () => {
   const simulatedMonthlyNetRevenue = simulatedMonthlyGmv * (takeRatePercent / 100);
   const simulatedMonthlyOpex = baseMonthlyOpex * (1 - opexSavingsPercent / 100);
   const simulatedMonthlyEbitda = simulatedMonthlyNetRevenue - simulatedMonthlyOpex;
-  const simulatedEbitdaMargin = ((simulatedMonthlyEbitda / simulatedMonthlyNetRevenue) * 100).toFixed(1);
+  const simulatedEbitdaMargin =
+    simulatedMonthlyNetRevenue > 0
+      ? ((simulatedMonthlyEbitda / simulatedMonthlyNetRevenue) * 100).toFixed(1)
+      : '0.0';
 
   const annualizedSimulatedArr = simulatedMonthlyNetRevenue * 12;
   const annualizedSimulatedGmv = simulatedMonthlyGmv * 12;
@@ -45,7 +72,7 @@ export const EbitdaWhatIfSimulatorView: React.FC = () => {
     };
   });
 
-  const maxEbitda = Math.max(...trajectoryData.map((d) => d.ebitda));
+  const maxEbitda = Math.max(0, ...trajectoryData.map((d) => d.ebitda));
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
@@ -56,7 +83,13 @@ export const EbitdaWhatIfSimulatorView: React.FC = () => {
             <h3 style={{ margin: 0, fontSize: '1.125rem', fontWeight: 800, color: 'var(--ds-color-text-primary)' }}>
               🎯 Interactive "What-If" EBITDA Scenario Simulator & 12-Month Trajectory
             </h3>
-            <Badge variant="primary">Real-Time Financial Modeling</Badge>
+            <Badge variant={baseMonthlyGmv > 0 ? 'primary' : 'warning'}>
+              {loadingBaseline
+                ? 'Loading Live PostgreSQL Baseline...'
+                : baseMonthlyGmv > 0
+                  ? 'Live PostgreSQL Baseline Active'
+                  : 'Zero-Baseline (No Clinical/Cost Ledger Activity Yet)'}
+            </Badge>
           </div>
           <p style={{ margin: '4px 0 0', fontSize: '0.8125rem', color: 'var(--ds-color-text-muted)' }}>
             Adjust hospital acquisition rate, take-rate commissions, and OPEX savings to project forward-looking profitability and ARR multiples
@@ -231,7 +264,7 @@ export const EbitdaWhatIfSimulatorView: React.FC = () => {
         {/* CSS/SVG Bar Projection Stream */}
         <div style={{ display: 'grid', gridTemplateColumns: `repeat(${months.length}, 1fr)`, gap: '8px', alignItems: 'flex-end', height: '180px', paddingTop: '20px', borderBottom: '1px solid #334155' }}>
           {trajectoryData.map((d) => {
-            const barHeightPercent = Math.max(15, Math.round((d.ebitda / maxEbitda) * 100));
+            const barHeightPercent = maxEbitda > 0 ? Math.max(15, Math.round((d.ebitda / maxEbitda) * 100)) : 8;
 
             return (
               <div

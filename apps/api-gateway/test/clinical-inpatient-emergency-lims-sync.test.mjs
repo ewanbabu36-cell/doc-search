@@ -1,7 +1,12 @@
 import { describe, it, before } from 'node:test';
 import assert from 'node:assert/strict';
+import crypto from 'node:crypto';
+import { signJwt } from '@docsearch/auth';
 
 const BASE_URL = 'http://localhost:4000';
+const MASTER_SECRET = process.env['JWT_SECRET'] || 'docsearch_master_jwt_secret_dev_32char_key_only';
+const ISSUER = process.env['JWT_ISSUER'] || 'docsearch-api';
+const AUDIENCE = process.env['JWT_AUDIENCE'] || 'docsearch-platform';
 
 async function api(path, options = {}, token) {
   const headers = {
@@ -35,17 +40,20 @@ describe('Clinical, Inpatient, Emergency & LIMS Multi-Department Live Persistenc
   let testLabOrderId;
 
   before(async () => {
-    // 1. Acquire Admin Token
-    const adminAuth = await api('/api/v1/auth/quick-session', {
-      method: 'POST',
-      body: JSON.stringify({
+    // 1. Mint Admin Token using test signing helper
+    adminToken = signJwt(
+      {
+        sub: '00000000-0000-4000-8000-000000000001',
         email: 'founder@docsearch.health',
-        role: 'SUPER_ADMIN',
-        permissions: ['*']
-      })
-    });
-    assert(adminAuth.ok, `Admin Auth failed: ${JSON.stringify(adminAuth.body)}`);
-    adminToken = adminAuth.body.data.accessToken;
+        tenantId: '00000000-0000-4000-8000-000000000000',
+        roles: ['SUPER_ADMIN', 'COMPANY_ADMIN'],
+        permissions: ['*'],
+        isSuperAdmin: true,
+        dataScope: 'global',
+        jti: crypto.randomUUID()
+      },
+      { secret: MASTER_SECRET, issuer: ISSUER, audience: AUDIENCE, expiresInSeconds: 3600 }
+    );
 
     // 2. Onboard Partner Facility
     const suffix = Date.now().toString().slice(-4);
@@ -72,21 +80,22 @@ describe('Clinical, Inpatient, Emergency & LIMS Multi-Department Live Persistenc
     partnerId = pData.id || pData.partner.id;
     branchId = pData.branchId || pData.facilityId;
 
-    // 3. Acquire Doctor Token for Onboarded Facility
-    const docAuth = await api('/api/v1/auth/quick-session', {
-      method: 'POST',
-      body: JSON.stringify({
+    // 3. Mint Doctor Token for Onboarded Facility
+    doctorToken = signJwt(
+      {
+        sub: crypto.randomUUID(),
         email: doctorEmail,
         role: 'DOCTOR',
         roles: ['DOCTOR', 'HOSPITAL_ADMIN', 'PATHOLOGIST'],
         tenantId,
         partnerId,
         branchId,
-        permissions: ['*']
-      })
-    });
-    assert(docAuth.ok, `Doctor auth failed: ${JSON.stringify(docAuth.body)}`);
-    doctorToken = docAuth.body.data.accessToken;
+        permissions: ['*'],
+        dataScope: 'tenant',
+        jti: crypto.randomUUID()
+      },
+      { secret: MASTER_SECRET, issuer: ISSUER, audience: AUDIENCE, expiresInSeconds: 3600 }
+    );
   });
 
   it('STAGE 1: Register Patient and Create OPD Encounter in Database', async () => {
